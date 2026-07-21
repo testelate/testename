@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Linkly — Encurtador de Links</title>
+  <meta name="description" content="Encurtador de links oficial do HUB." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/linkly.css" />
+  <script>
+    // Evita FOUC: aplica a cor de tema e o modo claro/escuro salvos antes do CSS carregar
+    (function () {
+      try {
+        var mode = localStorage.getItem('hubnexus-mode') || 'dark';
+        document.documentElement.classList.add(mode);
+
+        var h = localStorage.getItem('hubnexus-theme-color') || '#FF6500';
+        var hex = h.replace('#', '');
+        var r = parseInt(hex.slice(0, 2), 16) / 255, g = parseInt(hex.slice(2, 4), 16) / 255, b = parseInt(hex.slice(4, 6), 16) / 255;
+        var max = Math.max(r, g, b), min = Math.min(r, g, b), hh = 0, s = 0, l = (max + min) / 2;
+        if (max !== min) { var d = max - min; s = l > .5 ? d / (2 - max - min) : d / (max + min); switch (max) { case r: hh = ((g - b) / d + (g < b ? 6 : 0)) / 6; break; case g: hh = ((b - r) / d + 2) / 6; break; case b: hh = ((r - g) / d + 4) / 6; break; } }
+        var root = document.documentElement;
+        root.style.setProperty('--theme-h', Math.round(hh * 360));
+        root.style.setProperty('--theme-s', Math.round(s * 100) + '%');
+        root.style.setProperty('--theme-l', Math.round(l * 100) + '%');
+      } catch (e) { }
+    })();
+  </script>
+<style>
+    /* ── Overlay de migração (bloqueia o uso e força ida para o novo link) ── */
+    .migr-overlay { position:fixed; inset:0; z-index:99999; display:flex; align-items:center; justify-content:center; padding:24px; background:radial-gradient(circle at 50% 30%, hsl(var(--theme-h),35%,10%), hsl(var(--theme-h),40%,5%) 70%); backdrop-filter:blur(10px); }
+    .migr-card { position:relative; max-width:560px; width:100%; text-align:center; background:hsl(var(--theme-h),24%,12%); border:1px solid hsla(var(--theme-h),90%,50%,0.30); border-radius:20px; padding:44px 36px 36px; box-shadow:0 30px 80px rgba(0,0,0,.6), 0 0 0 1px hsla(var(--theme-h),90%,50%,0.08); }
+    .migr-icon { width:64px; height:64px; margin:0 auto 20px; border-radius:50%; background:hsla(var(--theme-h),90%,50%,0.16); border:1px solid hsla(var(--theme-h),90%,50%,0.4); display:flex; align-items:center; justify-content:center; font-size:30px; }
+    .migr-title { font-size:19px; font-weight:700; color:var(--text-primary); margin-bottom:12px; letter-spacing:-.2px; }
+    .migr-desc { font-size:13.5px; line-height:1.65; color:var(--text-secondary); margin-bottom:26px; }
+    .migr-desc strong { color:var(--orange-2); }
+    .migr-cta { display:inline-flex; align-items:center; gap:8px; padding:13px 26px; background:var(--orange); color:#1a0d05; font-weight:700; font-size:13.5px; border-radius:var(--r-pill); text-decoration:none; box-shadow:0 6px 20px hsla(var(--theme-h),90%,50%,0.4); transition:transform .15s, box-shadow .15s; }
+    .migr-cta:hover { transform:translateY(-1px); box-shadow:0 8px 26px hsla(var(--theme-h),90%,50%,0.5); }
+    .migr-link-fallback { margin-top:16px; font-size:11px; color:var(--text-muted); word-break:break-all; }
+    .migr-link-fallback a { color:var(--orange-2); }
+    body.light .migr-card { background:#fff8f0; }
+
+</style>
+</head>
+
+<body>
+  <!-- Overlay bloqueante: impede o uso desta ferramenta e encaminha pro novo link -->
+  <div id="migrOverlay" class="migr-overlay">
+    <div class="migr-card">
+      <div class="migr-icon">🚀</div>
+      <div class="migr-title">Este fluxo mudou de endereço</div>
+      <div class="migr-desc">
+        O Linkly agora vive em um <strong>novo link</strong>, com a IA já implementada de ponta a ponta — o processo ficou mais fácil e ainda mais rápido.<br/>Esta versão não está mais disponível para uso.
+      </div>
+      <a class="migr-cta" href="https://hub-dev.reputaition.nexus.fsb.com.br/linkly">
+        Acessar novo Linkly
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg>
+      </a>
+      <div class="migr-link-fallback">Se o botão não funcionar, acesse: <a href="https://hub-dev.reputaition.nexus.fsb.com.br/linkly">hub-dev.reputaition.nexus.fsb.com.br/linkly</a></div>
+    </div>
+  </div>
+
+
+  <div id="navbar-container"></div>
+
+  <div class="linkly-container">
+    <header class="linkly-header">
+      <div class="mascot-wrapper">
+        <img src="../assets/linkly-mascot.png" alt="Mascote Linkly" class="mascot-img" id="linklyMascot" onerror="this.src='../assets/logo.png'"/>
+        <div id="mascotBubble" class="mascot-bubble" style="display: none;">
+          <div class="bubble-tail-border"></div>
+          <div class="bubble-tail-bg"></div>
+          <p id="mascotText" class="bubble-text" style="transition: opacity 0.15s ease; opacity: 1;">Carregando...</p>
+        </div>
+      </div>
+      <div class="header-text">
+        <h1 class="linkly-title">Linkly</h1>
+        <p class="linkly-subtitle">Encurtador de URLs integrado do ecossistema HUB.nexus</p>
+      </div>
+    </header>
+
+    <main>
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- Seção de Geração de Link -->
+        <section class="linkly-card">
+          <h2 class="card-title">Encurtador de Link</h2>
+          <div class="input-group">
+            <input type="url" id="originalUrlInput" placeholder="Digite ou cole sua URL longa aqui (ex: https://...)"
+              required autocomplete="off" />
+            <button id="shortenBtn" class="btn-primary">Encurtar</button>
+          </div>
+
+          <!-- Box do Link Curto Gerado -->
+          <div id="resultBox" class="result-box" style="display: none;">
+            <p class="result-label">Link curto gerado com sucesso!</p>
+            <div class="result-field">
+              <input type="text" id="shortenedUrlInput" readonly onclick="this.select()" />
+              <button id="copyBtn" class="btn-secondary">Copiar</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Seção do Histórico (Standalone apenas) -->
+        <section class="linkly-card card-history">
+          <h2 class="card-title">Histórico de Links Encurtados</h2>
+          <div class="table-wrapper">
+            <table class="history-table" id="historyTable">
+              <thead>
+                <tr>
+                  <th>Link Original</th>
+                  <th>Link Curto</th>
+                  <th>Cliques</th>
+                  <th>Criado Em</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody">
+                <tr>
+                  <td colspan="4" class="empty-state">Carregando seu histórico de links...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/utils.js"></script>
+  <script src="../js/theme.js"></script>
+  <script src="../js/linkly.js"></script>
+</body>
+
+</html>

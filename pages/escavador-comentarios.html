@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HUB.nexus — Escavador de Comentários</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/global.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  body { display:flex; flex-direction:column; overflow:hidden; height:100vh; background:var(--bg); font-family:'Inter',sans-serif; }
+  .main { flex:1; display:flex; flex-direction:column; overflow:hidden; position:relative; }
+
+  /* ── Topbar (mesmo padrão das outras páginas) ── */
+  .topbar { display:flex; align-items:center; justify-content:space-between; padding:0 20px; height:52px; flex-shrink:0; backdrop-filter:blur(30px); background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.07); z-index:5; }
+  .topbar-left { display:flex; align-items:center; gap:10px; }
+  .topbar-title { font-size:13px; font-weight:500; color:var(--text-primary); letter-spacing:-0.2px; }
+  .topbar-sub   { font-size:11px; color:var(--text-muted); }
+  .topbar-right { display:flex; align-items:center; gap:8px; }
+  body.light .topbar { background:rgba(255,255,255,0.55); border-bottom-color:rgba(180,100,40,0.10); }
+  body.light .topbar-title { color:#3a1200; }
+  body.light .topbar-sub   { color:#b09070; }
+
+  /* ── Tabs (mesmo padrão do main-tab usado no Ekklesia) ── */
+  .escav-tabs { display:flex; gap:4px; padding:0 24px; border-bottom:1px solid rgba(255,255,255,0.07); flex-shrink:0; }
+  body.light .escav-tabs { border-bottom-color:rgba(180,100,40,0.10); }
+  .main-tab { padding:12px 16px; font-size:12px; font-weight:500; color:var(--text-muted); cursor:pointer; border:none; background:transparent; font-family:'Inter',sans-serif; transition:all 0.18s; border-bottom:2px solid transparent; margin-bottom:-1px; }
+  .main-tab.active { color:var(--orange-2); border-bottom-color:var(--orange); }
+  .main-tab:hover:not(.active) { color:var(--text-secondary); }
+  body.light .main-tab { color:#b09070; }
+  body.light .main-tab.active { color:var(--accent-dark); }
+
+  .content-scroll { flex:1; overflow-y:auto; padding:20px 24px 60px; }
+  .aba { display:none; }
+  .aba.ativa { display:block; }
+
+  /* ── elementos específicos do Escavador, usando os tokens do tema ── */
+  .lote-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:var(--r-lg); padding:16px; margin-bottom:12px; }
+  body.light .lote-card { background:rgba(255,255,255,0.55); border-color:rgba(180,100,40,0.12); }
+
+  .score-bar { width:56px; height:5px; background:rgba(255,255,255,0.10); border-radius:var(--r-pill); overflow:hidden; display:inline-block; vertical-align:middle; margin-right:6px; }
+  body.light .score-bar { background:rgba(180,100,40,0.14); }
+  .score-bar i { display:block; height:100%; background:var(--accent); }
+
+  /* breakdown de scores por dimensão */
+  .score-breakdown { display:flex; flex-direction:column; gap:3px; margin-top:6px; }
+  .score-dim { display:flex; align-items:center; gap:5px; font-size:10.5px; color:var(--text-muted); }
+  .score-dim-bar { flex:1; height:3px; background:rgba(255,255,255,0.08); border-radius:2px; overflow:hidden; max-width:60px; }
+  .score-dim-bar i { display:block; height:100%; border-radius:2px; }
+  .score-dim-label { width:62px; text-align:right; flex-shrink:0; }
+  .score-dim-val { width:24px; text-align:right; flex-shrink:0; }
+  .dim-volume i    { background:#a78bfa; }
+  .dim-sent i      { background:#f87171; }
+  .dim-rec i       { background:#34d399; }
+  .dim-alcance i   { background:#60a5fa; }
+  body.light .score-dim { color:#9a7055; }
+  body.light .score-dim-bar { background:rgba(180,100,40,0.10); }
+
+  /* legenda de seleção no topo do lote */
+  .lote-motivo { font-size:11px; color:var(--text-muted); margin:0 0 12px; line-height:1.5; padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:var(--r-md); border-left:2px solid var(--accent); }
+  body.light .lote-motivo { background:rgba(180,100,40,0.04); border-left-color:var(--accent-dark); }
+
+  /* skeleton da fila enquanto carrega */
+  .fila-loading { display:flex; flex-direction:column; gap:8px; padding:4px 0; }
+  .skel { background:rgba(255,255,255,0.06); border-radius:var(--r-md); animation:skel-pulse 1.4s ease-in-out infinite; }
+  body.light .skel { background:rgba(180,100,40,0.07); }
+  @keyframes skel-pulse { 0%,100%{opacity:1} 50%{opacity:.45} }
+
+  table.escav-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.escav-table th { text-align:left; color:var(--text-muted); font-weight:600; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.07); white-space:nowrap; }
+  table.escav-table td { padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.04); color:var(--text-secondary); vertical-align:top; }
+  table.escav-table tr:hover td { background:rgba(255,255,255,0.03); }
+  body.light table.escav-table th { border-bottom-color:rgba(180,100,40,0.10); }
+  body.light table.escav-table td { border-bottom-color:rgba(180,100,40,0.06); color:#7a4a30; }
+
+  .chip-risco { background:rgba(239,68,68,0.12); color:var(--red); }
+  .chip-ok    { background:rgba(34,197,94,0.12); color:var(--green); }
+
+  .dropzone { border:2px dashed rgba(255,255,255,0.12); border-radius:var(--r-lg); padding:36px; text-align:center; color:var(--text-muted); cursor:pointer; transition:all 0.18s; font-size:12.5px; }
+  .dropzone.arrastando { border-color:var(--accent); background:hsla(var(--theme-h),90%,50%,0.06); }
+  .dropzone strong { color:var(--text-primary); display:block; margin-bottom:4px; font-size:13px; }
+  body.light .dropzone { border-color:rgba(180,100,40,0.20); }
+
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:760px) { .grid2 { grid-template-columns:1fr; } }
+
+  .vazio { text-align:center; padding:36px 16px; color:var(--text-muted); font-size:12.5px; }
+  .vazio strong { color:var(--text-primary); display:block; margin-bottom:6px; font-size:13px; }
+
+  .toolbar { display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+  .page-navbar { width:100%; }
+
+  /* ── Score card ── */
+  #score-card { border-left: 3px solid var(--accent); }
+  #score-card.score-alto  { border-left-color: var(--green, #22c55e); }
+  #score-card.score-medio { border-left-color: var(--yellow, #fbbf24); }
+  #score-card.score-baixo { border-left-color: var(--red, #f87171); }
+
+  /* ── Sinal CIB pill ── */
+  .sinal-cib { display:flex; align-items:flex-start; gap:10px; padding:10px 14px; border-radius:var(--r-md); margin-bottom:8px; border:1px solid transparent; }
+  .sinal-cib.alta  { background:rgba(239,68,68,0.08); border-color:rgba(239,68,68,0.20); }
+  .sinal-cib.media { background:rgba(251,191,36,0.08); border-color:rgba(251,191,36,0.20); }
+  .sinal-cib.baixa { background:rgba(255,255,255,0.04); border-color:rgba(255,255,255,0.08); }
+  .sinal-cib-tipo { font-size:10px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; min-width:72px; padding-top:1px; }
+  .sinal-cib.alta  .sinal-cib-tipo { color:var(--red,#f87171); }
+  .sinal-cib.media .sinal-cib-tipo { color:var(--yellow,#fbbf24); }
+  .sinal-cib.baixa .sinal-cib-tipo { color:var(--text-muted); }
+  .sinal-cib-desc { font-size:12px; color:var(--text-secondary); line-height:1.5; }
+
+  /* ── Cópias ── */
+  .copia-item { padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+  body.light .copia-item { border-bottom-color:rgba(180,100,40,0.07); }
+  .copia-item:last-child { border-bottom:none; }
+  .copia-texto { font-size:11.5px; color:var(--text-secondary); font-style:italic; margin-bottom:4px; line-height:1.4; }
+  .copia-meta  { font-size:11px; color:var(--text-muted); }
+
+  /* ── Pico temporal ── */
+  .pico-numero { font-size:28px; font-weight:700; color:var(--text-primary); }
+  .pico-detalhe { font-size:12px; color:var(--text-muted); margin-top:2px; }
+
+  /* ── KPI strip (mantém mas sem margin própria quando dentro do grid) ── */
+  .kpi-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
+  @media (max-width:760px) { .kpi-strip { grid-template-columns:repeat(2,1fr); } }
+
+  /* ── KPI card ── */
+  .kpi-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:var(--r-lg); padding:14px 16px; }
+  body.light .kpi-card { background:rgba(255,255,255,0.55); border-color:rgba(180,100,40,0.12); }
+  .kpi-value { font-size:26px; font-weight:700; color:var(--text-primary); letter-spacing:-1px; line-height:1; }
+  .kpi-label { font-size:11px; color:var(--text-muted); margin-top:4px; }
+  .kpi-accent { color:var(--accent); }
+
+  /* ── Barra horizontal de narrativa ── */
+  .narr-bar-wrap { margin-bottom:10px; }
+  .narr-bar-header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; font-size:12px; }
+  .narr-bar-label { color:var(--text-secondary); font-weight:500; max-width:70%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .narr-bar-count { color:var(--text-muted); font-size:11px; flex-shrink:0; }
+  .narr-bar-track { height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden; }
+  body.light .narr-bar-track { background:rgba(180,100,40,0.10); }
+  .narr-bar-fill { height:100%; border-radius:3px; transition:width 0.4s; }
+
+  /* ── Post top card ── */
+  .post-top-item { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+  body.light .post-top-item { border-bottom-color:rgba(180,100,40,0.07); }
+  .post-top-item:last-child { border-bottom:none; }
+  .post-top-rank { font-size:11px; color:var(--text-muted); width:18px; flex-shrink:0; text-align:right; }
+  .post-top-info { flex:1; min-width:0; }
+  .post-top-url { font-size:11.5px; color:var(--accent); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block; }
+  .post-top-meta { font-size:10.5px; color:var(--text-muted); margin-top:2px; }
+  .post-top-count { font-size:13px; font-weight:600; color:var(--text-primary); flex-shrink:0; }
+
+  /* ── Coordenação ── */
+  .coord-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+  body.light .coord-row { border-bottom-color:rgba(180,100,40,0.07); }
+  .coord-row:last-child { border-bottom:none; }
+  .coord-name { flex:1; font-size:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .coord-narr { font-size:11px; color:#f87171; font-weight:600; flex-shrink:0; }
+  .coord-total { font-size:11px; color:var(--text-muted); flex-shrink:0; min-width:60px; text-align:right; }
+
+  @media print {
+    #navbar-container, .topbar, .escav-tabs, .btn, #aba-base { display:none !important; }
+    body { overflow:visible !important; height:auto !important; background:#fff !important; }
+    .main, .content-scroll { overflow:visible !important; height:auto !important; }
+    #aba-analise { display:block !important; }
+    .card { box-shadow:none !important; border:1px solid #ddd !important; background:#fff !important; }
+    .grid2 { grid-template-columns:1fr 1fr !important; }
+    canvas, svg { max-width:100% !important; }
+  }
+</style>
+</head>
+<body>
+  <div class="bg-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+  <div id="navbar-container"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-sub" style="font-size:12px;">Unificação e análise de padrões — ExportComments &amp; Apify</span>
+      </div>
+      <div class="topbar-right">
+        <select id="cliente" class="field-input" style="width:auto;padding:8px 12px;font-size:12px;"></select>
+      </div>
+    </div>
+
+    <div class="escav-tabs">
+      <button class="main-tab active" data-aba="base">Envio de base e links</button>
+      <button class="main-tab" data-aba="analise">Criação de análise</button>
+    </div>
+
+    <div class="content-scroll">
+
+      <!-- ABA 1: ENVIO DE BASE E LINKS -->
+      <section class="aba ativa" id="aba-base">
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-label">Base de publicações (Ekklesia)</div>
+          <p style="font-size:12.5px;color:var(--text-secondary);margin:0 0 14px;">Traga qualquer base carregada no Ekklesia — pode ser de um perfil específico, de um monitoramento geral ou de qualquer filtro aplicado lá. Filtre pelo período, rede ou publicador desejado antes de clicar em trazer.</p>
+          <div class="toolbar">
+            <button class="btn btn-primary" id="btn-abrir-ekklesia">Abrir Ekklesia e selecionar publicações</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-label">Fila de priorização — quais publicações extrair</div>
+          <p style="font-size:12.5px;color:var(--text-secondary);margin:0 0 14px;">Plano permite até 25 URLs por lote, com limite de comentários por URL configurável. Os posts são divididos em camadas — a primeira leva mais cota porque importa mais.</p>
+          <div class="toolbar" style="justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <button class="btn btn-primary" id="btn-recalcular">Recalcular fila</button>
+              <span id="status-fila" style="color:var(--text-muted);font-size:12px;"></span>
+            </div>
+            <button class="btn btn-ghost" id="btn-zerar-base" style="font-size:11.5px;color:var(--red,#f87171);border-color:rgba(248,113,113,0.3);" title="Apaga todos os comentários, fila e análises deste cliente">🗑 Zerar base</button>
+          </div>
+          <div id="lotes-container"></div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-label">Absorver extração</div>
+          <p style="font-size:12.5px;color:var(--text-secondary);margin:0 0 14px;">Depois de exportar no ExportComments (ou rodar o Apify), arraste os arquivos aqui. Você pode arrastar <strong>vários arquivos de uma vez</strong> — um por post, como o ExportComments exporta. Aceita <strong>.xlsx</strong> (padrão do ExportComments), .csv e .json (Apify).</p>
+          <div class="dropzone" id="dropzone">
+            <strong>Arraste os arquivos aqui</strong>
+            ou clique para escolher — .xlsx, .csv ou .json (múltiplos aceitos)
+            <input type="file" id="input-arquivo" accept=".csv,.xlsx,.json" multiple style="display:none">
+          </div>
+          <div id="batch-progress" style="display:none;margin-top:10px;font-size:12px;color:var(--text-muted);"></div>
+        </div>
+
+        <div class="card" id="card-previa" style="display:none; margin-bottom:16px;">
+          <div class="card-label">Prévia da importação</div>
+          <p style="font-size:12.5px;color:var(--text-secondary);margin:0 0 14px;" id="previa-resumo"></p>
+          <div id="previa-post-url" style="display:none; margin-bottom:16px;">
+            <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:6px;">
+              Este export não trouxe o link do post original (comum em export de Facebook). Cole aqui pra não perder a referência:
+            </label>
+            <input class="field-input" id="input-post-url" placeholder="https://facebook.com/...">
+          </div>
+          <div class="toolbar">
+            <button class="btn btn-primary" id="btn-confirmar-importacao">Confirmar importação</button>
+            <button class="btn btn-ghost" id="btn-cancelar-importacao">Cancelar</button>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="card">
+            <div class="card-label">Autores recorrentes</div>
+            <p style="font-size:12.5px;color:var(--text-secondary);margin:0 0 14px;">Mesmo perfil aparecendo em mais de um post deste cliente — atualiza conforme você importa.</p>
+            <div id="autores-recorrentes"></div>
+          </div>
+          <div class="card">
+            <div class="card-label">Base tratada</div>
+            <div class="toolbar">
+              <input class="field-input" id="filtro-autor" placeholder="Filtrar por autor normalizado..." style="max-width:200px;">
+              <input class="field-input" id="filtro-post" placeholder="Filtrar por post_id..." style="max-width:160px;">
+              <button class="btn btn-ghost" id="btn-filtrar">Filtrar</button>
+            </div>
+            <div id="tabela-comentarios" style="max-height:340px; overflow-y:auto;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ABA 2: CRIAÇÃO DE ANÁLISE -->
+      <section class="aba" id="aba-analise">
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-label">1. Gerar TXT pra IA externa</div>
+          <p style="font-size:12.5px;color:var(--text-secondary);margin:0 0 14px;">Baixa um .txt com o prompt de análise + a base de comentários indexada (cada comentário recebe um número — é só isso que a IA precisa devolver).</p>
+          <div class="toolbar">
+            <button class="btn btn-primary" id="btn-gerar-txt">Gerar TXT de análise</button>
+            <span id="status-export" style="color:var(--text-muted);font-size:12px;"></span>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-label">2. Colar resultado da IA</div>
+          <p style="font-size:12.5px;color:var(--text-secondary);margin:0 0 14px;">Cole aqui o JSON que a IA externa devolveu (sem markdown, só o JSON puro).</p>
+          <textarea class="field-input" id="input-json-resultado" rows="8" style="font-family:ui-monospace,monospace;font-size:11.5px;resize:vertical;" placeholder='{"narrativas": [...]}'></textarea>
+          <div class="toolbar" style="margin-top:12px;">
+            <button class="btn btn-primary" id="btn-processar-resultado">Processar resultado</button>
+            <span id="status-importar-analise" style="color:var(--text-muted);font-size:12px;"></span>
+          </div>
+        </div>
+
+        <div class="card" id="card-relatorio">
+          <div class="toolbar" style="justify-content:space-between;">
+            <div class="card-label" style="margin-bottom:0;">Relatório</div>
+            <button class="btn btn-ghost" id="btn-exportar-relatorio">Exportar / baixar (PDF)</button>
+          </div>
+
+          <div id="relatorio-conteudo">
+
+            <!-- Score de autenticidade + KPIs -->
+            <div style="display:grid; grid-template-columns:auto 1fr; gap:16px; margin-bottom:18px; align-items:stretch;">
+              <!-- Score principal -->
+              <div class="kpi-card" id="score-card" style="min-width:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px 24px; text-align:center;">
+                <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px; letter-spacing:0.5px; text-transform:uppercase;">Score de autenticidade</div>
+                <div id="score-valor" style="font-size:48px; font-weight:700; letter-spacing:-2px; line-height:1; color:var(--text-primary);">—</div>
+                <div id="score-label" style="font-size:11px; color:var(--text-muted); margin-top:6px; line-height:1.3; max-width:130px;"></div>
+                <div id="score-bar-wrap" style="width:100%; height:4px; background:rgba(255,255,255,0.08); border-radius:2px; margin-top:10px; overflow:hidden;">
+                  <div id="score-bar-fill" style="height:100%; border-radius:2px; transition:width 0.6s;"></div>
+                </div>
+              </div>
+              <!-- KPIs secundários -->
+              <div class="kpi-strip" id="kpi-strip" style="margin:0;">
+                <div class="kpi-card"><div class="kpi-value kpi-accent" id="kpi-comentarios">—</div><div class="kpi-label">comentários coletados</div></div>
+                <div class="kpi-card"><div class="kpi-value" id="kpi-posts">—</div><div class="kpi-label">publicações analisadas</div></div>
+                <div class="kpi-card"><div class="kpi-value" id="kpi-autores">—</div><div class="kpi-label">autores únicos</div></div>
+                <div class="kpi-card"><div class="kpi-value" id="kpi-narrativas">—</div><div class="kpi-label">narrativas identificadas</div></div>
+              </div>
+            </div>
+
+            <!-- Sinais de alerta CIB -->
+            <div id="sinais-cib" style="display:none; margin-bottom:18px;"></div>
+
+            <!-- Resumo executivo -->
+            <div id="relatorio-resumo" style="font-size:13px; color:var(--text-secondary); line-height:1.6; margin-bottom:18px; padding:14px 16px; background:rgba(255,255,255,0.03); border-radius:var(--r-lg); border-left:3px solid var(--accent);"></div>
+
+            <!-- Favorabilidade dos comentários -->
+            <div id="card-favorabilidade" style="margin-bottom:18px; display:none;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <div class="card-label" style="margin-bottom:0;">Favorabilidade dos comentários (a partir do tom das narrativas)</div>
+                <button class="btn" style="font-size:11px;padding:4px 10px;" onclick="baixarFavorabilidadeExcel()">⬇ Baixar Excel</button>
+              </div>
+              <div id="favorabilidade-bar"></div>
+            </div>
+
+            <!-- Grafo -->
+            <div class="card-label" style="margin-bottom:6px;">Mapa de conexão — quem fala o quê</div>
+            <p style="font-size:11.5px;color:var(--text-muted);margin:0 0 10px;">⬤ roxo = autor &nbsp;|&nbsp; ◎ verde = narrativa &nbsp;|&nbsp; ⚠ vermelho = suspeita de orquestração. Tamanho proporcional ao volume; espessura da linha = quantidade de comentários. Arraste, role pra zoom.</p>
+            <div style="position:relative; border:1px solid rgba(255,255,255,0.07); border-radius:var(--r-lg); overflow:hidden; margin-bottom:18px;">
+              <svg id="grafo-svg" width="100%" height="460" style="display:block; background:transparent;"></svg>
+              <div id="grafo-vazio" class="vazio" style="display:none; position:absolute; inset:0; align-items:center; justify-content:center;"></div>
+            </div>
+
+            <!-- Grid de insights -->
+            <div class="grid2" style="margin-bottom:18px;">
+              <div class="card" style="padding:16px;">
+                <div class="card-label" style="margin-bottom:12px;">🏆 Publicações com mais comentários</div>
+                <div id="top-posts-lista"></div>
+              </div>
+              <div class="card" style="padding:16px;">
+                <div class="card-label" style="margin-bottom:12px;">📊 Narrativas por volume de comentários</div>
+                <div id="narrativas-barras"></div>
+              </div>
+            </div>
+
+            <!-- Sinais de CIB: coordenação + cópias + pico temporal -->
+            <div class="grid2" style="margin-bottom:18px;">
+              <div class="card" style="padding:16px;" id="card-coordenacao">
+                <div class="card-label" style="margin-bottom:4px; color:var(--red,#f87171);">Autores em múltiplas narrativas</div>
+                <p style="font-size:11.5px;color:var(--text-muted);margin:0 0 12px;">Sinal de rede: perfis que comentaram em mais de uma narrativa — indicador de coordenação cross-narrativa.</p>
+                <div id="autores-coordenados-lista"></div>
+              </div>
+              <div class="card" style="padding:16px;" id="card-copias">
+                <div class="card-label" style="margin-bottom:4px; color:var(--red,#f87171);">Comentários quase-idênticos detectados</div>
+                <p style="font-size:11.5px;color:var(--text-muted);margin:0 0 12px;">Sinal semântico: grupos de autores distintos com texto quase igual — indicador forte de roteiro compartilhado.</p>
+                <div id="copias-lista"></div>
+              </div>
+            </div>
+
+            <!-- Pico de velocidade -->
+            <div class="card" style="padding:16px; margin-bottom:18px;" id="card-pico">
+              <div class="card-label" style="margin-bottom:4px;">Velocidade de comentários — sinal temporal</div>
+              <div id="pico-conteudo"></div>
+            </div>
+
+            <!-- Charts: plataforma + timeline por hora -->
+            <div class="grid2" style="margin-bottom:18px;">
+              <div>
+                <div class="card-label">Distribuição por plataforma</div>
+                <canvas id="chart-plataforma" height="200"></canvas>
+              </div>
+              <div>
+                <div class="card-label">Volume por hora do dia</div>
+                <canvas id="chart-timeline" height="200"></canvas>
+              </div>
+            </div>
+
+            <div class="card-label">Narrativas — detalhe completo</div>
+            <div id="narrativas-lista"></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Modal: Ekklesia embutido pra selecionar publicações de um perfil -->
+  <div id="modal-ekklesia" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:100; align-items:center; justify-content:center; padding:24px;">
+    <div style="background:var(--bg); border-radius:var(--r-xl); width:100%; height:100%; max-width:1400px; display:flex; flex-direction:column; overflow:hidden; box-shadow:var(--clay-shadow-lg);">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,0.08); flex-shrink:0;">
+        <div>
+          <strong style="font-size:13px; color:var(--text-primary);">Ekklesia — filtre e traga a base</strong>
+          <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">Carregue ou filtre a base no Ekklesia normalmente. Quando estiver com a visão que você quer, clique em "Trazer publicações pra fila".</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="display:flex; align-items:center; gap:7px; background:rgba(251,191,36,0.10); border:1px solid rgba(251,191,36,0.25); border-radius:var(--r-md); padding:7px 12px; font-size:11.5px; color:#fbbf24; max-width:380px; line-height:1.4;">
+            <span style="font-size:15px; flex-shrink:0;">⚠️</span>
+            <span>Depois de copiar as URLs daqui, abra o <strong style="color:#fde68a;">ExportComments</strong> e use a opção <strong style="color:#fde68a;">Exportação em massa</strong> para colar todas de uma vez.</span>
+          </div>
+          <button class="btn btn-primary" id="btn-trazer-publicacoes">Trazer publicações pra fila</button>
+          <button class="btn btn-ghost" id="btn-fechar-ekklesia">Fechar</button>
+        </div>
+      </div>
+      <iframe id="iframe-ekklesia" src="" style="flex:1; border:none; width:100%;"></iframe>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="../js/utils.js"></script>
+  <script src="../js/theme.js"></script>
+  <script>
+  /* ── Init padrão do HUB ── */
+  checkAuth();
+  initMode();
+  document.getElementById('navbar-container').innerHTML = renderNavbar('escavador');
+  if (typeof initTheme === 'function') { initTheme(); updateModeButtons(); }
+  if (typeof setNavLabel === 'function') setNavLabel('Escavador de Comentários');
+
+  const API = '/api/escavador';
+  let clienteAtual = null;
+
+  function escapeHtml(s) {
+    return (s || '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function copiar(texto) {
+    navigator.clipboard.writeText(texto);
+    showToast('Copiado pra área de transferência');
+  }
+
+  /* ── Tabs ── */
+  document.querySelectorAll('.main-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.main-tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
+      btn.classList.add('active');
+      document.getElementById('aba-' + btn.dataset.aba).classList.add('ativa');
+      if (btn.dataset.aba === 'analise') {
+        // Aguarda o canvas ficar visível antes de renderizar os charts
+        setTimeout(carregarRelatorio, 50);
+      }
+    });
+  });
+
+  /* ── Cliente ── */
+  async function carregarClientes() {
+    // TODO: trocar pelo endpoint real de clientes do HUB quando integrar
+    const params = new URLSearchParams(location.search);
+    const clientes = [
+      { id: params.get('cliente_id') || 'cliente-demo', nome: params.get('cliente_nome') || 'Cliente (definir integração)' },
+    ];
+    const select = document.getElementById('cliente');
+    select.innerHTML = clientes.map(c => `<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join('');
+    clienteAtual = clientes[0].id;
+    select.addEventListener('change', e => { clienteAtual = e.target.value; carregarFila(); });
+  }
+
+  /* ── ABA FILA ── */
+  function renderScoreBreakdown(p) {
+    // p pode ter os sub-scores direto (vindos do D1) ou não (lotes montados no front sem sub-scores)
+    const vol  = p.score_volume    != null ? Math.round(p.score_volume    * 100) : null;
+    const sent = p.score_sentimento != null ? Math.round(p.score_sentimento* 100) : null;
+    const rec  = p.score_recencia  != null ? Math.round(p.score_recencia  * 100) : null;
+    const alc  = p.score_alcance   != null ? Math.round(p.score_alcance   * 100) : null;
+    if (vol == null) return ''; // sem sub-scores disponíveis
+    const dim = (label, val, cls) =>
+      `<div class="score-dim">
+        <span class="score-dim-label">${label}</span>
+        <div class="score-dim-bar ${cls}"><i style="width:${val}%"></i></div>
+        <span class="score-dim-val">${val}%</span>
+      </div>`;
+    return `<div class="score-breakdown">
+      ${dim('volume',    vol,  'dim-volume')}
+      ${dim('sentimento',sent, 'dim-sent')}
+      ${dim('recência',  rec,  'dim-rec')}
+      ${dim('alcance',   alc,  'dim-alcance')}
+    </div>`;
+  }
+
+  function renderLotes(lotes) {
+    const container = document.getElementById('lotes-container');
+    if (!lotes.length) {
+      container.innerHTML = `<div class="vazio"><strong>Fila vazia</strong>Recalcule a partir dos posts monitorados do Ekklesia/IRX.</div>`;
+      return;
+    }
+    const motivoCamada = [
+      'Top 5 por score — recebem mais cota de comentários. Critério: volume de comentários (40%), sentimento negativo (30%), recência do post (20%) e alcance/curtidas (10%).',
+      'Próximas 20 publicações por score — cota menor, mas suficiente pra detectar autores recorrentes e narrativas secundárias.',
+    ];
+    container.innerHTML = lotes.map((lote, idx) => `
+      <div class="lote-card">
+        <div class="toolbar" style="justify-content:space-between;margin-bottom:10px;">
+          <div>
+            <span class="chip">Camada ${lote.camada}</span>
+            <strong style="margin-left:8px;font-size:12.5px;color:var(--text-primary);">${lote.posts.length} posts</strong>
+            <span style="color:var(--text-muted);font-size:11.5px;margin-left:8px;">cap sugerido: ${lote.cap_por_url.toLocaleString('pt-BR')} comentários/URL</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-ghost" style="padding:6px 14px;font-size:11px;" onclick='copiar(${JSON.stringify(lote.urls.join("\n"))})'>Copiar URLs deste lote</button>
+              <a href="https://exportcomments.com" target="_blank" class="btn btn-primary" style="padding:6px 14px;font-size:11px;text-decoration:none;">↗ Abrir ExportComments</a>
+            </div>
+            <span style="font-size:10.5px;color:var(--text-muted);text-align:right;line-height:1.4;">Copie as URLs e cole em <strong style="color:var(--text-secondary);">Exportação em massa</strong></span>
+          </div>
+        </div>
+        <p class="lote-motivo">${motivoCamada[idx] || ''}</p>
+        <table class="escav-table">
+          <thead><tr><th>Score final</th><th style="min-width:140px;">Por que foi escolhida</th><th>Post ID</th><th>URL</th></tr></thead>
+          <tbody>
+            ${lote.posts.map(p => `
+              <tr>
+                <td style="vertical-align:top;white-space:nowrap;">
+                  <div class="score-bar"><i style="width:${Math.round(p.score_final*100)}%"></i></div>
+                  <strong style="font-size:12px;">${(p.score_final*100).toFixed(0)}%</strong>
+                </td>
+                <td>${renderScoreBreakdown(p)}</td>
+                <td style="font-size:11px;color:var(--text-muted);">${escapeHtml(p.post_id)}</td>
+                <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;font-size:11px;">
+                  <a href="${escapeHtml(p.post_url)}" target="_blank" style="color:var(--accent);text-decoration:none;">${escapeHtml(p.post_url)}</a>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `).join('');
+  }
+
+  async function carregarFila() {
+    if (!clienteAtual) return;
+    document.getElementById('status-fila').textContent = 'Carregando...';
+    try {
+      const r = await fetch(`${API}/fila?cliente_id=${encodeURIComponent(clienteAtual)}`);
+      const data = await r.json();
+      const pendentes = (data.fila || []).filter(p => p.status === 'pendente');
+      const lotes = [];
+      if (pendentes.length) {
+        const camada1 = pendentes.slice(0, 5);
+        const camada2 = pendentes.slice(5, 25);
+        if (camada1.length) lotes.push({ camada: 1, posts: camada1, cap_por_url: estimarCap(camada1.length, 0.65), urls: camada1.map(p=>p.post_url) });
+        if (camada2.length) lotes.push({ camada: 2, posts: camada2, cap_por_url: estimarCap(camada2.length, 0.35), urls: camada2.map(p=>p.post_url) });
+      }
+      renderLotes(lotes);
+      document.getElementById('status-fila').textContent = `${pendentes.length} posts pendentes na fila`;
+    } catch (e) {
+      document.getElementById('status-fila').textContent = 'Erro ao carregar fila';
+    }
+    // carregarBaseTratada independente do sucesso da fila
+    try { carregarBaseTratada(); } catch (_) {}
+  }
+  function estimarCap(qtdPosts, peso, orcamento = 50000) {
+    return qtdPosts ? Math.floor((orcamento * peso) / qtdPosts) : 0;
+  }
+
+  document.getElementById('btn-recalcular').addEventListener('click', async () => {
+    showToast('Recalcular fila precisa dos posts monitorados (Ekklesia/IRX) — integração pendente.');
+  });
+
+  document.getElementById('btn-zerar-base').addEventListener('click', async () => {
+    if (!clienteAtual) return;
+    if (!confirm(`Zerar toda a base de "${clienteAtual}"?\n\nIsso apaga todos os comentários, fila de priorização e análises. Não tem volta.`)) return;
+    try {
+      const r = await fetch(`${API}/reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cliente_id: clienteAtual, limite: 50000 }),
+      });
+      const data = await r.json();
+      if (data.erro) { showToast('Erro: ' + data.erro); return; }
+      showToast('Base zerada — pode importar do zero.');
+      carregarFila();
+      carregarBaseTratada();
+      carregarRelatorio();
+    } catch (e) {
+      showToast('Erro ao zerar a base.');
+    }
+  });
+
+  /* ── Modal Ekklesia (perfil único via Supermetrics) ── */
+  const modalEkklesia = document.getElementById('modal-ekklesia');
+  const iframeEkklesia = document.getElementById('iframe-ekklesia');
+
+  document.getElementById('btn-abrir-ekklesia').addEventListener('click', () => {
+    iframeEkklesia.src = 'ekklesia.html';
+    modalEkklesia.style.display = 'flex';
+  });
+  document.getElementById('btn-fechar-ekklesia').addEventListener('click', () => {
+    modalEkklesia.style.display = 'none';
+    iframeEkklesia.src = '';
+  });
+
+  document.getElementById('btn-trazer-publicacoes').addEventListener('click', () => {
+    if (!iframeEkklesia.contentWindow) { showToast('O Ekklesia ainda não carregou.'); return; }
+    showToast('Pedindo a base filtrada ao Ekklesia...');
+    iframeEkklesia.contentWindow.postMessage({ type: 'escavador:solicitar-posts' }, '*');
+  });
+
+  function mostrarFilaSkeleton() {
+    // Fecha modal e mostra skeleton imediatamente — sem esperar o POST terminar
+    modalEkklesia.style.display = 'none';
+    iframeEkklesia.src = '';
+    const container = document.getElementById('lotes-container');
+    container.innerHTML = `
+      <div class="fila-loading">
+        <div class="skel" style="height:120px;"></div>
+        <div class="skel" style="height:280px;"></div>
+      </div>`;
+    document.getElementById('status-fila').textContent = 'Calculando fila…';
+  }
+
+  window.addEventListener('message', async (ev) => {
+    if (!ev.data || !clienteAtual) return;
+
+    if (ev.data.type === 'escavador:posts-erro') {
+      showToast('Erro ao ler a base do Ekklesia: ' + ev.data.erro);
+      return;
+    }
+    if (ev.data.type !== 'escavador:posts') return;
+
+    const posts = ev.data.posts || [];
+    if (!posts.length) { showToast('O Ekklesia não retornou nenhuma publicação — verifique se há uma base carregada/filtrada lá.'); return; }
+
+    // Fecha o modal e mostra skeleton antes de aguardar o POST
+    mostrarFilaSkeleton();
+
+    try {
+      const r = await fetch(`${API}/posts-perfil`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cliente_id: clienteAtual, posts }),
+      });
+      const data = await r.json();
+      if (data.erro) { showToast('Erro: ' + data.erro); return; }
+      showToast(`${data.total_posts} publicações trazidas — ${data.total_fila} na fila de priorização.`);
+      carregarFila();
+    } catch (e) {
+      showToast('Erro ao salvar as publicações trazidas.');
+      document.getElementById('lotes-container').innerHTML = '';
+      document.getElementById('status-fila').textContent = '';
+    }
+  });
+
+  /* ── ABA IMPORTAR ── */
+  const dropzone = document.getElementById('dropzone');
+  const inputArquivo = document.getElementById('input-arquivo');
+  let dadosPrevia = null;
+
+  dropzone.addEventListener('click', () => inputArquivo.click());
+  ['dragover','dragleave','drop'].forEach(evt => {
+    dropzone.addEventListener(evt, e => {
+      e.preventDefault();
+      dropzone.classList.toggle('arrastando', evt === 'dragover');
+    });
+  });
+  dropzone.addEventListener('drop', e => {
+    const files = Array.from(e.dataTransfer.files).filter(f => /\.(csv|xlsx|xls|json)$/i.test(f.name));
+    if (!files.length) return;
+    files.length === 1 ? processarArquivo(files[0]) : processarArquivosEmLote(files);
+  });
+  inputArquivo.addEventListener('change', e => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    files.length === 1 ? processarArquivo(files[0]) : processarArquivosEmLote(files);
+    e.target.value = ''; // reset p/ permitir re-seleção dos mesmos arquivos
+  });
+
+  // Lê qualquer arquivo suportado (xlsx, csv, json) e retorna { linhas, fonte, platform }
+  async function lerArquivo(f) {
+    const nome = f.name.toLowerCase();
+    if (nome.endsWith('.json')) {
+      const texto = await f.text();
+      return { linhas: JSON.parse(texto), fonte: 'apify', platform: null };
+    }
+    if (nome.endsWith('.xlsx') || nome.endsWith('.xls')) {
+      return lerXlsxExportComments(f);
+    }
+    // CSV
+    const texto = await f.text();
+    return { linhas: parseCSVSimples(texto), fonte: 'exportcomments', platform: null };
+  }
+
+  // Lê XLSX do ExportComments, pulando as linhas de metadados do topo.
+  // Estrutura real: linhas 1-8 são metadados, linha 9 é o header real.
+  // Colunas: [idx] [vazio] Name | Username | Profile ID | Date | Likes | Comment | (view source)
+  async function lerXlsxExportComments(f) {
+    const buffer = await f.arrayBuffer();
+    // Uint8Array é o tipo correto pro SheetJS; cellDates:true converte seriais pra Date JS
+    const data = new Uint8Array(buffer);
+    const wb = XLSX.read(data, { type: 'array', cellDates: true });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    // raw:false garante que todos os valores chegam como string/Date, sem seriais numéricos
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+
+    // Encontrar a linha de header: primeira linha que contém "Name" e "Comment"
+    let headerIdx = -1;
+    for (let i = 0; i < Math.min(rows.length, 15); i++) {
+      const row = rows[i].map(v => String(v).trim());
+      if (row.includes('Name') && row.includes('Comment')) { headerIdx = i; break; }
+    }
+    if (headerIdx === -1) return { linhas: [], fonte: 'exportcomments', platform: null };
+
+    // Extrair post_url dos metadados (linha "Source URL")
+    let sourceUrl = null;
+    for (let i = 0; i < headerIdx; i++) {
+      const row = rows[i];
+      const r0 = String(row[0] || '');
+      const r1 = String(row[1] || '');
+      if (r0.includes('Source URL')) {
+        sourceUrl = r1.trim() || null;
+        break;
+      }
+    }
+
+    const headers = rows[headerIdx].map(v => String(v).trim());
+    const linhas = [];
+    for (let i = headerIdx + 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.every(v => v === '' || v == null)) continue;
+      const obj = {};
+      headers.forEach((h, idx) => {
+        const v = row[idx];
+        // Date vem como objeto Date JS quando cellDates:true — converter pra ISO
+        if (v instanceof Date) obj[h] = v.toISOString();
+        else obj[h] = v != null ? String(v).trim() : '';
+      });
+
+      if (obj['Comment']) linhas.push(obj);
+    }
+
+    if (sourceUrl) linhas.forEach(l => { l['_source_url'] = sourceUrl; });
+
+    return { linhas, fonte: 'exportcomments', platform: null, post_url: sourceUrl };
+  }
+
+  // Batch: múltiplos arquivos (um por post, como o ExportComments exporta)
+  // Importa direto sem prévia — mostra progresso inline.
+  async function processarArquivosEmLote(files) {
+    const progress = document.getElementById('batch-progress');
+    progress.style.display = 'block';
+    let ok = 0, erros = 0, totalComentarios = 0;
+
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      progress.textContent = `Importando ${i + 1} de ${files.length}: ${f.name}…`;
+      try {
+        const { linhas, fonte, platform, post_url } = await lerArquivo(f);
+        if (!linhas.length) { erros++; continue; }
+        const resp = await fetch(`${API}/importar`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cliente_id: clienteAtual, fonte, platform, linhas, post_url, confirmar: true }),
+        });
+        const resultado = await resp.json();
+        if (resultado.erro) { erros++; continue; }
+        ok++;
+        totalComentarios += resultado.total_comentarios || 0;
+      } catch (e) { console.error(f.name, e); erros++; progress.textContent = `Erro em ${f.name}: ${e.message || e} — continuando…`; await new Promise(r => setTimeout(r, 800)); }
+    }
+
+    const msg = erros
+      ? `${ok} arquivos importados (${erros} com erro) — ${totalComentarios.toLocaleString('pt-BR')} comentários no total.`
+      : `${ok} arquivos importados — ${totalComentarios.toLocaleString('pt-BR')} comentários no total.`;
+    progress.textContent = msg;
+    showToast(msg);
+    setTimeout(() => { progress.style.display = 'none'; }, 6000);
+    carregarBaseTratada();
+    carregarFila();
+    carregarRelatorio();
+  }
+
+  async function processarArquivo(arquivo) {
+    let lido = await lerArquivo(arquivo);
+    let { linhas, fonte, post_url } = lido;
+    let platform = lido.platform;
+
+    if (fonte === 'apify' && !platform) {
+      platform = prompt('Qual plataforma é este dataset do Apify? (instagram, facebook, tiktok, twitter, youtube)', 'instagram');
+    }
+
+    const resp = await fetch(`${API}/importar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cliente_id: clienteAtual, fonte, platform, linhas, post_url, confirmar: false }),
+    });
+    const previa = await resp.json();
+    if (previa.erro) { showToast('Erro: ' + previa.erro); return; }
+
+    dadosPrevia = { fonte, platform, linhas };
+    document.getElementById('previa-resumo').textContent =
+      `${previa.total_comentarios} comentários · ${previa.autores_unicos} autores únicos · ${previa.posts_unicos} post(s) · plataforma: ${previa.platform}`;
+    document.getElementById('previa-post-url').style.display = previa.precisa_post_url ? 'block' : 'none';
+    document.getElementById('card-previa').style.display = 'block';
+  }
+
+  document.getElementById('btn-confirmar-importacao').addEventListener('click', async () => {
+    const postUrl = document.getElementById('input-post-url').value || undefined;
+    const resp = await fetch(`${API}/importar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cliente_id: clienteAtual, ...dadosPrevia, post_url: postUrl, confirmar: true }),
+    });
+    const resultado = await resp.json();
+    if (resultado.erro) { showToast('Erro: ' + resultado.erro); return; }
+    showToast(`Importado: ${resultado.total_comentarios} comentários`);
+    document.getElementById('card-previa').style.display = 'none';
+    carregarFila();
+  });
+  document.getElementById('btn-cancelar-importacao').addEventListener('click', () => {
+    document.getElementById('card-previa').style.display = 'none';
+    dadosPrevia = null;
+  });
+
+  function parseCSVSimples(texto) {
+    texto = texto.replace(/^\uFEFF/, '');
+    const linhas = [];
+    let row = [], field = '', inQuotes = false;
+    for (let i = 0; i < texto.length; i++) {
+      const c = texto[i], next = texto[i+1];
+      if (inQuotes) {
+        if (c === '"' && next === '"') { field += '"'; i++; }
+        else if (c === '"') { inQuotes = false; }
+        else field += c;
+      } else {
+        if (c === '"') inQuotes = true;
+        else if (c === ',') { row.push(field); field = ''; }
+        else if (c === '\n') { row.push(field); linhas.push(row); row = []; field = ''; }
+        else if (c === '\r') { /* skip */ }
+        else field += c;
+      }
+    }
+    if (field.length || row.length) { row.push(field); linhas.push(row); }
+    const headers = linhas[0];
+    return linhas.slice(1).filter(r => r.length === headers.length).map(r => {
+      const obj = {};
+      headers.forEach((h, idx) => obj[h] = r[idx]);
+      return obj;
+    });
+  }
+
+  /* ── BASE TRATADA (vive na aba 1) ── */
+  async function carregarBaseTratada() {
+    if (!clienteAtual) return;
+    const r = await fetch(`${API}/comentarios?cliente_id=${encodeURIComponent(clienteAtual)}`);
+    const data = await r.json();
+    renderAutoresRecorrentes(data.autores_recorrentes || []);
+    renderTabelaComentarios(data.comentarios || []);
+  }
+
+  function renderAutoresRecorrentes(autores) {
+    const el = document.getElementById('autores-recorrentes');
+    if (!autores.length) {
+      el.innerHTML = `<div class="vazio">Nenhum autor recorrente ainda — importe mais de um post pra começar a cruzar.</div>`;
+      return;
+    }
+    el.innerHTML = `
+      <table class="escav-table">
+        <thead><tr><th>Autor</th><th>Posts distintos</th><th>Total comentários</th></tr></thead>
+        <tbody>
+          ${autores.map(a => `
+            <tr>
+              <td>${escapeHtml(a.author_normalizado)}</td>
+              <td><span class="chip chip-risco">${a.posts_distintos}</span></td>
+              <td>${a.total_comentarios}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function renderTabelaComentarios(comentarios) {
+    const el = document.getElementById('tabela-comentarios');
+    if (!comentarios.length) {
+      el.innerHTML = `<div class="vazio"><strong>Nenhum comentário importado ainda</strong>Importe uma extração acima.</div>`;
+      return;
+    }
+    el.innerHTML = `
+      <table class="escav-table">
+        <thead><tr><th>Data</th><th>Autor</th><th>Plataforma</th><th>Comentário</th></tr></thead>
+        <tbody>
+          ${comentarios.map(c => `
+            <tr>
+              <td>${c.timestamp_comentario ? new Date(c.timestamp_comentario).toLocaleString('pt-BR') : '—'}</td>
+              <td>${escapeHtml(c.author_normalizado)}</td>
+              <td>${escapeHtml(c.platform)}</td>
+              <td style="max-width:380px;">${escapeHtml(c.texto)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  document.getElementById('btn-filtrar').addEventListener('click', async () => {
+    const autor = document.getElementById('filtro-autor').value.trim();
+    const post = document.getElementById('filtro-post').value.trim();
+    const params = new URLSearchParams({ cliente_id: clienteAtual });
+    if (autor) params.set('autor', autor);
+    if (post) params.set('post_id', post);
+    const r = await fetch(`${API}/comentarios?${params}`);
+    const data = await r.json();
+    renderTabelaComentarios(data.comentarios || []);
+  });
+
+  /* ── ABA 2: CRIAÇÃO DE ANÁLISE ── */
+  let exportIdAtual = null;
+
+  document.getElementById('btn-gerar-txt').addEventListener('click', async () => {
+    if (!clienteAtual) return;
+    document.getElementById('status-export').textContent = 'Gerando...';
+    try {
+      const r = await fetch(`${API}/exportar-analise`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cliente_id: clienteAtual, limite: 50000 }),
+      });
+      const data = await r.json();
+      if (data.erro) { showToast('Erro: ' + data.erro); document.getElementById('status-export').textContent = ''; return; }
+
+      exportIdAtual = data.export_id;
+      // guarda também no localStorage, pra sobreviver a um refresh antes de colar o resultado
+      localStorage.setItem('escavador_export_id_' + clienteAtual, exportIdAtual);
+
+      const blob = new Blob([data.txt], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `escavador-analise-${clienteAtual}-${exportIdAtual}.txt`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+
+      document.getElementById('status-export').textContent =
+        `${data.total_comentarios} comentários no arquivo. Export ID: ${exportIdAtual}`;
+      showToast('TXT baixado — cole na sua IA externa e depois volte com o resultado.');
+    } catch (e) {
+      document.getElementById('status-export').textContent = 'Erro ao gerar TXT';
+    }
+  });
+
+  document.getElementById('btn-processar-resultado').addEventListener('click', async () => {
+    const bruto = document.getElementById('input-json-resultado').value.trim();
+    if (!bruto) { showToast('Cole o JSON da IA antes de processar.'); return; }
+
+    const idParaUsar = exportIdAtual || localStorage.getItem('escavador_export_id_' + clienteAtual);
+    if (!idParaUsar) { showToast('Gere o TXT de análise primeiro (passo 1).'); return; }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(bruto);
+    } catch (e) {
+      showToast('JSON inválido — confira se colou só o JSON, sem texto extra ao redor.');
+      return;
+    }
+    if (!Array.isArray(parsed.narrativas)) {
+      showToast('JSON não tem o formato esperado (precisa de uma chave "narrativas").');
+      return;
+    }
+
+    document.getElementById('status-importar-analise').textContent = 'Processando...';
+    try {
+      const r = await fetch(`${API}/importar-analise`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ export_id: idParaUsar, narrativas: parsed.narrativas, resumo_executivo: parsed.resumo_executivo || '' }),
+      });
+      const data = await r.json();
+      if (data.erro) { showToast('Erro: ' + data.erro); document.getElementById('status-importar-analise').textContent = ''; return; }
+
+      let msg = `${data.narrativas_gravadas} narrativa(s) gravada(s).`;
+      if (data.indices_nao_encontrados) msg += ` ${data.indices_nao_encontrados} índice(s) não reconhecido(s) — confira se usou os números certos.`;
+      document.getElementById('status-importar-analise').textContent = msg;
+      document.getElementById('input-json-resultado').value = '';
+      showToast('Análise processada');
+      carregarRelatorio();
+    } catch (e) {
+      document.getElementById('status-importar-analise').textContent = 'Erro ao processar resultado';
+    }
+  });
+
+  let charts = {}; // referências pra destruir antes de re-renderizar
+
+  function destruirCharts() {
+    Object.values(charts).forEach(c => c && c.destroy());
+    charts = {};
+  }
+
+  const PALETA = ['#A855F7', '#F59E0B', '#22C55E', '#3B82F6', '#EC4899', '#14B8A6', '#F43F5E', '#6B7280'];
+
+  function corTema() {
+    const isDark = document.body.classList.contains('dark') || !document.body.classList.contains('light');
+    return {
+      texto: isDark ? '#cbd5e1' : '#3a1200',
+      grid: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(180,100,40,0.10)',
+    };
+  }
+
+  function renderGrafo(grafo) {
+    const svg = d3.select('#grafo-svg');
+    svg.selectAll('*').remove();
+    const vazioEl = document.getElementById('grafo-vazio');
+
+    if (!grafo || !grafo.nodes || !grafo.nodes.length) {
+      vazioEl.style.display = 'flex';
+      vazioEl.innerHTML = '<div><strong>Sem narrativas pra mapear ainda</strong>Processe uma análise pra ver as conexões.</div>';
+      return;
+    }
+    vazioEl.style.display = 'none';
+
+    const el = document.getElementById('grafo-svg');
+    const w = el.clientWidth || 800, h = 460;
+    svg.attr('viewBox', `0 0 ${w} ${h}`);
+
+    const g = svg.append('g'); // grupo pra zoom/pan
+    svg.call(d3.zoom().scaleExtent([0.3, 4]).on('zoom', (ev) => g.attr('transform', ev.transform)));
+
+    const nodes = grafo.nodes.map(n => ({ ...n }));
+    const links = grafo.edges.map(e => ({ ...e }));
+
+    const maxValorAutor = Math.max(1, ...nodes.filter(n => n.tipo === 'autor').map(n => n.valor));
+    const maxValorNarr  = Math.max(1, ...nodes.filter(n => n.tipo === 'narrativa').map(n => n.valor));
+    const raio = (n) => n.tipo === 'narrativa'
+      ? 14 + 22 * Math.sqrt(n.valor / maxValorNarr)
+      : 5 + 12 * Math.sqrt(n.valor / maxValorAutor);
+
+    const sim = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(links).id(d => d.id).distance(d => 70 + 120 / Math.sqrt(d.peso)).strength(0.5))
+      .force('charge', d3.forceManyBody().strength(-90))
+      .force('center', d3.forceCenter(w / 2, h / 2))
+      .force('collide', d3.forceCollide(d => raio(d) + 3));
+
+    const maxPeso = Math.max(1, ...links.map(l => l.peso));
+    const link = g.append('g').selectAll('line')
+      .data(links).join('line')
+      .attr('stroke', 'rgba(168,85,247,0.35)')
+      .attr('stroke-width', d => 1 + 4 * Math.sqrt(d.peso / maxPeso));
+
+    const node = g.append('g').selectAll('g')
+      .data(nodes).join('g')
+      .style('cursor', 'grab')
+      .call(d3.drag()
+        .on('start', (ev, d) => { sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+        .on('drag', (ev, d) => { d.fx = ev.x; d.fy = ev.y; })
+        .on('end', (ev, d) => { sim.alphaTarget(0); d.fx = null; d.fy = null; }));
+
+    node.each(function (d) {
+      const sel = d3.select(this);
+      const r = raio(d);
+      if (d.tipo === 'narrativa') {
+        // Círculo grande com borda colorida — verde normal, vermelho se orquestração
+        const cor = d.flag_orquestracao ? '#EF4444' : '#22C55E';
+        sel.append('circle').attr('r', r)
+          .attr('fill', d.flag_orquestracao ? 'rgba(239,68,68,0.18)' : 'rgba(34,197,94,0.18)')
+          .attr('stroke', cor).attr('stroke-width', 2.5);
+        // Ícone central para diferenciar visualmente
+        sel.append('text')
+          .text(d.flag_orquestracao ? '⚠' : '◎')
+          .attr('text-anchor', 'middle').attr('dominant-baseline', 'central')
+          .attr('font-size', Math.max(10, r * 0.55))
+          .attr('fill', cor)
+          .style('pointer-events', 'none');
+      } else {
+        sel.append('circle').attr('r', r)
+          .attr('fill', '#A855F7')
+          .attr('stroke', 'rgba(255,255,255,0.4)').attr('stroke-width', 1);
+      }
+      sel.append('title').text(d.tipo === 'autor'
+        ? `${d.label} — ${d.valor} comentário(s) em ${d.narrativas_distintas} narrativa(s)`
+        : `${d.label} — ${d.valor} comentário(s)${d.flag_orquestracao ? ' · suspeita de orquestração' : ''}`);
+    });
+
+    // Label só pras narrativas (poucas) — autores só mostram no hover via <title>
+    const label = g.append('g').selectAll('text')
+      .data(nodes.filter(d => d.tipo === 'narrativa'))
+      .join('text')
+      .text(d => d.label)
+      .attr('font-size', 10.5)
+      .attr('font-family', 'Inter, sans-serif')
+      .attr('fill', 'var(--text-primary)')
+      .attr('dx', 14).attr('dy', 4)
+      .style('pointer-events', 'none');
+
+    sim.on('tick', () => {
+      link
+        .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+      node.attr('transform', d => `translate(${d.x},${d.y})`);
+      label.attr('x', d => d.x).attr('y', d => d.y);
+    });
+  }
+
+  function renderKPIs(totais) {
+    const fmt = n => Number(n || 0).toLocaleString('pt-BR');
+    document.getElementById('kpi-comentarios').textContent = fmt(totais.comentarios);
+    document.getElementById('kpi-posts').textContent = fmt(totais.posts);
+    document.getElementById('kpi-autores').textContent = fmt(totais.autores);
+    document.getElementById('kpi-narrativas').textContent = fmt(totais.narrativas);
+  }
+
+  function renderScore(score) {
+    if (!score) return;
+    const card = document.getElementById('score-card');
+    const valorEl = document.getElementById('score-valor');
+    const labelEl = document.getElementById('score-label');
+    const barEl   = document.getElementById('score-bar-fill');
+
+    valorEl.textContent = score.score;
+    labelEl.textContent = score.classificacao;
+
+    card.classList.remove('score-alto', 'score-medio', 'score-baixo');
+    let cor;
+    if (score.score >= 75) { card.classList.add('score-alto');  cor = 'var(--green,#22c55e)'; }
+    else if (score.score >= 50) { card.classList.add('score-medio'); cor = 'var(--yellow,#fbbf24)'; }
+    else { card.classList.add('score-baixo'); cor = 'var(--red,#f87171)'; }
+
+    valorEl.style.color = cor;
+    barEl.style.width = score.score + '%';
+    barEl.style.background = cor;
+  }
+
+  function renderSinaisCIB(score) {
+    const el = document.getElementById('sinais-cib');
+    if (!score || !score.sinais || !score.sinais.length) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    const TIPO_LABEL = { rede: 'Rede', semantica: 'Semântica', temporal: 'Temporal', narrativa: 'Narrativa IA' };
+    el.innerHTML = `
+      <div class="card-label" style="margin-bottom:10px;">Sinais de comportamento coordenado detectados</div>
+      ${score.sinais.map(s => `
+        <div class="sinal-cib ${s.intensidade}">
+          <span class="sinal-cib-tipo">${TIPO_LABEL[s.tipo] || s.tipo}</span>
+          <span class="sinal-cib-desc">${escapeHtml(s.descricao)}</span>
+        </div>`).join('')}`;
+  }
+
+  function renderCopias(suspeitos) {
+    const el = document.getElementById('copias-lista');
+    const card = document.getElementById('card-copias');
+    if (!suspeitos || !suspeitos.grupos || !suspeitos.grupos.length) {
+      card.style.display = 'none'; return;
+    }
+    card.style.display = 'block';
+    const pct = suspeitos.percentual || 0;
+    const resumo = `<div style="display:flex;gap:16px;margin-bottom:12px;">
+      <div><span style="font-size:20px;font-weight:700;color:var(--red,#f87171);">${suspeitos.grupos.length}</span><br><span style="font-size:11px;color:var(--text-muted);">grupo(s) detectado(s)</span></div>
+      <div><span style="font-size:20px;font-weight:700;color:var(--text-primary);">${suspeitos.total_suspeitos}</span><br><span style="font-size:11px;color:var(--text-muted);">autor(es) envolvidos</span></div>
+      <div><span style="font-size:20px;font-weight:700;color:var(--text-primary);">~${pct}%</span><br><span style="font-size:11px;color:var(--text-muted);">da amostra analisada</span></div>
+    </div>`;
+    const lista = suspeitos.grupos.map(g => `
+      <div class="copia-item">
+        <div class="copia-texto">"${escapeHtml(g.texto_referencia)}${g.texto_referencia.length >= 120 ? '…' : ''}"</div>
+        <div class="copia-meta">${g.ocorrencias} ocorrência(s) · ${g.autores.length} autor(es) distinto(s) · ${g.posts_distintos} post(s)</div>
+      </div>`).join('');
+    el.innerHTML = resumo + lista;
+  }
+
+  function renderPicoVelocidade(pico) {
+    const el = document.getElementById('pico-conteudo');
+    const card = document.getElementById('card-pico');
+    if (!pico || !pico.pico) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+
+    const momento = pico.momento ? new Date(pico.momento).toLocaleString('pt-BR') : '—';
+    const intensidade = pico.pico > 200 ? 'alta' : pico.pico > 50 ? 'media' : 'baixa';
+    const corIntensidade = intensidade === 'alta' ? 'var(--red,#f87171)' : intensidade === 'media' ? 'var(--yellow,#fbbf24)' : 'var(--text-muted)';
+
+    el.innerHTML = `
+      <div style="display:flex;gap:24px;align-items:flex-end;flex-wrap:wrap;">
+        <div>
+          <div class="pico-numero" style="color:${corIntensidade};">${pico.pico}</div>
+          <div class="pico-detalhe">comentários em ${pico.janela_minutos} minutos</div>
+        </div>
+        <div>
+          <div class="pico-numero">${pico.autores_no_pico}</div>
+          <div class="pico-detalhe">autores distintos no pico</div>
+        </div>
+        <div style="flex:1; min-width:180px;">
+          <div style="font-size:11.5px;color:var(--text-muted);">Momento do pico: <strong style="color:var(--text-secondary);">${momento}</strong></div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Picos com muitos autores distintos em janelas curtas indicam possível disparo coordenado ou bot</div>
+        </div>
+      </div>`;
+  }
+
+  function renderTopPosts(posts) {
+    const el = document.getElementById('top-posts-lista');
+    if (!posts || !posts.length) {
+      el.innerHTML = `<div class="vazio" style="padding:16px 0;">Nenhum post ainda.</div>`; return;
+    }
+    el.innerHTML = posts.map((p, i) => {
+      const label = p.post_url
+        ? `<a href="${escapeHtml(p.post_url)}" target="_blank" class="post-top-url">${escapeHtml(p.post_url)}</a>`
+        : `<span class="post-top-url" style="color:var(--text-muted);">${escapeHtml(p.post_id)}</span>`;
+      return `
+        <div class="post-top-item">
+          <span class="post-top-rank">${i + 1}</span>
+          <div class="post-top-info">
+            ${label}
+            <div class="post-top-meta">${escapeHtml(p.platform || '?')} · ${p.autores_distintos} autor(es)</div>
+          </div>
+          <span class="post-top-count">${Number(p.total_comentarios).toLocaleString('pt-BR')}</span>
+        </div>`;
+    }).join('');
+  }
+
+  // Dados da última renderização — usados pelo botão "Baixar Excel"
+  let _favorabilidadeExport = null;
+
+  // Favorabilidade agregada a partir do "tom" que a própria IA já atribui a
+  // cada narrativa (positivo/negativo/neutro/misto) — não precisa de nenhuma
+  // classificação nova, só soma comentarios_count por tom.
+  function renderFavorabilidade(narrativas) {
+    const card = document.getElementById('card-favorabilidade');
+    const el = document.getElementById('favorabilidade-bar');
+    _favorabilidadeExport = null;
+    if (!narrativas || !narrativas.length) { card.style.display = 'none'; return; }
+
+    const TOM_CFG = {
+      positivo:           { label: 'Positivo',           cor: '#22C55E' },
+      negativo:           { label: 'Negativo',           cor: '#EF4444' },
+      neutro:             { label: 'Neutro',             cor: '#6B7280' },
+      misto:              { label: 'Misto',              cor: '#F59E0B' },
+      'sem_classificacao': { label: 'Sem tom identificado', cor: '#374151' },
+    };
+
+    const somaPorTom = {};
+    let total = 0;
+    narrativas.forEach(n => {
+      const tomRaw = String(n.tom || '').toLowerCase().trim();
+      const tom = TOM_CFG[tomRaw] ? tomRaw : 'sem_classificacao';
+      const cnt = n.comentarios_count || 0;
+      somaPorTom[tom] = (somaPorTom[tom] || 0) + cnt;
+      total += cnt;
+    });
+
+    if (!total) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+
+    const ordem = ['positivo', 'negativo', 'neutro', 'misto', 'sem_classificacao'];
+    const partes = ordem.filter(t => somaPorTom[t]);
+
+    const barra = partes.map(t => {
+      const pct = (somaPorTom[t] / total) * 100;
+      return `<div style="width:${pct}%;background:${TOM_CFG[t].cor};" title="${TOM_CFG[t].label}: ${Math.round(pct)}%"></div>`;
+    }).join('');
+
+    const legenda = partes.map(t => {
+      const pct = Math.round((somaPorTom[t] / total) * 100);
+      return `
+        <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-secondary);">
+          <span style="width:9px;height:9px;border-radius:2px;background:${TOM_CFG[t].cor};display:inline-block;flex-shrink:0;"></span>
+          ${TOM_CFG[t].label} — <strong style="color:var(--text-primary);">${pct}%</strong>
+          <span style="color:var(--text-muted);">(${Number(somaPorTom[t]).toLocaleString('pt-BR')})</span>
+        </div>`;
+    }).join('');
+
+    el.innerHTML = `
+      <div style="display:flex;width:100%;height:14px;border-radius:7px;overflow:hidden;margin-bottom:10px;">${barra}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:14px;">${legenda}</div>
+      <div style="font-size:10.5px;color:var(--text-muted);margin-top:8px;">Baseado no tom classificado pela IA por narrativa, ponderado pelo número de comentários de cada uma — não é uma classificação comentário a comentário.</div>
+    `;
+
+    _favorabilidadeExport = {
+      resumo: partes.map(t => ({
+        Tom: TOM_CFG[t].label,
+        Comentarios: somaPorTom[t],
+        Percentual: Number(((somaPorTom[t] / total) * 100).toFixed(1)),
+      })),
+      detalhe: narrativas.map(n => ({
+        Narrativa: n.cluster_label,
+        Tom: TOM_CFG[TOM_CFG[String(n.tom || '').toLowerCase().trim()] ? String(n.tom || '').toLowerCase().trim() : 'sem_classificacao'].label,
+        Comentarios: n.comentarios_count || 0,
+        Suspeita_Orquestracao: n.flag_orquestracao ? 'Sim' : 'Não',
+      })),
+    };
+  }
+
+  function sanitizeXLSXCell(v) {
+    if (v === null || v === undefined) return '';
+    if (typeof v !== 'string') return v;
+    return v.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+  }
+  function sanitizeXLSXRow(r) {
+    const out = {};
+    Object.keys(r).forEach(k => { out[k] = sanitizeXLSXCell(r[k]); });
+    return out;
+  }
+
+  function baixarFavorabilidadeExcel() {
+    if (!_favorabilidadeExport) { showToast('⚠️ Gere o relatório antes de baixar.'); return; }
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,
+      XLSX.utils.json_to_sheet(_favorabilidadeExport.resumo.map(sanitizeXLSXRow)), 'Favorabilidade');
+    XLSX.utils.book_append_sheet(wb,
+      XLSX.utils.json_to_sheet(_favorabilidadeExport.detalhe.map(sanitizeXLSXRow)), 'Por narrativa');
+    XLSX.writeFile(wb, `favorabilidade_comentarios_${clienteAtual || 'cliente'}.xlsx`);
+  }
+
+  function renderNarrativasBarras(narrativas) {
+    const el = document.getElementById('narrativas-barras');
+    if (!narrativas || !narrativas.length) {
+      el.innerHTML = `<div class="vazio" style="padding:16px 0;">Nenhuma narrativa ainda.</div>`; return;
+    }
+    const max = Math.max(1, ...narrativas.map(n => n.comentarios_count));
+    const totalGeral = narrativas.reduce((s, n) => s + (n.comentarios_count || 0), 0) || 1;
+    const CORES = ['#A855F7','#22C55E','#3B82F6','#F59E0B','#EC4899','#14B8A6','#F43F5E','#6B7280'];
+    el.innerHTML = narrativas.map((n, i) => {
+      const pct = Math.round((n.comentarios_count / totalGeral) * 100);
+      const w = Math.round((n.comentarios_count / max) * 100);
+      const cor = n.flag_orquestracao ? '#EF4444' : (CORES[i % CORES.length]);
+      return `
+        <div class="narr-bar-wrap">
+          <div class="narr-bar-header">
+            <span class="narr-bar-label" title="${escapeHtml(n.cluster_label)}">${escapeHtml(n.cluster_label)}</span>
+            <span class="narr-bar-count">${Number(n.comentarios_count).toLocaleString('pt-BR')} (${pct}%)</span>
+          </div>
+          <div class="narr-bar-track"><div class="narr-bar-fill" style="width:${w}%;background:${cor};"></div></div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderAutoresCoordenados(autores) {
+    const el = document.getElementById('autores-coordenados-lista');
+    const card = document.getElementById('card-coordenacao');
+    if (!autores || !autores.length) {
+      card.style.display = 'none'; return;
+    }
+    card.style.display = 'block';
+    el.innerHTML = autores.map(a => `
+      <div class="coord-row">
+        <span class="coord-name" title="${escapeHtml(a.author_normalizado)}">${escapeHtml(a.author_normalizado)}</span>
+        <span class="coord-narr">${a.narrativas_distintas} narrativas</span>
+        <span class="coord-total">${Number(a.total_comentarios).toLocaleString('pt-BR')} comentários</span>
+      </div>`).join('');
+  }
+
+  // ── Computação local (CPU-safe no browser, não no Worker) ────────
+
+  function calcularPicoVelocidade(timestamps, janelaMs = 5 * 60 * 1000) {
+    if (!timestamps || !timestamps.length) return { pico: 0, janela_minutos: 5, autores_no_pico: 0, momento: null };
+    const pontos = timestamps
+      .map(t => ({ ts: new Date(t.timestamp_comentario).getTime(), autor: t.author_normalizado }))
+      .filter(p => !isNaN(p.ts))
+      .sort((a, b) => a.ts - b.ts);
+    let picoMax = 0, picoAutores = 0, picoMomento = null, j = 0;
+    const autoresJanela = new Map();
+    for (let i = 0; i < pontos.length; i++) {
+      autoresJanela.set(pontos[i].autor, (autoresJanela.get(pontos[i].autor) || 0) + 1);
+      while (pontos[i].ts - pontos[j].ts > janelaMs) {
+        const cnt = autoresJanela.get(pontos[j].autor);
+        if (cnt === 1) autoresJanela.delete(pontos[j].autor);
+        else autoresJanela.set(pontos[j].autor, cnt - 1);
+        j++;
+      }
+      const total = i - j + 1;
+      if (total > picoMax) { picoMax = total; picoAutores = autoresJanela.size; picoMomento = new Date(pontos[i].ts).toISOString(); }
+    }
+    return { pico: picoMax, janela_minutos: 5, autores_no_pico: picoAutores, momento: picoMomento };
+  }
+
+  function detectarCopiasTrigramas(comentarios, limiar = 0.72) {
+    if (!comentarios || comentarios.length < 2) return { grupos: [], total_suspeitos: 0, percentual: 0 };
+    function tri(txt) {
+      const s = new Set(), l = txt.toLowerCase().replace(/\s+/g, ' ').trim();
+      for (let i = 0; i < l.length - 2; i++) s.add(l.slice(i, i + 3));
+      return s;
+    }
+    function jaccard(a, b) {
+      let inter = 0; for (const t of a) if (b.has(t)) inter++;
+      return inter / (a.size + b.size - inter);
+    }
+    const itens = comentarios.slice(0, 500).map(c => ({ ...c, tri: tri(c.texto) }));
+    const grupos = [], visto = new Set();
+    for (let i = 0; i < itens.length; i++) {
+      if (visto.has(i)) continue;
+      const grupo = [itens[i]];
+      for (let j = i + 1; j < itens.length; j++) {
+        if (visto.has(j) || itens[i].author_normalizado === itens[j].author_normalizado) continue;
+        if (jaccard(itens[i].tri, itens[j].tri) >= limiar) { grupo.push(itens[j]); visto.add(j); }
+      }
+      if (grupo.length > 1) {
+        visto.add(i);
+        grupos.push({
+          texto_referencia: grupo[0].texto.slice(0, 120),
+          autores: [...new Set(grupo.map(c => c.author_normalizado))],
+          ocorrencias: grupo.length,
+          posts_distintos: new Set(grupo.map(c => c.post_id)).size,
+        });
+      }
+    }
+    grupos.sort((a, b) => b.ocorrencias - a.ocorrencias);
+    const totalSuspeitos = new Set(grupos.flatMap(g => g.autores)).size;
+    return { grupos: grupos.slice(0, 8), total_suspeitos: totalSuspeitos, percentual: comentarios.length > 0 ? Math.round((totalSuspeitos / comentarios.length) * 100) : 0 };
+  }
+
+  function calcularScore({ totais, autoresCoordenados, suspeitos, picoVelocidade, narrativasOrquestradas, totalNarrativas }) {
+    let pen = 0; const sinais = [];
+    const pctCoord = totais.autores > 0 ? (autoresCoordenados.length / totais.autores) * 100 : 0;
+    const p1 = Math.min(30, pctCoord * 3); pen += p1;
+    if (autoresCoordenados.length > 0) sinais.push({ tipo: 'rede', descricao: `${autoresCoordenados.length} autor(es) em múltiplas narrativas (${pctCoord.toFixed(1)}% do total)`, intensidade: p1 > 20 ? 'alta' : p1 > 8 ? 'media' : 'baixa' });
+    const p2 = Math.min(30, (suspeitos.percentual || 0) * 1.5); pen += p2;
+    if (suspeitos.total_suspeitos > 0) sinais.push({ tipo: 'semantica', descricao: `${suspeitos.grupos.length} grupo(s) de comentários quase-idênticos — ${suspeitos.total_suspeitos} autor(es) envolvidos (~${suspeitos.percentual}% da amostra)`, intensidade: p2 > 20 ? 'alta' : p2 > 8 ? 'media' : 'baixa' });
+    const picoRef = Math.max(1, Math.sqrt(totais.comentarios) * 0.5);
+    const p3 = picoVelocidade.pico > picoRef ? Math.min(25, ((picoVelocidade.pico / picoRef) - 1) * 10) : 0; pen += p3;
+    if (p3 > 0) sinais.push({ tipo: 'temporal', descricao: `Pico de ${picoVelocidade.pico} comentários em 5 min (${picoVelocidade.autores_no_pico} autores distintos) — acima do esperado para base orgânica`, intensidade: p3 > 15 ? 'alta' : p3 > 5 ? 'media' : 'baixa' });
+    const pctOrq = totalNarrativas > 0 ? (narrativasOrquestradas / totalNarrativas) * 100 : 0;
+    const p4 = Math.min(15, pctOrq * 0.5); pen += p4;
+    if (narrativasOrquestradas > 0) sinais.push({ tipo: 'narrativa', descricao: `${narrativasOrquestradas} de ${totalNarrativas} narrativa(s) marcadas com suspeita de orquestração pela IA`, intensidade: pctOrq > 50 ? 'alta' : pctOrq > 25 ? 'media' : 'baixa' });
+    const score = Math.max(0, Math.round(100 - pen));
+    return { score, classificacao: score >= 75 ? 'Predominantemente orgânico' : score >= 50 ? 'Sinais moderados de coordenação' : score >= 25 ? 'Forte suspeita de orquestração' : 'Operação coordenada detectada', sinais };
+  }
+
+  function renderChartPlataforma(dist) {
+    const ctx = document.getElementById('chart-plataforma');
+    if (!ctx || typeof Chart === 'undefined') return;
+    if (!dist.length) { ctx.replaceWith(Object.assign(document.createElement('div'), { className: 'vazio', textContent: 'Sem dados ainda.' })); return; }
+    const tema = corTema();
+    charts.plataforma = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: dist.map(d => d.platform || 'desconhecido'),
+        datasets: [{ data: dist.map(d => d.total), backgroundColor: PALETA }],
+      },
+      options: { plugins: { legend: { position: 'bottom', labels: { color: tema.texto } } } },
+    });
+  }
+
+  function renderChartTimeline(timeline) {
+    const ctx = document.getElementById('chart-timeline');
+    if (!ctx || typeof Chart === 'undefined') return;
+    if (!timeline.length) { ctx.replaceWith(Object.assign(document.createElement('div'), { className: 'vazio', textContent: 'Sem dados ainda.' })); return; }
+    const tema = corTema();
+    charts.timeline = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: timeline.map(t => t.dia),
+        datasets: [{ label: 'Comentários', data: timeline.map(t => t.total), borderColor: '#A855F7', backgroundColor: 'rgba(168,85,247,0.15)', fill: true, tension: 0.3 }],
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: tema.texto }, grid: { display: false } },
+          y: { ticks: { color: tema.texto }, grid: { color: tema.grid } },
+        },
+      },
+    });
+  }
+
+  function renderNarrativasDetalhe(narrativas) {
+    const el = document.getElementById('narrativas-lista');
+    if (!narrativas.length) {
+      el.innerHTML = `<div class="vazio"><strong>Nenhuma narrativa ainda</strong>Gere o TXT, cole na IA externa e processe o resultado acima.</div>`;
+      return;
+    }
+    el.innerHTML = narrativas.map(n => `
+      <div class="lote-card">
+        <div class="toolbar" style="justify-content:space-between;">
+          <strong style="font-size:13px;color:var(--text-primary);">${escapeHtml(n.cluster_label)} ${n.tom ? `<span style="color:var(--text-muted);font-weight:400;">· ${escapeHtml(n.tom)}</span>` : ''}</strong>
+          ${n.flag_orquestracao ? `<span class="chip chip-risco">⚠ suspeita de orquestração (${escapeHtml(n.confianca_orquestracao || '?')})</span>` : '<span class="chip chip-ok">sem sinal de orquestração</span>'}
+        </div>
+        <p style="font-size:12.5px;color:var(--text-secondary);margin:8px 0;">${escapeHtml(n.descricao_ia || '')}</p>
+        ${n.justificativa_orquestracao ? `<p style="font-size:11.5px;color:var(--text-muted);margin:0 0 8px;"><em>Justificativa: ${escapeHtml(n.justificativa_orquestracao)}</em></p>` : ''}
+        <span style="font-size:11.5px;color:var(--text-muted);">${n.comentarios_count} comentários · ${n.autores_distintos} autores distintos</span>
+      </div>
+    `).join('');
+  }
+
+  async function carregarRelatorio() {
+    if (!clienteAtual) return;
+    try {
+      const r = await fetch(`${API}/relatorio?cliente_id=${encodeURIComponent(clienteAtual)}`);
+      if (!r.ok) {
+        // 500 geralmente indica migration pendente no D1 — mostra aviso sem quebrar a página
+        document.getElementById('relatorio-resumo').innerHTML =
+          `<span style="color:var(--yellow, #fbbf24);">⚠️ Relatório indisponível — rode as migrations do Escavador no D1 Console (arquivo <strong>escavador_migrations_completo.sql</strong>).</span>`;
+        return;
+      }
+      const data = await r.json();
+
+      document.getElementById('relatorio-resumo').innerHTML = data.resumo_executivo
+        ? escapeHtml(data.resumo_executivo)
+        : `<span style="color:var(--text-muted);">Ainda sem resumo executivo — processe uma análise abaixo.</span>`;
+
+      renderKPIs(data.totais || {});
+
+      // Computação local — não sobrecarrega o Worker
+      const picoVelocidade  = calcularPicoVelocidade(data._timestamps || []);
+      const suspeitos       = detectarCopiasTrigramas(data._amostras_texto || []);
+      const scoreAuth       = calcularScore({
+        totais:                 data.totais || {},
+        autoresCoordenados:     data.autores_coordenados || [],
+        suspeitos,
+        picoVelocidade,
+        narrativasOrquestradas: data._narrativas_orq_count || 0,
+        totalNarrativas:        (data.narrativas || []).length,
+      });
+
+      renderScore(scoreAuth);
+      renderSinaisCIB(scoreAuth);
+      renderTopPosts(data.top_posts || []);
+      renderFavorabilidade(data.narrativas || []);
+      renderNarrativasBarras(data.narrativas || []);
+      renderAutoresCoordenados(data.autores_coordenados || []);
+      renderCopias(suspeitos);
+      renderPicoVelocidade(picoVelocidade);
+      destruirCharts();
+      renderGrafo(data.grafo);
+      renderChartPlataforma(data.distribuicao_plataforma || []);
+      // Usa timeline por hora se disponível, cai em por dia se não
+      const timelineData = (data.timeline_hora && data.timeline_hora.length)
+        ? data.timeline_hora.map(t => ({ ...t, dia: t.hora ? t.hora.replace('T', ' ') + 'h' : t.hora }))
+        : (data.timeline || []);
+      renderChartTimeline(timelineData);
+      renderNarrativasDetalhe(data.narrativas || []);
+    } catch (e) {
+      console.error('carregarRelatorio:', e);
+    }
+  }
+
+  document.getElementById('btn-exportar-relatorio').addEventListener('click', () => {
+    window.print();
+  });
+
+  /* ── Init ── */
+  carregarClientes().then(() => {
+    carregarFila();
+    // Adia carregarRelatorio para garantir que Chart.js terminou de carregar
+    if (typeof Chart !== 'undefined') {
+      carregarRelatorio();
+    } else {
+      window.addEventListener('load', carregarRelatorio, { once: true });
+    }
+  });
+  </script>
+</body>
+</html>

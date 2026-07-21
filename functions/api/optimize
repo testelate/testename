@@ -1,0 +1,99 @@
+// functions/api/optimize.js — HUB.nexus
+// Endpoint para otimização de banco de dados (Arquivamento de dados antigos)
+
+const ORIGIN = 'https://hub-nexus.pages.dev';
+
+function getCorsHeaders(request) {
+  const origin = request.headers.get('Origin') || ORIGIN;
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json',
+  };
+}
+
+// 1. Handler para PREFLIGHT (OPTIONS)
+export async function onRequestOptions({ request }) {
+  return new Response(null, { status: 204, headers: getCorsHeaders(request) });
+}
+
+// 2. Handler Principal (POST)
+export async function onRequestPost({ request, env }) {
+  try {
+    const body = await request.json();
+    
+    // Verificação de Segurança (Apenas o gestor pode otimizar)
+    if (body.senha !== env.GESTAO_PASSWORD) {
+      return new Response(JSON.stringify({ error: 'Não autorizado' }), { status: 401, headers: getCorsHeaders(request) });
+    }
+
+    const oneYearAgo = "datetime('now', '-1 year')";
+    const results = { archivedTasks: 0, archivedKanban: 0, archivedProjetos: 0 };
+
+    // 1. Arquivar TAREFAS
+    await env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS tasks_archive (
+        id INTEGER PRIMARY KEY, email TEXT, title TEXT, deadline TEXT, 
+        priority TEXT, tags TEXT, avatars TEXT, files TEXT, nota TEXT, 
+        done INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT, archived_at TEXT
+      )
+    `).run();
+    
+    const moveTasks = await env.DB.prepare(`
+      INSERT INTO tasks_archive 
+      SELECT *, datetime('now') as archived_at FROM tasks 
+      WHERE created_at < ${oneYearAgo} OR (done = 1 AND updated_at < ${oneYearAgo})
+    `).run();
+    results.archivedTasks = moveTasks.meta.changes || 0;
+    
+    await env.DB.prepare(`DELETE FROM tasks WHERE id IN (SELECT id FROM tasks_archive WHERE archived_at IS NOT NULL)`).run();
+
+    // 2. Arquivar KANBAN
+    await env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS kanban_archive (
+        id INTEGER PRIMARY KEY, title TEXT, descricao TEXT, col TEXT, 
+        prio TEXT, tipo TEXT, dataEntrega TEXT, dataRevisao TEXT, 
+        dataApresentacao TEXT, avatars TEXT, files TEXT, recorrencia TEXT, 
+        bar TEXT, created_at TEXT, updated_at TEXT, archived_at TEXT
+      )
+    `).run();
+
+    const moveKanban = await env.DB.prepare(`
+      INSERT INTO kanban_archive 
+      SELECT *, datetime('now') as archived_at FROM kanban 
+      WHERE created_at < ${oneYearAgo} OR (col = 'concluido' AND updated_at < ${oneYearAgo})
+    `).run();
+    results.archivedKanban = moveKanban.meta.changes || 0;
+
+    await env.DB.prepare(`DELETE FROM kanban WHERE id IN (SELECT id FROM kanban_archive WHERE archived_at IS NOT NULL)`).run();
+
+    // 3. Arquivar PROJETOS
+    await env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS gestao_projetos_archive (
+        id INTEGER PRIMARY KEY, nome TEXT, cliente TEXT, responsavel TEXT, 
+        data_entrega TEXT, horas_est INTEGER, horas_real INTEGER, 
+        valor REAL, faturamento TEXT, pjs TEXT, ferramentas TEXT, 
+        obs TEXT, created_at TEXT, archived_at TEXT
+      )
+    `).run();
+
+    const moveProj = await env.DB.prepare(`
+      INSERT INTO gestao_projetos_archive 
+      SELECT *, datetime('now') as archived_at FROM gestao_projetos 
+      WHERE created_at < ${oneYearAgo} OR (faturamento = 'pago' AND created_at < datetime('now', '-6 months'))
+    `).run();
+    results.archivedProjetos = moveProj.meta.changes || 0;
+
+    await env.DB.prepare(`DELETE FROM gestao_projetos WHERE id IN (SELECT id FROM gestao_projetos_archive WHERE archived_at IS NOT NULL)`).run();
+
+    return new Response(JSON.stringify({ 
+      ok: true, 
+      message: `Otimização concluída. ${results.archivedTasks + results.archivedKanban + results.archivedProjetos} registros movidos para o arquivo.`,
+      details: results
+    }), { status: 200, headers: getCorsHeaders(request) });
+
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: getCorsHeaders(request) });
+  }
+}

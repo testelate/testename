@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HUB.nexus — Nova Ferramenta</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/global.css"/>
+
+  <style> 
+    /* ── BASE E LAYOUT ── */
+    body { 
+      display: flex; 
+      flex-direction: column;
+      overflow: hidden; 
+      height: 100vh; 
+      background: var(--bg);
+      margin: 0;
+    }
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    
+    /* ── TOPBAR ── */
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 52px; flex-shrink: 0; backdrop-filter: blur(30px); background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.07); z-index: 5; }
+    .topbar-left { display: flex; align-items: center; gap: 8px; }
+    .topbar-title { font-size: 13px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.2px; }
+    .topbar-sub   { font-size: 11px; color: var(--accent-light); }
+    
+    body.light .topbar { background: rgba(255,255,255,0.55); border-bottom-color: rgba(180,100,40,0.10); }
+    body.light .topbar-title { color: #3a1200; }
+    body.light .topbar-sub   { color: #b09070; }
+
+    /* ── BOTÕES PADRÃO ── */
+    .tbtn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); border-radius: var(--r-sm); font-size: 11px; color: var(--text-secondary); cursor: pointer; font-family: 'Inter', sans-serif; transition: all var(--t-normal); }
+    .tbtn:hover { background: rgba(255,255,255,0.09); }
+    body.light .tbtn { background: rgba(255,255,255,0.70); border-color: rgba(180,100,40,0.18); color: #7a4a30; }
+
+    /* ── WORKSPACE (Área de Trabalho) ── */
+    .workspace { flex: 1; display: flex; overflow: hidden; position: relative; z-index: 1; }
+
+    /* ── COLUNA ESQUERDA (Menu Lateral) ── */
+    .col-library { width: 272px; flex-shrink: 0; display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.12); overflow: hidden; background: var(--surface); }
+    body.light .col-library { border-right-color: rgba(180,100,40,0.15); background: var(--surface); }
+    .lib-header { padding: 10px 12px 8px; border-bottom: 1px solid rgba(255, 18, 18, 0.06); flex-shrink: 0; }
+    body.light .lib-header { border-bottom-color: rgba(220, 240, 240, 0.831); }
+    .lib-list { flex: 1; overflow-y: auto; padding: 16px 8px; }
+
+    /* ── COLUNA CENTRAL (Conteúdo Principal) ── */
+    .col-center { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; padding: 20px; }
+    .col-center-content { flex: 1; overflow-y: auto; color: var(--text-primary); font-family: 'Inter', sans-serif; }
+    body.light .col-center-content { color: #3a1200; }
+
+    /* ── EFEITOS VISUAIS (Orbs) ── */
+    .orb { position: absolute; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0; }
+    .orb-1 { width: 380px; height: 380px; background: radial-gradient(circle, #ff5500 0%, transparent 65%); opacity: 0.10; top: -130px; right: -80px; animation: drift-1 14s ease-in-out infinite; }
+    .orb-2 { width: 260px; height: 260px; background: radial-gradient(circle, #ff8800 0%, transparent 65%); opacity: 0.07; bottom: -70px; left: 60px; animation: drift-2 18s ease-in-out infinite; }
+    
+    @keyframes drift-1 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-20px, 20px); } }
+    @keyframes drift-2 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(20px, -20px); } }
+
+    /* ── INTEGRAÇÃO NAVBAR HUB ── */
+    #navbar-container:not(:empty) ~ .main > .topbar .topbar-left { display: none !important; }
+    #navbar-container:not(:empty) ~ .main > .topbar { justify-content: flex-end; padding-left: 8px; height: 46px; }
+  </style>
+</head>
+<body>
+
+<!-- Navbar Global -->
+<div id="navbar-container"></div>
+
+<!-- Efeitos de Fundo -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-title">Nova Ferramenta</span>
+      <span class="topbar-sub">Descrição da ferramenta</span>
+    </div>
+  </div>
+
+  <!-- Workspace: 2 colunas -->
+  <div class="workspace">
+    
+    <!-- COLUNA 1: Menu Lateral -->
+    <div class="col-library">
+      <div class="lib-header">
+        <!-- Espaço para buscas ou botões de filtro -->
+      </div>
+      <div class="lib-list" id="sidebar-content">
+        <!-- Lista de itens laterais -->
+      </div>
+    </div>
+
+    <!-- COLUNA 2: Conteúdo Principal -->
+    <div class="col-center">
+      <div class="col-center-content">
+        <h2>Área de Trabalho</h2>
+        <p>Comece a construir a interface da sua nova ferramenta aqui.</p>
+      </div>
+    </div>
+
+  </div><!-- /workspace -->
+</div>
+
+<!-- Scripts Globais do Projeto -->
+<script src="../js/utils.js"></script>
+<script src="../js/theme.js"></script>
+
+<script>
+  // Inicialização básica ao carregar a página
+  document.addEventListener('DOMContentLoaded', () => {
+    // Renderiza a barra de navegação global do HUB
+    if (typeof renderSidebar === 'function') {
+      document.getElementById('navbar-container').innerHTML = renderNavbar('nova-ferramenta');
+    }
+    
+    // Inicializa o tema (Claro/Escuro)
+    if (typeof initTheme === 'function') initTheme();
+    if (typeof initMode === 'function') initMode();
+    if (typeof updateModeButtons === 'function') updateModeButtons();
+    
+    // Configura o título na navegação
+    if (typeof setNavLabel === 'function') setNavLabel('Nova Ferramenta');
+  });
+</script>
+
+</body>
+</html>

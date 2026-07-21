@@ -1,0 +1,3183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HUB.nexus — Ekklesia para Monitoramento</title>
+  <link rel="icon" href="../assets/logo.png" type="image/png"/>
+  <link rel="stylesheet" href="../css/global.css" />
+  <style>
+    body { height:100vh; margin:0; overflow:hidden; background:var(--bg); color:var(--text-primary); font-family:Inter, var(--font-ui), system-ui, sans-serif; }
+    .multi-shell { height:100vh; display:flex; flex-direction:column; }
+    .iframe-wrap { flex:1; min-height:0; }
+    .iframe-wrap iframe { width:100%; height:100%; border:none; border-radius:10px; }
+    .multi-shell.iframe-mode .tab-body { overflow:hidden; padding:0; }
+    #iframePage { height:100%; display:none; flex-direction:column; padding:20px 20px 0; }
+    #iframePage.active { display:flex; }
+    .tab-body { flex:1; overflow-y:auto; overflow-x:hidden; padding:20px; }
+    .multi-page { width:min(1180px, 100%); margin:0 auto; }
+    .multi-head { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:18px 4px 14px; border-bottom:1px solid rgba(255,255,255,.07); margin-bottom:18px; }
+    .multi-kicker { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--orange-2); margin-bottom:4px; }
+    .multi-h1 { font-size:22px; font-weight:700; line-height:1.15; margin:0; color:var(--text-primary); }
+    .multi-sub { margin:3px 0 0; font-size:12px; color:var(--text-muted); }
+    .multi-section { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09); border-radius:14px; padding:20px; margin-bottom:14px; }
+    .multi-section.compact { padding:14px 16px; }
+    .multi-panel-title { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:14px; color:var(--orange-2); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; }
+    .multi-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .multi-row.stretch > * { flex:1 1 180px; }
+    .multi-field { display:flex; flex-direction:column; gap:5px; margin-bottom:10px; min-width:0; }
+    .multi-label { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.45px; }
+    .multi-input, .multi-select, .multi-textarea { width:100%; box-sizing:border-box; border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.06); color:var(--text-primary); border-radius:8px; padding:8px 11px; font:12px Inter, var(--font-ui), sans-serif; outline:none; }
+    .multi-select { color-scheme:dark; }
+    .multi-select option { background:#1a1d27; color:#e8e6f0; }
+    .multi-textarea { min-height:88px; resize:vertical; line-height:1.6; }
+    .multi-input:focus, .multi-select:focus, .multi-textarea:focus { border-color:hsla(var(--theme-h),90%,50%,.40); }
+    .multi-btn { border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.07); color:var(--text-secondary); border-radius:8px; padding:8px 14px; font:700 11px Inter, var(--font-ui), sans-serif; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; transition:all .18s; white-space:nowrap; }
+    .multi-btn:hover { background:rgba(255,255,255,.12); color:var(--text-primary); }
+    .multi-btn.primary { background:var(--orange); border-color:var(--orange); color:#fff; }
+    .multi-btn.primary:hover { background:var(--orange-2); transform:translateY(-1px); }
+    .multi-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+    .multi-upload { position:relative; border:1.5px dashed rgba(255,255,255,.14); border-radius:10px; padding:18px 14px; text-align:center; color:var(--text-muted); font-size:12px; cursor:pointer; transition:all .18s; }
+    .multi-upload:hover, .multi-upload.drag { border-color:hsla(var(--theme-h),90%,50%,.40); background:hsla(var(--theme-h),90%,50%,.04); }
+    .multi-upload input { position:absolute; inset:0; width:100%; opacity:0; cursor:pointer; }
+    .multi-kpis { display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:10px; }
+    .multi-kpi { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); border-radius:10px; padding:12px 14px; min-height:68px; }
+    .multi-kpi span { display:block; font-size:9px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
+    .multi-kpi strong { display:block; font-size:22px; line-height:1; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .multi-split { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .multi-table-wrap { max-height:360px; overflow:auto; border:1px solid rgba(255,255,255,.08); border-radius:8px; }
+    .multi-table { width:100%; border-collapse:collapse; font-size:11px; }
+    .multi-table th, .multi-table td { padding:7px 10px; border-bottom:1px solid rgba(255,255,255,.05); text-align:left; vertical-align:top; color:var(--text-secondary); }
+    .multi-table tr:hover td { background:rgba(255,255,255,.025); }
+    .multi-table th { position:sticky; top:0; background:rgba(25,25,32,.96); color:var(--text-muted); font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; z-index:1; }
+    .multi-empty { color:var(--text-muted); font-size:12px; padding:32px 20px; text-align:center; opacity:.72; }
+    .multi-config { display:none; }
+    .multi-config.open { display:block; }
+    .multi-status { min-height:16px; font-size:11px; color:var(--text-muted); }
+    .cover-toolbar { display:grid; grid-template-columns:minmax(220px, 1fr) auto; gap:10px; align-items:end; margin-bottom:14px; }
+    .client-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:10px; }
+    .client-card { border:1px solid rgba(255,255,255,.09); background:rgba(255,255,255,.045); border-radius:8px; padding:14px; cursor:pointer; transition:all .16s; min-height:132px; display:flex; flex-direction:column; gap:12px; }
+    .client-card:hover { border-color:hsla(var(--theme-h),90%,50%,.34); background:rgba(255,255,255,.075); transform:translateY(-1px); }
+    .client-card.favorite { border-color:rgba(255,170,92,.34); background:rgba(255,147,79,.08); }
+    .client-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+    .client-name { font-size:16px; font-weight:750; color:var(--text-primary); line-height:1.2; }
+    .client-meta { color:var(--text-muted); font-size:11px; margin-top:3px; }
+    .icon-btn { width:32px; height:32px; border-radius:8px; border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.055); color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; font-weight:800; }
+    .icon-btn.active { color:#fff; background:var(--orange); border-color:var(--orange); }
+    .status-pill { display:inline-flex; align-items:center; gap:6px; border-radius:999px; border:1px solid rgba(255,255,255,.10); padding:4px 9px; font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.45px; }
+    .status-pill.producao { color:#f2d18a; border-color:rgba(242,209,138,.28); background:rgba(242,209,138,.09); }
+    .status-pill.revisao { color:#91c7ff; border-color:rgba(145,199,255,.28); background:rgba(145,199,255,.09); }
+    .status-pill.finalizado { color:#75d99a; border-color:rgba(117,217,154,.28); background:rgba(117,217,154,.09); }
+    .workflow-board { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; margin-bottom:14px; }
+    .workflow-card { border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:12px; background:rgba(255,255,255,.035); }
+    .workflow-card span { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; }
+    .workflow-card strong { display:block; margin-top:4px; font-size:24px; color:var(--text-primary); }
+    .workspace-page, .cover-page { display:none; }
+    .workspace-page.active, .cover-page.active { display:block; }
+    .report-tabs { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+    .report-tab { border:1px solid rgba(255,255,255,.10); border-radius:8px; padding:8px 13px; background:rgba(255,255,255,.045); color:var(--text-muted); cursor:pointer; font:700 11px Inter, var(--font-ui), sans-serif; }
+    .report-tab.active { color:#fff; background:var(--orange); border-color:var(--orange); }
+    .mini-list { display:grid; gap:7px; }
+    .mini-item { display:flex; align-items:center; justify-content:space-between; gap:8px; border-bottom:1px solid rgba(255,255,255,.055); padding:7px 0; font-size:11px; color:var(--text-secondary); }
+    .bar-row { display:grid; grid-template-columns:120px 1fr 46px; gap:8px; align-items:center; font-size:11px; color:var(--text-secondary); }
+    .bar { height:8px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; }
+    .bar i { display:block; height:100%; background:var(--orange); border-radius:999px; }
+    .word-cloud { display:flex; flex-wrap:wrap; gap:8px; align-items:center; min-height:92px; }
+    .word-cloud span { color:var(--orange-2); background:rgba(255,147,79,.08); border:1px solid rgba(255,147,79,.16); border-radius:999px; padding:4px 9px; cursor:pointer; }
+    .cena-card { border:1px solid rgba(255,147,79,.28); background:linear-gradient(135deg, rgba(255,147,79,.16), rgba(255,255,255,.045)); border-radius:8px; padding:14px; min-height:92px; }
+    .cena-card strong { display:block; font-size:44px; line-height:1; color:var(--orange-2); margin-top:6px; }
+    .modal-backdrop { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.62); backdrop-filter:blur(8px); z-index:20; padding:18px; }
+    .modal-backdrop.open { display:flex; }
+    .modal-panel { width:min(520px, 100%); border:1px solid rgba(255,255,255,.12); border-radius:10px; background:rgb(23,25,33); padding:18px; box-shadow:0 20px 80px rgba(0,0,0,.38); }
+    .print-only-export { margin-top:14px; }
+    #paraPrintStaging { display:none; }
+    #ekklesiaBridgeFrame { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; border:0; }
+    .hidden { display:none !important; }
+    body.light .multi-section, body.light .multi-kpi { background:rgba(255,255,255,.72); border-color:rgba(160,80,20,.16); }
+    body.light .multi-input, body.light .multi-select, body.light .multi-textarea { background:#fff; border-color:rgba(160,80,20,.22); color:#2a0e00; color-scheme:light; }
+    body.light .multi-select option { background:#fff; color:#2a0e00; }
+    body.light .multi-table th { background:rgba(255,250,246,.96); }
+    body.light .client-card, body.light .workflow-card, body.light .modal-panel { background:rgba(255,255,255,.82); border-color:rgba(160,80,20,.16); }
+    /* ─── CLIENTE GOVERNO DO PARÁ ESTILOS INTEGRADOS ─── */
+    :root {
+      --para-primary: #D92626;
+      --para-primary-rgb: 217, 38, 38;
+      --para-bg-rgb: 255, 255, 255;
+    }
+    body.theme-hana {
+      --para-primary: #D92626;
+      --para-primary-rgb: 217, 38, 38;
+    }
+    body.theme-helder {
+      --para-primary: #0060B6;
+      --para-primary-rgb: 0, 96, 182;
+    }
+    .para-workspace-shell {
+      display: flex;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+      margin: -20px;
+    }
+    .para-control-panel {
+      width: 290px;
+      background: rgba(255, 255, 255, 0.02);
+      border-right: 1px solid rgba(255, 255, 255, 0.07);
+      display: flex;
+      flex-direction: column;
+      padding: 14px;
+      gap: 14px;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+    .para-content-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--bg-2);
+    }
+    .para-control-group {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .para-control-title {
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .para-control-panel .multi-upload strong { color:var(--text-primary) !important; }
+    .para-control-panel .multi-select,
+    .para-control-panel .multi-input,
+    .para-control-panel .multi-textarea { color:var(--text-primary); }
+    .para-field-label {
+      font-size: 8.5px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.35px;
+      margin-bottom: 3px;
+      display: block;
+    }
+    .para-banner-container {
+      width: 100%;
+      position: relative;
+      background: #000;
+      border-radius: 0;
+      overflow: visible;
+      aspect-ratio: 1024 / 146;
+      margin-bottom: 10mm;
+    }
+    #paraPage1 .para-banner-container { aspect-ratio:2045 / 512; margin-bottom:3mm; }
+    .para-banner-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .para-banner-date-overlay {
+      position: absolute;
+      top: auto;
+      right: 23mm;
+      bottom: -5mm;
+      background: var(--para-primary);
+      color: #fff;
+      border-radius: 5px;
+      padding: 5px 10px;
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1.3;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+      pointer-events: none;
+    }
+    .para-post-link, .para-top5-link { display:block; color:inherit; text-decoration:none; }
+    .para-post-link:hover .para-post-card, .para-top5-link:hover .para-top5-item { border-color:var(--para-primary); }
+    .para-report-page {
+      width: 210mm;
+      height: 297mm;
+      background: #fff;
+      color: #333;
+      padding: 0;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 25px;
+    }
+    .para-report-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 8mm 23mm 0;
+    }
+    .para-section-title {
+      font-size: 16px;
+      font-weight: 850;
+      text-transform: uppercase;
+      color: var(--para-primary);
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid var(--para-primary);
+      padding-bottom: 3px;
+      margin: 12px 0 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .para-subsection-title {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--para-primary);
+      margin: 8px 0 5px 0;
+    }
+    .para-kpis-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .para-kpi-card {
+      border: 0;
+      background: transparent;
+      border-radius: 0;
+      padding: 10px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .para-kpi-icon {
+      width: 20px;
+      height: 20px;
+      margin-bottom: 4px;
+      color: var(--para-primary);
+    }
+    .para-kpi-label {
+      font-size: 9px;
+      font-weight: 800;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 2px;
+    }
+    .para-kpi-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: #1e293b;
+      line-height: 1.1;
+    }
+    .para-kpi-delta {
+      font-size: 10px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+    .para-kpi-delta.pos { color: #16a34a; }
+    .para-kpi-delta.neg { color: #dc2626; }
+    
+    .para-table-custom {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 10px;
+      font-size: 10.5px;
+    }
+    .para-table-custom th, .para-table-custom td {
+      padding: 6px 8px;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .para-table-custom th {
+      background: var(--para-primary);
+      color: #fff;
+      font-size: 8.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .para-table-custom td { color: #334155; }
+    .para-table-custom tr:last-child td { border-bottom: none; }
+    
+    .para-network-cell {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 700;
+    }
+    .para-cand-badge {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--para-primary);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 9px;
+    }
+    
+    .para-highlights-list {
+      margin: 0;
+      padding-left: 18px;
+      color: #334155;
+      font-size: 10.5px;
+      line-height: 1.45;
+    }
+    .para-highlights-list li { margin-bottom: 4px; }
+    
+    .para-performance-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .para-performance-head {
+      display: grid;
+      grid-template-columns: 142px 1fr 118px;
+      padding: 0 8px 4px;
+      border-bottom: 1px solid #94a3b8;
+      color: #64748b;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: .45px;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .para-post-card {
+      border: 0;
+      border-bottom: 1px solid #cbd5e1;
+      border-radius: 0;
+      background: #fff;
+      padding: 8px 8px 10px;
+      display: grid;
+      grid-template-columns: 134px 1fr 112px;
+      gap: 14px;
+      align-items: center;
+      min-height:145px;
+    }
+    .para-post-visual { display:grid; grid-template-columns:40px 88px; gap:6px; align-items:center; }
+    .para-format-block { color:var(--para-primary); font-size:8px; font-weight:800; text-align:center; text-transform:uppercase; }
+    .para-network-glyph { display:block; font-size:22px; line-height:1; margin-bottom:5px; }
+    .para-post-media {
+      width: 88px;
+      height: 74px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .para-post-img { width: 100%; height: 100%; object-fit: cover; }
+    .para-post-badge {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      padding: 1px 3px;
+      border-radius: 2px;
+      font-size: 7px;
+      font-weight: 700;
+    }
+    .para-post-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      font-size: 10.5px;
+    }
+    .para-post-category {
+      font-weight: 800;
+      color: var(--para-primary);
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.35px;
+    }
+    .para-post-narrative { color: #334155; line-height: 1.4; text-align:center; font-size:12px; }
+    .para-post-interactions {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+    .para-post-inter-val { font-size: 30px; font-weight: 850; color: var(--para-primary); line-height:1; }
+    .para-post-inter-lbl { font-size: 7px; font-weight: 800; color: #64748b; text-transform: uppercase; }
+    
+    .para-split-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .para-format-charts { display:grid; grid-template-columns:1fr; gap:18px; margin-bottom:15px; }
+    .para-bar-chart-container {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      height: 150px;
+      align-items:end;
+      border-bottom:1px solid #94a3b8;
+    }
+    .para-chart-bar-row {
+      height:100%; display:flex; flex-direction:column-reverse; align-items:center; gap:3px;
+      font-size: 9px;
+      color: #334155;
+    }
+    .para-bar-track {
+      width:34px; height:74px; background:#e2e8f0; overflow:hidden; display:flex; align-items:flex-end;
+      flex:none;
+    }
+    .para-bar-fill {
+      width:100%;
+      flex:none;
+      background: var(--para-primary);
+      border-radius: 2px 2px 0 0;
+    }
+    
+    .para-top5-list { display: flex; flex-direction: column; gap: 5px; }
+    .para-top5-item {
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      border-radius: 5px;
+      padding: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      font-size: 9px;
+    }
+    .para-top5-img-wrap {
+      width: 42px;
+      height: 42px;
+      border-radius: 3px;
+      overflow: hidden;
+      background: #e2e8f0;
+      flex-shrink: 0;
+    }
+    .para-top5-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .para-top5-meta { font-weight: 700; color: #475569; font-size: 8px; }
+    .para-top5-text { color:#334155; white-space:normal; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:1.25; overflow-wrap:anywhere; }
+    .para-top5-rate { font-weight: 800; color: var(--para-primary); font-size: 10.5px; }
+    
+    .para-bubble-grid {
+      display: grid;
+      grid-template-columns: 34px repeat(7, 1fr);
+      grid-template-rows: repeat(13, 25px) 22px;
+      gap: 0;
+      background: #fff;
+      border: 0;
+      font-size: 8px;
+      color: #334155;
+    }
+    .para-bubble-header {
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      text-align: center;
+    }
+    .para-bubble-row-lbl {
+      background: #fff;
+      display: flex;
+      align-items: center;
+      padding-right: 6px;
+      justify-content:flex-end;
+      font-weight: 700;
+    }
+    .para-bubble-cell {
+      background: #fff;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 25px;
+    }
+    .para-bubble-span {
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #1e293b;
+      position: absolute;
+    }
+    .para-bubble-highlight-box {
+      border: 1.5px solid #000;
+      position: absolute;
+      z-index: 10;
+      background: transparent;
+      pointer-events: none;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-end;
+      padding: 1px;
+    }
+    .para-bubble-highlight-label {
+      background: #000;
+      color: #fff;
+      font-size: 6px;
+      font-weight: 900;
+      padding: 0.5px 2px;
+      border-radius: 1px;
+      line-height: 1;
+      transform: translate(3px, -9px);
+    }
+    .para-bubble-legend {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 6px;
+      font-size: 8px;
+      color: #475569;
+    }
+    .para-bubble-note { margin-top:5px; color:#64748b; font-size:6.5px; text-align:center; }
+    #paraPage2 .para-section-title,
+    #paraPage3 .para-section-title,
+    #paraPage4 .para-section-title {
+      border-bottom:0; font-size:24px; margin:6px 0 14px; padding:0; letter-spacing:.2px;
+    }
+    #paraPage2 .para-report-body, #paraPage3 .para-report-body, #paraPage4 .para-report-body { padding-top:5mm; }
+    #paraPage2 .para-report-body { padding-top:2mm; }
+    #paraPage3 .para-subsection-title { font-size:17px; margin:2px 0 6px; }
+    #paraPage3 .para-split-row { margin-top:2px !important; }
+    #paraPage4 .para-bubble-grid { margin-top:4px; }
+    #paraPage1 .para-section-title { font-size:22px; margin-top:15px; }
+    #paraPage1 .para-kpi-value { font-size:34px; }
+    #paraPage1 .para-kpi-label { font-size:12px; color:var(--para-primary); }
+    #paraPage1 .para-kpi-icon { width:31px !important; height:31px !important; }
+    #paraPage1 .para-kpis-grid { margin:0 0 20px; }
+    #paraPage1 .para-table-custom { font-size:13px; }
+    #paraPage1 .para-table-custom th { font-size:10px; padding:9px 8px; }
+    #paraPage1 .para-table-custom td { padding:8px; }
+    #paraPage1 .para-highlights-list { font-size:12px; line-height:1.45; }
+    
+    .para-report-footer {
+      background: var(--para-primary);
+      color: #fff;
+      padding: 8px;
+      text-align: center;
+      font-size: 7.5px;
+      font-weight: 600;
+      margin-top: 10px;
+      line-height: 1.3;
+      border-radius: 0;
+    }
+    
+    body.light .para-report-page { background: #fff !important; color: #333 !important; }
+    body.light .para-kpi-card { background: #f8fafc !important; border-color: #e2e8f0 !important; }
+    body.light .para-table-custom td { color: #334155 !important; border-bottom-color: #e2e8f0 !important; }
+    body.light .para-post-card { background: #f8fafc !important; border-color: #e2e8f0 !important; }
+    body.light .para-top5-item { background: #f8fafc !important; border-color: #e2e8f0 !important; }
+    body.light .para-bubble-cell { background: #fff !important; }
+
+    @media print {
+      @page { size:A4 portrait; margin:0; }
+      body.theme-hana, body.theme-helder {
+        background: #fff !important;
+        color: #333 !important;
+        overflow: visible !important;
+      }
+      .multi-shell, .tab-body, .para-workspace-shell {
+        height: auto !important;
+        overflow: visible !important;
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      #navbar-container, .para-control-panel, #coverPage, #workspacePage, #iframePage {
+        display: none !important;
+      }
+      .para-content-area {
+        padding: 0 !important;
+        background: #fff !important;
+        overflow: visible !important;
+        display: block !important;
+      }
+      .para-report-page {
+        margin: 0 !important;
+        box-shadow: none !important;
+        page-break-after: always !important;
+        border: none !important;
+      }
+      body:has(#paraPrintStaging) .multi-shell { display:none !important; }
+      #paraPrintStaging { display:block !important; }
+      #paraPrintStaging .para-report-page:last-child { page-break-after:auto !important; }
+      #toast, .toast { display:none !important; }
+      .para-banner-date-overlay, .para-kpi-card, .para-table-custom th, .para-report-footer,
+      .para-bar-fill, .para-bubble-span, .legend-color {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+    }
+    @media (max-width: 860px) {
+      .multi-head { align-items:flex-start; flex-direction:column; }
+      .multi-kpis { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+      .multi-split { grid-template-columns:1fr; }
+      .cover-toolbar, .workflow-board { grid-template-columns:1fr; }
+      .tab-body { padding:14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="multi-shell">
+    <div id="navbar-container"></div>
+
+    <div class="tab-body">
+      <main id="coverPage" class="multi-page cover-page active">
+        <div class="multi-head">
+          <div>
+            <h1 class="multi-h1">Selecionar cliente</h1>
+            <p class="multi-sub">Produção, revisão e entrega de relatórios para múltiplos clientes.</p>
+          </div>
+          <div class="multi-row">
+            <button class="multi-btn" onclick="loadAll()" title="Recarregar clientes">↺ Sincronizar</button>
+            <button class="multi-btn primary" onclick="openClientModal()">+ Novo cliente</button>
+          </div>
+        </div>
+
+        <section class="workflow-board" id="workflowBoard"></section>
+
+        <section class="multi-section compact">
+          <div class="cover-toolbar">
+            <div class="multi-field" style="margin-bottom:0;">
+              <label class="multi-label">Buscar cliente</label>
+              <input id="clientSearch" class="multi-input" placeholder="Digite nome, slug ou status" oninput="renderCover()" />
+            </div>
+            <button class="multi-btn" onclick="renderCover()">Atualizar lista</button>
+          </div>
+          <div id="clientGrid" class="client-grid"></div>
+        </section>
+      </main>
+
+      <main id="iframePage">
+        <div class="multi-head" style="flex-shrink:0;">
+          <h1 class="multi-h1" id="iframeTitle" style="font-size:18px;"></h1>
+          <button class="multi-btn" onclick="showCover()">← Voltar</button>
+        </div>
+        <div class="iframe-wrap">
+          <iframe id="clientIframe" src="" title="Cliente" allowfullscreen></iframe>
+        </div>
+      </main>
+
+      <main id="workspacePage" class="multi-page workspace-page">
+        <div class="multi-head">
+          <div>
+            <h1 class="multi-h1" id="workspaceTitle">Relatório Diário</h1>
+            <p class="multi-sub" id="workspaceSub">Fluxo operacional para bases do Reputation/hub com prompts dinamicos por cliente.</p>
+          </div>
+          <button class="multi-btn" onclick="showCover()">← Voltar</button>
+        </div>
+
+        <section class="multi-section">
+          <div class="multi-panel-title">
+            <span>Upload da base</span>
+            <span id="rowsCount" style="color:var(--text-muted);font-weight:600;"></span>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;line-height:1.6;">
+            Suba CSV ou XLSX exportado do Reputation/hub. As linhas ficam isoladas no módulo multi-cliente e não usam as tabelas da Embratur.
+          </div>
+          <div class="multi-upload" id="uploadZone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
+            <input type="file" accept=".csv,.xlsx,.xls" multiple onchange="handleFiles(this.files); this.value='';" />
+            <strong style="color:var(--orange-2);">Clique</strong> ou arraste CSV/XLSX do Reputation/hub
+          </div>
+          <div id="uploadStatus" class="multi-status" style="margin-top:8px;"></div>
+        </section>
+
+        <section class="multi-section compact">
+          <div class="multi-panel-title">
+            <span>Controles do relatório</span>
+            <span id="activeClientStatus"></span>
+          </div>
+          <div class="multi-row stretch">
+            <div class="multi-field" style="margin-bottom:0;max-width:190px;">
+              <label class="multi-label">Status</label>
+              <select id="workflowStatus" class="multi-select" onchange="updateClientMeta()">
+                <option value="producao">Produção</option>
+                <option value="revisao">Revisão</option>
+                <option value="finalizado">Finalizado</option>
+              </select>
+            </div>
+            <div class="multi-field" style="margin-bottom:0;max-width:180px;">
+              <label class="multi-label">Data do relatório</label>
+              <input id="dataRel" class="multi-input" type="date" onchange="render()" />
+            </div>
+            <div class="multi-field" style="margin-bottom:0;max-width:180px;">
+              <label class="multi-label">Comparar com</label>
+              <input id="compareDate" class="multi-input" type="date" onchange="render()" />
+            </div>
+            <button class="multi-btn" style="align-self:flex-end;" onclick="toggleActiveFavorite()">Favorito</button>
+          </div>
+          <div id="clienteStatus" class="multi-status" style="margin-top:8px;"></div>
+        </section>
+
+        <div class="report-tabs">
+          <button class="report-tab active" data-report="diario" onclick="setReportType('diario')">Diário</button>
+          <button class="report-tab" data-report="semanal" onclick="setReportType('semanal')">Semanal</button>
+          <button class="report-tab" data-report="mensal" onclick="setReportType('mensal')">Mensal</button>
+        </div>
+
+        <section class="multi-section">
+          <div class="multi-panel-title">KPIs calculados automaticamente</div>
+          <div id="kpiArea"></div>
+        </section>
+
+        <section class="multi-section">
+          <div class="multi-panel-title">Comparativo e panoramas</div>
+          <div id="panoramaArea"></div>
+        </section>
+
+        <section class="multi-section">
+          <div class="multi-panel-title">Visualizações automáticas</div>
+          <div id="visualArea"></div>
+        </section>
+
+        <section id="configPanel" class="multi-section multi-config">
+          <div class="multi-panel-title">
+            <span>Configuração de prompts</span>
+            <button class="multi-btn" onclick="savePrompts()">Salvar prompts</button>
+          </div>
+          <div class="multi-row" style="margin-bottom:10px;">
+            <select id="tipoPrompt" class="multi-select" style="width:170px;" onchange="setReportType(this.value)">
+              <option value="diario">Diário</option>
+              <option value="semanal">Semanal</option>
+              <option value="mensal">Mensal</option>
+            </select>
+            <span id="promptStatus" class="multi-status"></span>
+          </div>
+          <div class="multi-split">
+            <div class="multi-field">
+              <label class="multi-label">Prompt contexto</label>
+              <textarea id="promptContexto" class="multi-textarea" placeholder="Você é um analista focado em..."></textarea>
+            </div>
+            <div class="multi-field">
+              <label class="multi-label">Prompt regras</label>
+              <textarea id="promptRegras" class="multi-textarea" placeholder="Ignore temas..., foque em..., responda em JSON..."></textarea>
+            </div>
+          </div>
+        </section>
+
+        <section class="multi-section">
+          <div class="multi-panel-title">
+            <span>Análise editorial - prompt</span>
+            <div class="multi-row">
+              <button class="multi-btn" onclick="copyPrompt()">Copiar prompt</button>
+              <button class="multi-btn" onclick="downloadPrompt()">Baixar TXT</button>
+              <button class="multi-btn" onclick="exportReport('html')">Baixar HTML</button>
+              <button class="multi-btn" onclick="exportReport('json')">Base visual</button>
+              <button class="multi-btn" onclick="exportPdf()">PDF</button>
+              <button class="multi-btn primary" onclick="openRadarReport()">Abrir Radar SECOM</button>
+            </div>
+          </div>
+          <textarea id="promptPreview" class="multi-textarea" style="min-height:260px;font-family:Consolas,monospace;font-size:11px;" readonly></textarea>
+        </section>
+
+        <section class="multi-section">
+          <div class="multi-panel-title">Publicações do recorte</div>
+          <div id="tableArea"></div>
+        </section>
+
+      </main>
+
+      <main id="paraWorkspacePage" class="multi-page" style="display:none; width:100%; max-width:100%; margin:0; padding:0;">
+        <div class="para-workspace-shell">
+          <!-- Sidebar Control Panel -->
+          <aside class="para-control-panel">
+            <div class="sidebar-header">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h1 class="sidebar-h1" style="font-size:14px; font-weight:800; margin:0;">Ekklesia Pará</h1>
+                <button class="multi-btn" onclick="showCover()" style="width:auto; padding:4px 8px; font-size:10px;">✕ Voltar</button>
+              </div>
+              <p class="sidebar-sub" style="font-size:9.5px; color:var(--text-muted); margin:4px 0 0 0;">Relatório semanal de performance política</p>
+            </div>
+            
+            <!-- Upload section -->
+            <div class="para-control-group">
+              <div class="para-control-title">Base de Dados</div>
+              <div class="multi-upload" id="paraUploadZone" style="padding:10px; font-size:10px; cursor:pointer; position:relative;">
+                <input type="file" id="paraCsvFile" accept=".csv,.xlsx,.xls" onchange="handleParaFile(this.files[0]); this.value='';" style="position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer;" />
+                <strong style="color:var(--para-primary);">Clique para upload</strong><br>ou arraste a planilha semanal
+              </div>
+              <div id="paraUploadStatus" style="font-size:9px;color:var(--text-muted);margin-top:6px;text-align:center;">Nenhum arquivo carregado</div>
+            </div>
+            
+            <!-- Profile Config -->
+            <div class="para-control-group">
+              <div class="para-control-title">Configurações do Perfil</div>
+              
+              <label class="para-field-label">Perfil Ativo</label>
+              <select id="paraProfileSelect" class="multi-select" style="padding:5px; font-size:11px;" onchange="changeParaProfile()">
+                <option value="Hana Ghassan">Hana Ghassan (Vice-Governadora)</option>
+                <option value="Helder Barbalho">Helder Barbalho (Governador)</option>
+              </select>
+              
+              <label class="para-field-label" style="margin-top:8px;">Período Relatório</label>
+              <input type="text" id="paraPeriodInput" class="multi-input" style="padding:5px; font-size:11px;" value="29/6/2026 a 5/7/2026" oninput="updateParaReportMeta()" />
+              
+              <label class="para-field-label" style="margin-top:8px;">Comparativo Anterior</label>
+              <input type="text" id="paraCompareInput" class="multi-input" style="padding:5px; font-size:11px;" value="22/6/2026 a 28/6/2026" oninput="updateParaReportMeta()" />
+
+              <label class="para-field-label" style="margin-top:8px;">Variação Seguidores (%)</label>
+              <input type="text" id="paraDeltaSeguidores" class="multi-input" style="padding:5px; font-size:11px;" value="1,5%" oninput="updateParaReportMeta()" />
+              
+              <label class="para-field-label" style="margin-top:8px;">Variação Publicações (%)</label>
+              <input type="text" id="paraDeltaPosts" class="multi-input" style="padding:5px; font-size:11px;" value="-19%" oninput="updateParaReportMeta()" />
+              
+              <label class="para-field-label" style="margin-top:8px;">Variação Interações (%)</label>
+              <input type="text" id="paraDeltaInteracoes" class="multi-input" style="padding:5px; font-size:11px;" value="-53%" oninput="updateParaReportMeta()" />
+            </div>
+            
+            <!-- Editorial & highlights -->
+            <div class="para-control-group">
+              <div class="para-control-title">Destaques da Semana</div>
+              <label class="para-field-label">Ponto 1</label>
+              <textarea id="paraBullet1" class="multi-textarea" style="min-height:45px; font-size:11px; padding:5px;" oninput="updateParaEditorial()"></textarea>
+              <label class="para-field-label" style="margin-top:6px;">Ponto 2</label>
+              <textarea id="paraBullet2" class="multi-textarea" style="min-height:45px; font-size:11px; padding:5px;" oninput="updateParaEditorial()"></textarea>
+              <label class="para-field-label" style="margin-top:6px;">Ponto 3</label>
+              <textarea id="paraBullet3" class="multi-textarea" style="min-height:45px; font-size:11px; padding:5px;" oninput="updateParaEditorial()"></textarea>
+            </div>
+            
+            <!-- Peaks/best times configs -->
+            <div class="para-control-group">
+              <div class="para-control-title">Narrativa dos Picos</div>
+              <label class="para-field-label">Destaque D1</label>
+              <textarea id="paraPeakD1Text" class="multi-textarea" style="min-height:45px; font-size:11px; padding:5px;" oninput="updateParaPeaks()"></textarea>
+              <label class="para-field-label" style="margin-top:6px;">Destaque D2</label>
+              <textarea id="paraPeakD2Text" class="multi-textarea" style="min-height:45px; font-size:11px; padding:5px;" oninput="updateParaPeaks()"></textarea>
+              <label class="para-field-label" style="margin-top:6px;">Destaque D3</label>
+              <textarea id="paraPeakD3Text" class="multi-textarea" style="min-height:45px; font-size:11px; padding:5px;" oninput="updateParaPeaks()"></textarea>
+            </div>
+
+            <div class="para-control-group">
+              <div class="para-control-title">Preenchimento com IA</div>
+              <div style="font-size:9.5px;color:var(--text-muted);line-height:1.45;margin-bottom:8px;">
+                Baixe o TXT, envie para a IA e cole abaixo somente o JSON retornado para preencher os textos do relatório.
+              </div>
+              <div class="multi-row" style="gap:5px;margin-bottom:7px;">
+                <button class="multi-btn" style="flex:1;padding:6px 8px;" onclick="copyParaPrompt()">Copiar prompt</button>
+                <button class="multi-btn" style="flex:1;padding:6px 8px;" onclick="downloadParaPrompt()">Baixar TXT</button>
+              </div>
+              <label class="para-field-label">Resposta JSON da IA</label>
+              <textarea id="paraAiResponse" class="multi-textarea" style="min-height:100px;font:10px Consolas,monospace;padding:7px;" placeholder='{"destaques":[...],"picos":{"D1":"..."},"posts":[...]}'></textarea>
+              <button class="multi-btn primary" onclick="applyParaAiResponse()" style="width:100%;margin-top:6px;">Preencher relatório</button>
+              <div id="paraAiStatus" class="multi-status" style="margin-top:6px;font-size:9px;"></div>
+            </div>
+            
+            <!-- Export Action -->
+            <div class="para-control-group">
+              <div class="para-control-title">Exportação</div>
+              <button class="multi-btn primary" onclick="exportParaPDF()" style="margin-bottom:6px; width:100%;">
+                Imprimir / Exportar PDF
+              </button>
+              <button class="multi-btn" onclick="exportParaJSON()" style="width:100%;">
+                Baixar JSON Base
+              </button>
+            </div>
+          </aside>
+          
+          <!-- Report Viewer & Sheets -->
+          <div class="para-content-area">
+            <div class="report-pages-container">
+              
+              <!-- PAGE 1: Cenário Geral & Redes -->
+              <div class="para-report-page" id="paraPage1">
+                <div class="para-banner-container">
+                  <img id="paraBannerPage1" class="para-banner-img" src="../assets/banner-hana-2.png" alt="Header" />
+                  <div class="para-banner-date-overlay" id="paraDateOverlay1">
+                    Período: 29/6/2026 a 5/7/2026<br>
+                    Comparativo: 22/6/2026 a 28/6/2026
+                  </div>
+                </div>
+                
+                <div class="para-report-body">
+                  <h2 class="para-section-title">Cenário Geral</h2>
+                  <div class="para-kpis-grid">
+                    <!-- KPI 1 -->
+                    <div class="para-kpi-card">
+                      <svg class="para-kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px;">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                      </svg>
+                      <div class="para-kpi-label">Seguidores</div>
+                      <div class="para-kpi-value" id="paraKpiSeguidores">-</div>
+                      <div class="para-kpi-delta" id="paraKpiSeguidoresDelta">-</div>
+                    </div>
+                    
+                    <!-- KPI 2 -->
+                    <div class="para-kpi-card">
+                      <svg class="para-kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px;">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/>
+                      </svg>
+                      <div class="para-kpi-label">Publicações</div>
+                      <div class="para-kpi-value" id="paraKpiPosts">-</div>
+                      <div class="para-kpi-delta" id="paraKpiPostsDelta">-</div>
+                    </div>
+                    
+                    <!-- KPI 3 -->
+                    <div class="para-kpi-card">
+                      <svg class="para-kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px;">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                      </svg>
+                      <div class="para-kpi-label">Interações</div>
+                      <div class="para-kpi-value" id="paraKpiInteracoes">-</div>
+                      <div class="para-kpi-delta" id="paraKpiInteracoesDelta">-</div>
+                    </div>
+                  </div>
+                  
+                  <h2 class="para-section-title">Cenário por Redes</h2>
+                  <table class="para-table-custom" id="paraRedeTable">
+                    <thead>
+                      <tr>
+                        <th>Rede</th>
+                        <th>Seguidores</th>
+                        <th>Crescimento de Base</th>
+                        <th>Número de Posts</th>
+                        <th>Posts/Dia</th>
+                        <th>Interações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td colspan="6" style="text-align:center;color:#64748b;">Suba uma base para ver os dados</td></tr>
+                    </tbody>
+                  </table>
+                  
+                  <h2 class="para-section-title">Destaques da Semana</h2>
+                  <ul class="para-highlights-list" id="paraEditorialList">
+                    <li>Aguardando upload da base de dados com as informações do cliente.</li>
+                  </ul>
+                </div>
+                
+                <div class="para-report-footer">
+                  Relatório produzido a partir da análise de dados públicos coletados com ferramenta de monitoramento.<br>
+                  *Os dados considerados na produção deste relatório são orgânicos.
+                </div>
+              </div>
+              
+              <!-- PAGE 2: Performance por Conteúdo (List of Top 5 Posts) -->
+              <div class="para-report-page" id="paraPage2">
+                <div class="para-banner-container">
+                  <img id="paraBannerPage2" class="para-banner-img" src="../assets/banner-hana-1.png" alt="Header" />
+                  <div class="para-banner-date-overlay" id="paraDateOverlay2">
+                    Período: 29/6/2026 a 5/7/2026<br>
+                    Comparativo: 22/6/2026 a 28/6/2026
+                  </div>
+                </div>
+                
+                <div class="para-report-body">
+                  <h2 class="para-section-title">Performance por Conteúdo</h2>
+                  <div class="para-performance-head"><span>Post</span><span>Assunto</span><span>Interações</span></div>
+                  
+                  <div class="para-performance-list" id="paraTopPostsList">
+                    <div style="text-align:center;padding:40px;color:#64748b;font-size:11px;">Suba uma base para visualizar o ranking de posts</div>
+                  </div>
+                </div>
+                
+                <div class="para-report-footer">
+                  Relatório produzido a partir da análise de dados públicos coletados com ferramenta de monitoramento.<br>
+                  *Os dados considerados na produção deste relatório são orgânicos.
+                </div>
+              </div>
+              
+              <!-- PAGE 3: Formatos & Top 5 Fotos/Videos -->
+              <div class="para-report-page" id="paraPage3">
+                <div class="para-banner-container">
+                  <img id="paraBannerPage3" class="para-banner-img" src="../assets/banner-hana-1.png" alt="Header" />
+                  <div class="para-banner-date-overlay" id="paraDateOverlay3">
+                    Período: 29/6/2026 a 5/7/2026<br>
+                    Comparativo: 22/6/2026 a 28/6/2026
+                  </div>
+                </div>
+                
+                <div class="para-report-body">
+                  <h2 class="para-section-title">Performance por Conteúdo</h2>
+                  
+                  <div class="para-format-charts">
+                    <div>
+                      <h3 class="para-subsection-title">Formatos com Maior Número de Posts</h3>
+                      <div class="para-bar-chart-container" id="paraFormatCountChart">
+                        <!-- Dynamic -->
+                      </div>
+                    </div>
+                    <div>
+                      <h3 class="para-subsection-title">Formatos com Maior Taxa de Engajamento*</h3>
+                      <div class="para-bar-chart-container" id="paraFormatEngageChart">
+                        <!-- Dynamic -->
+                      </div>
+                      <div style="font-size:6px;color:#64748b;margin-top:3px;">*A taxa de engajamento é referente ao engajamento sobre a base de seguidores de cada rede.</div>
+                    </div>
+                  </div>
+                  
+                  <div class="para-split-row" style="margin-top:10px;">
+                    <div>
+                      <h3 class="para-subsection-title">Top 5 - Fotos</h3>
+                      <div class="para-top5-list" id="paraTop5Fotos">
+                        <div style="font-size:9px;color:#64748b;text-align:center;padding:15px;">Sem dados</div>
+                      </div>
+                    </div>
+                    <div>
+                      <h3 class="para-subsection-title">Top 5 - Vídeos</h3>
+                      <div class="para-top5-list" id="paraTop5Videos">
+                        <div style="font-size:9px;color:#64748b;text-align:center;padding:15px;">Sem dados</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="para-report-footer">
+                  Relatório produzido a partir da análise de dados públicos coletados com ferramenta de monitoramento.<br>
+                  *Os dados considerados na produção deste relatório são orgânicos.
+                </div>
+              </div>
+              
+              <!-- PAGE 4: Melhores Horários para Postagem -->
+              <div class="para-report-page" id="paraPage4">
+                <div class="para-banner-container">
+                  <img id="paraBannerPage4" class="para-banner-img" src="../assets/banner-hana-1.png" alt="Header" />
+                  <div class="para-banner-date-overlay" id="paraDateOverlay4">
+                    Período: 29/6/2026 a 5/7/2026<br>
+                    Comparativo: 22/6/2026 a 28/6/2026
+                  </div>
+                </div>
+                
+                <div class="para-report-body" style="justify-content:flex-start;">
+                  <h2 class="para-section-title">Performance por Conteúdo</h2>
+                  <h3 class="para-subsection-title" style="margin-top:2px;margin-bottom:2px;">Melhores Horários para Postagem</h3>
+                  <div class="chart-peaks-desc" style="font-size:10px; margin-bottom:8px;">
+                    Neste gráfico, os pontos maiores e mais verdes são considerados os melhores horários para postagem.
+                  </div>
+                  
+                  <!-- Peak description texts -->
+                  <div style="margin-bottom:10px; font-size:10px; line-height:1.4; color:#334155;">
+                    <div class="chart-peak-item" id="paraPeak1Container"><strong>Pico D1:</strong> <span id="paraTextD1">Aguardando dados...</span></div>
+                    <div class="chart-peak-item" id="paraPeak2Container"><strong>Pico D2:</strong> <span id="paraTextD2">Aguardando dados...</span></div>
+                    <div class="chart-peak-item" id="paraPeak3Container"><strong>Pico D3:</strong> <span id="paraTextD3">Aguardando dados...</span></div>
+                  </div>
+                  
+                  <!-- Custom bubble chart grid -->
+                  <div class="para-bubble-grid" id="paraBubbleGridContainer">
+                    <!-- Generated by JS -->
+                  </div>
+                  
+                  <!-- Legend -->
+                  <div class="para-bubble-legend">
+                    <div class="legend-item">
+                      <div style="display:flex;gap:3px;align-items:center;">
+                        <div style="width:5px;height:5px;border-radius:50%;background:#475569;"></div>
+                        <div style="width:8px;height:8px;border-radius:50%;background:#475569;"></div>
+                        <div style="width:12px;height:12px;border-radius:50%;background:#475569;"></div>
+                      </div>
+                      <span>Nº de posts</span>
+                    </div>
+                    <div class="legend-item">
+                      <div style="display:flex;gap:3px;">
+                        <div class="legend-color" style="width:10px;height:10px;background:#dc2626;"></div>
+                        <div class="legend-color" style="width:10px;height:10px;background:#fbbf24;"></div>
+                        <div class="legend-color" style="width:10px;height:10px;background:#16a34a;"></div>
+                      </div>
+                      <span>Interações</span>
+                    </div>
+                  </div>
+                  <div class="para-bubble-note">*Os pontos mais verdes são considerados os melhores horários, considerando o volume de publicações e as interações.</div>
+                </div>
+                
+                <div class="para-report-footer" style="margin-top:auto;">
+                  Relatório produzido a partir da análise de dados públicos coletados com ferramenta de monitoramento.<br>
+                  *Os dados considerados na produção deste relatório são orgânicos.
+                </div>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="clientModal" class="modal-backdrop">
+    <div class="modal-panel">
+      <div class="multi-panel-title">
+        <span>Criar novo cliente</span>
+        <button class="icon-btn" onclick="closeClientModal()">✕</button>
+      </div>
+      <div class="multi-field">
+        <label class="multi-label">Nome</label>
+        <input id="novoClienteNome" class="multi-input" placeholder="Ex: SECOM" />
+      </div>
+      <div class="multi-field">
+        <label class="multi-label">Slug</label>
+        <input id="novoClienteId" class="multi-input" placeholder="secom" />
+      </div>
+      <div class="multi-row">
+        <label class="multi-btn"><input id="novoClienteFavorito" type="checkbox" /> Favorito</label>
+        <label class="multi-btn"><input id="novoClienteCena" type="checkbox" /> Possui CENA</label>
+      </div>
+      <div class="multi-row" style="justify-content:flex-end;margin-top:16px;">
+        <button class="multi-btn" onclick="closeClientModal()">Cancelar</button>
+        <button class="multi-btn primary" onclick="saveCliente()">Salvar cliente</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="rmDuplicateModal" class="modal-backdrop">
+    <div class="modal-panel">
+      <div class="multi-panel-title">
+        <span>Duplicar modelo de relatório</span>
+        <button class="icon-btn" onclick="closeRmDuplicateModal()">✕</button>
+      </div>
+      <div class="multi-field">
+        <label class="multi-label">Nome do cliente</label>
+        <input id="rmDuplicateNome" class="multi-input" placeholder="Ex: Cliente X" onkeydown="if(event.key==='Enter')confirmDuplicateRm()" />
+      </div>
+      <div class="multi-row" style="justify-content:flex-end;margin-top:16px;">
+        <button class="multi-btn" onclick="closeRmDuplicateModal()">Cancelar</button>
+        <button class="multi-btn primary" onclick="confirmDuplicateRm()">Duplicar</button>
+      </div>
+    </div>
+  </div>
+
+  <iframe id="ekklesiaBridgeFrame" title="Ekklesia Social Bridge" aria-hidden="true"></iframe>
+  <div id="toast" class="toast"></div>
+  <script src="../js/utils.js"></script>
+  <script src="../js/theme.js"></script>
+  <script>
+    checkAuth();
+    initMode();
+    if (typeof initTheme === 'function') initTheme();
+    const _nc = document.getElementById('navbar-container');
+    if (_nc && typeof renderSidebar === 'function') _nc.innerHTML = renderSidebar('ekklesia-multi');
+    if (typeof setNavLabel === 'function') setNavLabel('');
+
+    const API = '/api/ekklesia-multi';
+    const RM_API = '/api/relatorio-modelo';
+    let rmRelatorios = [];
+
+    async function loadRelatorioModelos() {
+      try {
+        const res = await fetch(RM_API + '/lista');
+        const data = await res.json();
+        rmRelatorios = data.relatorios || [];
+      } catch (e) {
+        rmRelatorios = [];
+      }
+    }
+
+    function openRmDuplicateModal() {
+      document.getElementById('rmDuplicateModal').classList.add('open');
+      document.getElementById('rmDuplicateNome').value = '';
+      document.getElementById('rmDuplicateNome').focus();
+    }
+
+    function closeRmDuplicateModal() {
+      document.getElementById('rmDuplicateModal').classList.remove('open');
+    }
+
+    async function confirmDuplicateRm() {
+      const nome = document.getElementById('rmDuplicateNome').value.trim();
+      if (!nome) { showToast('Informe o nome do cliente.'); return; }
+      try {
+        const res = await fetch(RM_API + '/duplicar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ origem_id: 'modelo-padrao', nome_cliente: nome })
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || 'Falha ao duplicar relatorio.');
+        closeRmDuplicateModal();
+        location.href = 'relatorio-modelo-builder.html?id=' + encodeURIComponent(data.doc.id);
+      } catch (e) {
+        showToast(e.message || 'Erro ao duplicar relatorio.');
+      }
+    }
+
+    async function excluirRelatorioModeloCard(id, event) {
+      event.stopPropagation();
+      if (!confirm('Excluir este relatorio?')) return;
+      await fetch(RM_API + '/excluir', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      await loadRelatorioModelos();
+      renderCover();
+    }
+    const CLIENT_ALIASES = {
+      default: {},
+      mds: {
+        tema: ['Tema', 'Assunto', 'Categoria', 'Editoria'],
+        territorio: ['UF', 'Estado', 'Municipio', 'Localidade']
+      },
+      turismo: {
+        tema: ['Destino', 'Tema', 'Categoria', 'Produto turistico'],
+        territorio: ['Pais', 'Estado', 'Destino', 'Mercado']
+      }
+    };
+
+    const state = {
+      clientes: [],
+      clienteId: localStorage.getItem('ekklesia_multi_cliente') || '',
+      reportType: localStorage.getItem('ekklesia_multi_tipo') || 'diario',
+      rows: [],
+      prompt: { prompt_contexto: '', prompt_regras: '', tipo_relatorio: 'diario' },
+      ignoredWords: new Set(JSON.parse(localStorage.getItem('ekklesia_multi_ignored_words') || '[]'))
+    };
+
+    const esc = value => String(value || '').replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
+    const norm = value => String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    const slugify = value => norm(value).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64);
+    const num = value => {
+      if (value === null || value === undefined || value === '') return 0;
+      let raw = String(value).trim().toLowerCase();
+      const mult = raw.includes('mi') || raw.endsWith('m') ? 1000000 : raw.endsWith('k') || raw.includes('mil') ? 1000 : 1;
+      raw = raw.replace(/\s/g, '').replace(/mi|mil|k|m/g, '');
+      const hasComma = raw.includes(',');
+      const hasDot = raw.includes('.');
+      if (hasComma && hasDot) raw = raw.replace(/\./g, '').replace(',', '.');
+      else if (hasComma) raw = raw.replace(',', '.');
+      else if (/^-?\d{1,3}\.\d{3}(\.\d{3})*$/.test(raw)) raw = raw.replace(/\./g, '');
+      else if ((raw.match(/\./g) || []).length > 1) raw = raw.replace(/\./g, '');
+      const n = Number(raw.replace(/[^\d.-]/g, ''));
+      return Number.isFinite(n) ? n * mult : 0;
+    };
+    const fmt = value => {
+      const n = Number(value) || 0;
+      return n >= 1000000 ? (n / 1000000).toFixed(1).replace('.', ',') + ' mi'
+        : n >= 1000 ? (n / 1000).toFixed(1).replace('.', ',') + ' mil'
+        : String(Math.round(n));
+    };
+    const statusLabel = status => ({ producao:'Produção', revisao:'Revisão', finalizado:'Finalizado' }[status] || 'Produção');
+    const currentCliente = () => state.clientes.find(item => item.id === state.clienteId) || null;
+    const uniq = values => [...new Set(values.filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'));
+
+    function rowDate(row) {
+      return String(row?._dataRel || row?.data_rel || row?.data || '').slice(0, 10);
+    }
+
+    function latestBaseDate(rows = state.rows) {
+      return rows.map(rowDate).filter(Boolean).sort().pop() || '';
+    }
+
+    function syncReportDateWithBase() {
+      const input = document.getElementById('dataRel');
+      if (!input || !state.rows.length) return;
+      const latest = latestBaseDate();
+      if (latest && (!input.value || !currentRows().length)) input.value = latest;
+    }
+
+    function ignoredWordsFromInput() {
+      const value = document.getElementById('ignoredWordsInput')?.value || '';
+      return value.split(/[\n,;]+/).map(norm).filter(Boolean);
+    }
+
+    function ignoredExpressionsFromInput() {
+      const value = document.getElementById('ignoredWordsInput')?.value || '';
+      return value.split(/[\n,;]+/).map(item => item.trim()).filter(Boolean);
+    }
+
+    function syncIgnoredWordsFromInput() {
+      state.ignoredWords = new Set(ignoredExpressionsFromInput());
+      localStorage.setItem('ekklesia_multi_ignored_words', JSON.stringify([...state.ignoredWords]));
+      render();
+    }
+
+    function ignoreCloudWord(word) {
+      state.ignoredWords.add(norm(word));
+      localStorage.setItem('ekklesia_multi_ignored_words', JSON.stringify([...state.ignoredWords]));
+      renderVisuals(currentRows());
+    }
+
+    function tokenizeBooleanExpression(expr) {
+      return String(expr || '')
+        .match(/"[^"]+"|'[^']+'|\bAND\b|\bOR\b|\bNOT\b|[^\s()]+|[()]/gi)
+        ?.map(token => token.trim())
+        .filter(Boolean) || [];
+    }
+
+    function booleanExpressionMatches(expr, target) {
+      const tokens = tokenizeBooleanExpression(expr);
+      let index = 0;
+      const hay = norm(target);
+      const peek = () => tokens[index] || '';
+      const next = () => tokens[index++] || '';
+      const isOp = (token, op) => token.toUpperCase() === op;
+      const termValue = token => norm(token.replace(/^["']|["']$/g, ''));
+      const parsePrimary = () => {
+        if (peek() === '(') {
+          next();
+          const value = parseOr();
+          if (peek() === ')') next();
+          return value;
+        }
+        const token = next();
+        return token ? hay.includes(termValue(token)) : false;
+      };
+      const parseNot = () => isOp(peek(), 'NOT') ? (next(), !parseNot()) : parsePrimary();
+      const parseAnd = () => {
+        let value = parseNot();
+        while (isOp(peek(), 'AND')) {
+          next();
+          value = value && parseNot();
+        }
+        return value;
+      };
+      const parseOr = () => {
+        let value = parseAnd();
+        while (isOp(peek(), 'OR')) {
+          next();
+          value = value || parseAnd();
+        }
+        return value;
+      };
+      return parseOr();
+    }
+
+    function isIgnoredCloudWord(word) {
+      const rules = [...state.ignoredWords].map(item => String(item || '').trim()).filter(Boolean);
+      return rules.some(rule => booleanExpressionMatches(rule, word));
+    }
+
+    function pick(row, aliases) {
+      const keys = Object.keys(row);
+      const map = {};
+      keys.forEach(key => { map[norm(key)] = key; });
+      for (const alias of aliases) {
+        const key = map[norm(alias)];
+        if (key !== undefined && row[key] !== undefined && row[key] !== '') return row[key];
+      }
+      return '';
+    }
+
+    function canonSent(value) {
+      const raw = norm(value).replace(/[._-]+/g, ' ').replace(/\s+/g, ' ').trim();
+      // Valores de processamento (por exemplo, "SEM REGRA") não são
+      // sentimento. Mantê-los como categoria fazia esse estado sobrescrever
+      // classificações válidas vindas do Brandwatch.
+      if (!raw || ['sem regra', 'sem classificacao', 'nao classificado', 'n a', 'na'].includes(raw)) return '';
+      const map = {
+        positivo: 'positivo', positive: 'positivo', positiv: 'positivo', favoravel: 'favoravel', favorable: 'favoravel',
+        negativo: 'negativo', negative: 'negativo', negativ: 'negativo', desfavoravel: 'desfavoravel', unfavorable: 'desfavoravel',
+        neutro: 'neutro', neutral: 'neutro', neutralidade: 'neutro'
+      };
+      return map[raw] || raw || '';
+    }
+
+    function canonCanal(value, link = '') {
+      const raw = norm(value).replace(/[._-]+/g, ' ').replace(/\s+/g, ' ').trim();
+      const url = String(link || '').toLowerCase();
+      if (raw.includes('facebook') || raw === 'fb' || /(?:facebook\.com|fb\.com)/.test(url)) return 'facebook';
+      if (raw.includes('instagram') || raw === 'ig' || /instagram\.com/.test(url)) return 'instagram';
+      if (raw.includes('twitter') || raw === 'x' || /(?:twitter\.com|x\.com)\//.test(url)) return 'x';
+      if (raw.includes('tiktok') || raw === 'tt' || /tiktok\.com/.test(url)) return 'tiktok';
+      if (raw.includes('youtube') || raw === 'yt' || /(?:youtube\.com|youtu\.be)/.test(url)) return 'youtube';
+      return raw;
+    }
+
+    function parseDate(value) {
+      if (value instanceof Date && !isNaN(value.getTime())) return value.toISOString().replace('.000Z', 'Z');
+      const raw = String(value || '').trim();
+      const br = raw.match(/^(\d{2})\/(\d{2})\/(\d{2,4})(?:\s+(\d{1,2}:\d{2}(?::\d{2})?))?/);
+      if (br) return (br[3].length === 2 ? '20' + br[3] : br[3]) + '-' + br[2] + '-' + br[1] + (br[4] ? 'T' + br[4] : '');
+      const iso = raw.match(/^(\d{4})[-/](\d{2})[-/](\d{2})(?:[ T](\d{1,2}:\d{2}(?::\d{2})?))?/);
+      if (iso) return iso[1] + '-' + iso[2] + '-' + iso[3] + (iso[4] ? 'T' + iso[4] : '');
+      return '';
+    }
+
+    function tableRowsFromAOA(aoa) {
+      let headerIndex = 0;
+      for (let i = 0; i < Math.min(aoa.length, 20); i++) {
+        const filled = (aoa[i] || []).filter(cell => cell !== '' && cell !== null && cell !== undefined);
+        if (filled.length >= 4) { headerIndex = i; break; }
+      }
+      const header = (aoa[headerIndex] || []).map(cell => String(cell || '').trim());
+      return aoa.slice(headerIndex + 1).map(row => {
+        const obj = {};
+        header.forEach((key, index) => { if (key) obj[key] = row[index] ?? ''; });
+        return obj;
+      }).filter(row => Object.values(row).some(Boolean));
+    }
+
+    function firstMetric(row, aliases) {
+      const values = aliases.map(alias => pick(row, [alias])).filter(value => value !== '');
+      return num(values.find(value => num(value) !== 0) ?? values[0]);
+    }
+
+    function parseRows(rawRows) {
+      if (state.clienteId === 'governo-para' || state.clienteId === 'para') {
+        return parseParaRows(rawRows);
+      }
+      const custom = CLIENT_ALIASES[state.clienteId] || {};
+      return rawRows.map((row, index) => {
+        const data = parseDate(pick(row, ['Data da mencao', 'Data da publicacao', 'Data', 'Date', 'Published', 'Created']));
+        const link = String(pick(row, ['Link da mencao', 'Link da publicacao', 'URL', 'Url', 'Link', 'Permalink']) || '').trim();
+        const autor = String(pick(row, ['Publicador', 'Autor', 'Veiculo', 'Nome do perfil', 'Author', 'Full Name', 'Username']) || '').replace(/^@+/, '').trim();
+        const texto = String(pick(row, ['Publicacao', 'Conteudo', 'Texto', 'Snippet', 'Titulo', 'Full Text', 'Content']) || '').trim();
+        const canal = canonCanal(pick(row, ['Canal', 'Rede', 'Rede Social', 'Source', 'Domain', 'Page Type']), link);
+        const interacoesDiretas = pick(row, ['Total de Interacoes', 'Total Interacoes', 'Interacoes', 'Engagement Score', 'Total', 'Interactions']);
+        const interacoesSociais = firstMetric(row, ['Facebook Likes', 'Instagram Likes', 'X Likes', 'Likes', 'Curtidas'])
+          + firstMetric(row, ['Facebook Comments', 'Instagram Comments', 'X Replies', 'Comments', 'Comentários', 'Comentarios'])
+          + firstMetric(row, ['Facebook Shares', 'X Reposts', 'Shares', 'Compartilhamentos']);
+        const interacoes = interacoesDiretas === '' ? interacoesSociais : num(interacoesDiretas);
+        const seguidores = num(pick(row, ['Seguidores', 'Followers', 'Potential Audience', 'Alcance', 'Reach']));
+        const sentimento = canonSent(pick(row, ['Polaridade', 'Sentimento', 'Classificacao', 'Classificação', 'Sentiment', 'Sentiment Category', 'p.sent']));
+        const tema = String(pick(row, custom.tema || ['Tema', 'Categoria', 'Assunto']) || '').trim();
+        const territorio = String(pick(row, custom.territorio || ['Pais', 'Estado', 'UF', 'Mercado', 'Destino']) || '').trim();
+        const id = link || [autor, texto.slice(0, 80), data, index].join('|');
+        return {
+          id,
+          data,
+          // A data de referência só é fallback. Aplicá-la a todas as linhas
+          // deslocava posts de dias anteriores e escondia publicações do
+          // recorte correto, sobretudo nos arquivos diários do Brandwatch.
+          data_rel: (data || '').slice(0, 10) || document.getElementById('dataRel').value,
+          canal,
+          nome_publicador: autor,
+          conteudo: texto.slice(0, 600),
+          link_publicacao: link,
+          interacoes,
+          seguidores,
+          sentimento,
+          tema,
+          territorio,
+          tipo_relatorio: state.reportType
+        };
+      }).filter(row => row.data || row.conteudo || row.link_publicacao);
+    }
+
+    async function loadXlsx() {
+      if (typeof XLSX !== 'undefined') return;
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    async function loadPapaParse() {
+      if (typeof Papa !== 'undefined') return;
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    async function readFile(file) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (ext === 'csv') await loadPapaParse();
+      else await loadXlsx();
+      const aoa = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = reject;
+        reader.onload = event => {
+          if (ext === 'csv') {
+            resolve(Papa.parse(event.target.result, { header:false, skipEmptyLines:true }).data);
+          } else {
+            const wb = XLSX.read(new Uint8Array(event.target.result), { type:'array' });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            resolve(XLSX.utils.sheet_to_json(ws, { header:1, defval:'', blankrows:false }));
+          }
+        };
+        if (ext === 'csv') reader.readAsText(file, 'UTF-8');
+        else reader.readAsArrayBuffer(file);
+      });
+      return tableRowsFromAOA(aoa);
+    }
+
+    async function api(path, options) {
+      const res = await fetch(API + path, options);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error) throw new Error(data.error || 'Falha na API');
+      return data;
+    }
+
+    async function loadClientes() {
+      const data = await api('/clientes');
+      state.clientes = data.clientes || [];
+      if (!state.clienteId && state.clientes[0]) state.clienteId = state.clientes[0].id;
+      if (state.clienteId) localStorage.setItem('ekklesia_multi_cliente', state.clienteId);
+      renderClientes();
+      renderCover();
+    }
+
+    function renderClientes() {
+      const select = document.getElementById('clienteSelect');
+      if (!state.clientes.length) {
+        if (select) select.innerHTML = '<option value="">Cadastre um cliente</option>';
+        return;
+      }
+      if (select) {
+        select.innerHTML = state.clientes.map(cliente =>
+          `<option value="${esc(cliente.id)}" ${cliente.id === state.clienteId ? 'selected' : ''}>${esc(cliente.nome)}</option>`
+        ).join('');
+      }
+      const cliente = currentCliente();
+      const statusEl = document.getElementById('workflowStatus');
+      if (statusEl && cliente) statusEl.value = cliente.workflow_status || 'producao';
+      const activeStatus = document.getElementById('activeClientStatus');
+      if (activeStatus && cliente) activeStatus.innerHTML = `<span class="status-pill ${esc(cliente.workflow_status)}">${statusLabel(cliente.workflow_status)}</span>`;
+      const title = document.getElementById('workspaceTitle');
+      const sub = document.getElementById('workspaceSub');
+      if (title) title.textContent = `${cliente?.nome || 'Cliente'} | Relatorio ${statusReportLabel()}`;
+      if (sub) sub.textContent = `${state.reportType.toUpperCase()} com filtros de menções, polaridade, canais e temas.`;
+    }
+
+    async function renderCover() {
+      const grid = document.getElementById('clientGrid');
+      if (!grid) return;
+      const term = norm(document.getElementById('clientSearch')?.value || '');
+      const filtered = state.clientes.filter(cliente => {
+        const hay = norm([cliente.nome, cliente.id, cliente.workflow_status].join(' '));
+        return !term || hay.includes(term);
+      });
+      await loadRelatorioModelos();
+      const rmFiltered = rmRelatorios.filter(r => !term || norm([r.nome_cliente, r.titulo, r.id].join(' ')).includes(term));
+
+      // Busca dados de status do dia para Embratur (6 países) e SECOM
+      let ctrlRows = [];
+      try {
+        const targetDate = localStorage.getItem('ekklesia_data_rel') || new Date().toISOString().slice(0, 10);
+        const res = await fetch(`/api/ekklesia/embratur-controle?data=${targetDate}&tipo=diario`);
+        if (res.ok) ctrlRows = await res.json();
+      } catch (e) {
+        console.error('Erro ao buscar status do dia:', e);
+      }
+
+      function mapStatusToPhase(st) {
+        if (st === 'disponivel' || st === 'revisando') return 'revisao';
+        if (st === 'aprovado' || st === 'publicado') return 'finalizado';
+        return 'producao';
+      }
+
+      // Calcula fases da Embratur (6 países)
+      const PAISES = ['eua', 'esp', 'fra', 'uk', 'deu', 'chn'];
+      const embraturPhases = { producao: 0, revisao: 0, finalizado: 0 };
+      PAISES.forEach(p => {
+        const row = ctrlRows.find(r => r.pais === p);
+        const st = row?.status || 'pendente';
+        embraturPhases[mapStatusToPhase(st)]++;
+      });
+
+      // Calcula fase da SECOM
+      const secomRow = ctrlRows.find(r => r.pais === 'secom');
+      const secomStatus = secomRow?.status || 'pendente';
+      const secomPhase = mapStatusToPhase(secomStatus);
+
+      // Consolida contagens
+      const counts = { producao: 0, revisao: 0, finalizado: 0 };
+      
+      // 1. Soma os países da Embratur individualmente
+      counts.producao += embraturPhases.producao;
+      counts.revisao += embraturPhases.revisao;
+      counts.finalizado += embraturPhases.finalizado;
+
+      // 2. Soma o status da SECOM
+      counts[secomPhase]++;
+
+      // 3. Soma os clientes dinâmicos
+      filtered.filter(c => c.id !== 'secom' && c.id !== 'embratur').forEach(cliente => {
+        const key = cliente.workflow_status || 'producao';
+        counts[key] = (counts[key] || 0) + 1;
+      });
+
+      document.getElementById('workflowBoard').innerHTML = ['producao', 'revisao', 'finalizado'].map(status => `
+        <div class="workflow-card">
+          <span>${statusLabel(status)}</span>
+          <strong>${counts[status] || 0}</strong>
+        </div>
+      `).join('');
+
+      // Estilo/Label para a pílula da SECOM
+      const secomLabels = {
+        'pendente': 'Pendente',
+        'em_producao': 'Em Produção',
+        'disponivel': 'Disponível p/ Revisão',
+        'revisando': 'Revisando',
+        'aprovado': 'Aprovado',
+        'publicado': 'Publicado'
+      };
+
+      // Estilo/Label para a pílula da Embratur
+      let embraturPillText = 'Ativo';
+      let embraturClass = 'finalizado';
+      if (embraturPhases.producao > 0) {
+        embraturPillText = `${embraturPhases.producao} em Produção`;
+        embraturClass = 'producao';
+      } else if (embraturPhases.revisao > 0) {
+        embraturPillText = `${embraturPhases.revisao} em Revisão`;
+        embraturClass = 'revisao';
+      } else if (embraturPhases.finalizado > 0) {
+        embraturPillText = `${embraturPhases.finalizado}/6 Finalizados`;
+        embraturClass = 'finalizado';
+      }
+
+      const staticCards = `
+        <article class="client-card favorite" onclick="location.href='ekklesia-embratur-nacional.html'">
+          <div class="client-top">
+            <div><div class="client-name">Embratur Nacional</div><div class="client-meta">4 relatórios diários: 7h, 8h, 14h e 16h</div></div>
+          </div>
+          <div class="multi-row" style="justify-content:space-between;">
+            <span class="status-pill producao">DIÁRIO</span>
+            <button class="multi-btn" onclick="event.stopPropagation(); location.href='ekklesia-embratur-nacional.html'">Abrir</button>
+          </div>
+        </article>
+        <article class="client-card favorite" onclick="location.href='ekklesia-embratur.html'">
+          <div class="client-top">
+            <div>
+              <div class="client-name">Embratur</div>
+              <div class="client-meta">Ekklesia para Embratur</div>
+            </div>
+          </div>
+          <div class="multi-row" style="justify-content:space-between;">
+            <span class="status-pill ${embraturClass}">${embraturPillText}</span>
+            <button class="multi-btn" onclick="event.stopPropagation(); location.href='ekklesia-embratur.html'">Abrir</button>
+          </div>
+        </article>
+        <article class="client-card favorite" onclick="location.href='ekklesia-secom.html'">
+          <div class="client-top">
+            <div>
+              <div class="client-name">SECOM</div>
+              <div class="client-meta">Ekklesia para SECOM</div>
+            </div>
+          </div>
+          <div class="multi-row" style="justify-content:space-between;">
+            <span class="status-pill ${secomPhase}">${secomLabels[secomStatus] || secomStatus}</span>
+            <button class="multi-btn" onclick="event.stopPropagation(); location.href='ekklesia-secom.html'">Abrir</button>
+          </div>
+        </article>
+        <article class="client-card favorite" onclick="openClient('governo-para')">
+          <div class="client-top">
+            <div>
+              <div class="client-name">Governo do Pará</div>
+              <div class="client-meta">Ekklesia para Governo do Pará</div>
+            </div>
+          </div>
+          <div class="multi-row" style="justify-content:space-between;">
+            <span class="status-pill finalizado">Semanal</span>
+            <button class="multi-btn" onclick="event.stopPropagation(); openClient('governo-para')">Abrir</button>
+          </div>
+        </article>
+        <article class="client-card favorite" onclick="location.href='relatorio-modelo-builder.html?id=modelo-padrao'">
+          <div class="client-top">
+            <div>
+              <div class="client-name">Modelo Padrão</div>
+              <div class="client-meta">Duplique para montar um novo relatório</div>
+            </div>
+          </div>
+          <div class="multi-row" style="justify-content:space-between;">
+            <span class="status-pill finalizado">MODELO</span>
+            <div class="multi-row">
+              <button class="multi-btn" onclick="event.stopPropagation(); location.href='relatorio-modelo-builder.html?id=modelo-padrao'">Editar</button>
+              <button class="multi-btn primary" onclick="event.stopPropagation(); openRmDuplicateModal()">Duplicar</button>
+            </div>
+          </div>
+        </article>
+        ${rmFiltered.map(r => `
+        <article class="client-card" onclick="location.href='relatorio-modelo-builder.html?id=${esc(r.id)}'">
+          <div class="client-top">
+            <div>
+              <div class="client-name">${esc(r.nome_cliente)}</div>
+              <div class="client-meta">${esc(r.titulo)}</div>
+            </div>
+          </div>
+          <div class="multi-row" style="justify-content:space-between;">
+            <span class="status-pill producao">RELATÓRIO</span>
+            <div class="multi-row">
+              <button class="multi-btn" onclick="event.stopPropagation(); location.href='relatorio-modelo-builder.html?id=${esc(r.id)}'">Editar</button>
+              <button class="multi-btn" onclick="excluirRelatorioModeloCard('${esc(r.id)}', event)">Excluir</button>
+            </div>
+          </div>
+        </article>
+        `).join('')}
+      `;
+      const dynamicFiltered = filtered.filter(c => c.id !== 'secom' && c.id !== 'embratur' && c.id !== 'embratur-nacional' && c.id !== 'para' && c.id !== 'governo-para');
+      grid.innerHTML = staticCards + (dynamicFiltered.length ? dynamicFiltered.map(cliente => `
+        <article class="client-card ${cliente.favorito ? 'favorite' : ''}" onclick="openClient('${esc(cliente.id)}')">
+          <div class="client-top">
+            <div>
+              <div class="client-name">${esc(cliente.nome)}</div>
+              <div class="client-meta">${esc(cliente.id)} ${cliente.possui_cena ? '| CENA' : ''}</div>
+            </div>
+            <button class="icon-btn ${cliente.favorito ? 'active' : ''}" title="Favorito" onclick="event.stopPropagation(); toggleFavorite('${esc(cliente.id)}')">★</button>
+          </div>
+          <div class="multi-row" style="justify-content:space-between;">
+            <span class="status-pill ${esc(cliente.workflow_status)}">${statusLabel(cliente.workflow_status)}</span>
+            <button class="multi-btn" onclick="event.stopPropagation(); openClient('${esc(cliente.id)}')">Abrir</button>
+          </div>
+        </article>
+      `).join('') : '');
+    }
+
+    async function selectCliente(id) {
+      state.clienteId = id;
+      localStorage.setItem('ekklesia_multi_cliente', id);
+      state.rows = [];
+      if (id === 'governo-para' || id === 'para') {
+        state.reportType = 'semanal';
+      }
+      await loadBase();
+      await loadPrompts();
+      render();
+    }
+
+    async function openClient(id) {
+      await selectCliente(id);
+      showWorkspace();
+    }
+
+    function clearParaProfileTheme() {
+      document.body.classList.remove('theme-hana', 'theme-helder');
+    }
+
+    function showCover() {
+      document.querySelector('.multi-shell').classList.remove('iframe-mode');
+      clearParaProfileTheme();
+      document.getElementById('coverPage').classList.add('active');
+      document.getElementById('workspacePage').classList.remove('active');
+      document.getElementById('paraWorkspacePage').style.display = 'none';
+      document.getElementById('iframePage').classList.remove('active');
+      renderCover();
+    }
+
+    function showWorkspace() {
+      if (!state.clienteId) { showToast('Selecione ou crie um cliente.'); return; }
+      document.querySelector('.multi-shell').classList.remove('iframe-mode');
+      document.getElementById('coverPage').classList.remove('active');
+      document.getElementById('iframePage').classList.remove('active');
+      
+      const isPara = state.clienteId === 'governo-para' || state.clienteId === 'para';
+      if (isPara) {
+        document.getElementById('workspacePage').classList.remove('active');
+        document.getElementById('paraWorkspacePage').style.display = 'block';
+        initParaWorkspace();
+      } else {
+        clearParaProfileTheme();
+        document.getElementById('workspacePage').classList.add('active');
+        document.getElementById('paraWorkspacePage').style.display = 'none';
+        render();
+      }
+    }
+
+    function showIframePage(nome, url) {
+      document.querySelector('.multi-shell').classList.add('iframe-mode');
+      document.getElementById('coverPage').classList.remove('active');
+      document.getElementById('workspacePage').classList.remove('active');
+      document.getElementById('iframePage').classList.add('active');
+      document.getElementById('iframeTitle').textContent = nome;
+      document.getElementById('clientIframe').src = url;
+    }
+
+    function openClientModal() {
+      document.getElementById('clientModal').classList.add('open');
+      document.getElementById('novoClienteNome').focus();
+    }
+
+    function closeClientModal() {
+      document.getElementById('clientModal').classList.remove('open');
+    }
+
+    async function saveCliente() {
+      const nomeEl = document.getElementById('novoClienteNome');
+      const idEl = document.getElementById('novoClienteId');
+      const nome = nomeEl.value.trim();
+      const id = slugify(idEl.value || nome);
+      if (!nome || !id) { showToast('Informe nome e slug do cliente.'); return; }
+      document.getElementById('clienteStatus').textContent = 'Salvando...';
+      await api('/clientes', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({
+          id,
+          nome,
+          ativo:true,
+          favorito: document.getElementById('novoClienteFavorito').checked,
+          possui_cena: document.getElementById('novoClienteCena').checked,
+          workflow_status:'producao'
+        })
+      });
+      state.clienteId = id;
+      nomeEl.value = '';
+      idEl.value = '';
+      document.getElementById('novoClienteFavorito').checked = false;
+      document.getElementById('novoClienteCena').checked = false;
+      closeClientModal();
+      document.getElementById('clienteStatus').textContent = 'Cliente salvo.';
+      await loadAll();
+      showWorkspace();
+    }
+
+    async function saveClienteMeta(cliente) {
+      await api('/clientes', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({
+          id: cliente.id,
+          nome: cliente.nome,
+          ativo: cliente.ativo,
+          favorito: cliente.favorito,
+          possui_cena: cliente.possui_cena,
+          workflow_status: cliente.workflow_status || 'producao'
+        })
+      });
+      await loadClientes();
+    }
+
+    async function toggleFavorite(id) {
+      const cliente = state.clientes.find(item => item.id === id);
+      if (!cliente) return;
+      await saveClienteMeta({ ...cliente, favorito: !cliente.favorito });
+    }
+
+    async function toggleActiveFavorite() {
+      if (!state.clienteId) return;
+      await toggleFavorite(state.clienteId);
+    }
+
+    async function updateClientMeta() {
+      const cliente = currentCliente();
+      if (!cliente) return;
+      await saveClienteMeta({ ...cliente, workflow_status: document.getElementById('workflowStatus').value });
+      showToast('Status do cliente atualizado.');
+    }
+
+    async function loadPrompts() {
+      if (!state.clienteId) return;
+      const tipo = state.reportType;
+      const tipoEl = document.getElementById('tipoPrompt');
+      if (tipoEl) tipoEl.value = tipo;
+      const data = await api('/prompts?' + new URLSearchParams({ cliente_id: state.clienteId, tipo_relatorio: tipo }));
+      state.prompt = data.prompt || { prompt_contexto:'', prompt_regras:'', tipo_relatorio:tipo };
+      document.getElementById('promptContexto').value = state.prompt.prompt_contexto || '';
+      document.getElementById('promptRegras').value = state.prompt.prompt_regras || '';
+      buildPrompt();
+    }
+
+    async function savePrompts() {
+      if (!state.clienteId) { showToast('Selecione um cliente.'); return; }
+      const tipo = document.getElementById('tipoPrompt').value;
+      state.reportType = tipo;
+      localStorage.setItem('ekklesia_multi_tipo', tipo);
+      const payload = {
+        cliente_id: state.clienteId,
+        tipo_relatorio: tipo,
+        prompt_contexto: document.getElementById('promptContexto').value,
+        prompt_regras: document.getElementById('promptRegras').value
+      };
+      document.getElementById('promptStatus').textContent = 'Salvando...';
+      await api('/prompts', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+      document.getElementById('promptStatus').textContent = 'Salvo.';
+      state.prompt = payload;
+      buildPrompt();
+    }
+
+    async function loadBase() {
+      if (!state.clienteId) return;
+      const data = await api('/base?' + new URLSearchParams({ cliente_id: state.clienteId, tipo_relatorio: state.reportType, dias:'180' }));
+      state.rows = data.rows || [];
+      syncReportDateWithBase();
+    }
+
+    async function handleFiles(files) {
+      if (!state.clienteId) { showToast('Cadastre ou selecione um cliente antes do upload.'); return; }
+      const status = document.getElementById('uploadStatus');
+      let processadas = 0;
+      let salvas = 0;
+      let ignoradas = 0;
+      for (let i = 0; i < files.length; i++) {
+        status.textContent = `Processando ${i + 1}/${files.length}: ${files[i].name}`;
+        const rawRows = await readFile(files[i]);
+        const rows = parseRows(rawRows);
+        if (!rows.length) continue;
+        const result = await api('/base', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({ cliente_id: state.clienteId, tipo_relatorio: state.reportType, rows, force: true })
+        });
+        processadas += rows.length;
+        salvas += Number(result.salvas || 0);
+        ignoradas += Number(result.ignoradas || 0);
+      }
+      await loadBase();
+      const visiveis = currentRows().length;
+      status.textContent = `${salvas.toLocaleString('pt-BR')} salvas | ${ignoradas.toLocaleString('pt-BR')} ignoradas | ${visiveis.toLocaleString('pt-BR')} no recorte`;
+      if (!processadas) showToast('Nenhuma linha valida encontrada nos arquivos enviados.');
+      else if (!salvas && !visiveis) showToast('Arquivo lido, mas nenhuma linha foi salva. Confira se a planilha tem data e conteudo/link.');
+      else showToast(`${salvas.toLocaleString('pt-BR')} linhas salvas no modulo multi-cliente.`);
+      render();
+      triggerEkklesiaIframe();
+    }
+
+    function handleDrop(event) {
+      event.preventDefault();
+      document.getElementById('uploadZone').classList.remove('drag');
+      handleFiles(event.dataTransfer.files);
+    }
+
+    function triggerEkklesiaIframe() {
+      const iframe = document.getElementById('ekklesiaBridgeFrame');
+      if (!iframe) return;
+      const post = () => iframe.contentWindow?.postMessage({ type: 'embratur:solicitar-base' }, '*');
+      iframe.onload = () => setTimeout(post, 350);
+      iframe.src = 'ekklesia.html?_t=' + Date.now();
+      clearTimeout(window._multiEkklesiaBridgeTimer);
+      window._multiEkklesiaBridgeTimer = setTimeout(post, 1200);
+    }
+
+    function setReportType(tipo) {
+      if (!['diario', 'semanal', 'mensal'].includes(tipo)) return;
+      state.reportType = tipo;
+      localStorage.setItem('ekklesia_multi_tipo', tipo);
+      document.querySelectorAll('.report-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.report === tipo));
+      loadBase().then(loadPrompts).then(render).catch(error => showToast(error.message || 'Erro ao trocar relatorio.'));
+    }
+
+    function statusReportLabel() {
+      return ({ diario:'Diário', semanal:'Semanal', mensal:'Mensal' }[state.reportType] || 'Diário');
+    }
+
+    function dateInScope(rowDate, refDate) {
+      if (!refDate) return true;
+      const value = (rowDate || '').slice(0, 10);
+      if (!value) return false;
+      if (state.reportType === 'diario') return value === refDate;
+      const ref = new Date(refDate + 'T00:00:00Z');
+      const cur = new Date(value + 'T00:00:00Z');
+      const diff = Math.floor((ref - cur) / 86400000);
+      if (state.reportType === 'semanal') return diff >= 0 && diff < 7;
+      return value.slice(0, 7) === refDate.slice(0, 7);
+    }
+
+    function applyFilters(rows) {
+      return rows;
+    }
+
+    function scopedRows(dateValue = document.getElementById('dataRel')?.value) {
+      return state.rows.filter(row => dateInScope(row._dataRel || row.data_rel || row.data, dateValue));
+    }
+
+    function currentRows() {
+      return applyFilters(scopedRows());
+    }
+
+    function compareRows() {
+      const date = document.getElementById('compareDate')?.value;
+      return date ? applyFilters(scopedRows(date)) : [];
+    }
+
+    function calcKpis(rows) {
+      const total = rows.length;
+      const interacoes = rows.reduce((sum, row) => sum + num(row.interacoes), 0);
+      const alcance = Math.round(rows.reduce((sum, row) => sum + num(row.seguidores), 0) * 0.2);
+      const canais = {};
+      const sentimentos = {};
+      rows.forEach(row => {
+        const canal = row.canal || 'sem canal';
+        canais[canal] = (canais[canal] || 0) + 1;
+        const sent = row.sentimento || 'sem classif.';
+        sentimentos[sent] = (sentimentos[sent] || 0) + 1;
+      });
+      const topCanal = Object.entries(canais).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
+      const topSent = Object.entries(sentimentos).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
+      return { total, interacoes, alcance, topCanal, topSent };
+    }
+
+    function frequency(rows, key, limit = 8) {
+      const count = {};
+      rows.forEach(row => {
+        const value = String(typeof key === 'function' ? key(row) : row[key] || '').trim() || 'sem classif.';
+        count[value] = (count[value] || 0) + 1;
+      });
+      return Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, limit);
+    }
+
+    function wordFrequency(rows, limit = 24) {
+      const stop = new Set('para com uma que por dos das aos nas nos nao mais como sobre entre pelo pela esta esse essa isso suas seus voce eles elas'.split(' '));
+      const count = {};
+      rows.forEach(row => {
+        norm(row.conteudo).split(/[^a-z0-9]+/).forEach(word => {
+          if (word.length < 4 || stop.has(word) || isIgnoredCloudWord(word)) return;
+          count[word] = (count[word] || 0) + 1;
+        });
+      });
+      return Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, limit);
+    }
+
+    function calcCena(rows) {
+      if (!rows.length) return null;
+      const sentScore = rows.reduce((sum, row) => {
+        const sent = canonSent(row.sentimento);
+        if (sent === 'positivo') return sum + 10;
+        if (sent === 'favoravel') return sum + 7.5;
+        if (sent === 'neutro') return sum + 5;
+        if (sent === 'desfavoravel') return sum + 3;
+        if (sent === 'negativo') return sum + 1;
+        return sum + 5;
+      }, 0) / rows.length;
+      const engagement = Math.min(10, Math.log10(1 + rows.reduce((sum, row) => sum + num(row.interacoes), 0)) * 2.2);
+      const nota = (sentScore * 0.72 + engagement * 0.28);
+      return { nota: nota.toFixed(1), sentimento: sentScore.toFixed(1), tracao: engagement.toFixed(1) };
+    }
+
+    function renderPanorama(rows, compare) {
+      const kpis = calcKpis(rows);
+      const ck = calcKpis(compare);
+      const delta = (a, b) => b ? (((a - b) / b) * 100).toFixed(1).replace('.', ',') + '%' : (a ? '+100%' : '-');
+      const historico = frequency(state.rows, row => (row._dataRel || row.data_rel || row.data || '').slice(0, 10), 7);
+      document.getElementById('panoramaArea').innerHTML = `
+        <div class="multi-split">
+          <div>
+            <div class="multi-kpis" style="grid-template-columns:repeat(3,minmax(0,1fr));">
+              <div class="multi-kpi"><span>Menções vs comp.</span><strong>${delta(kpis.total, ck.total)}</strong></div>
+              <div class="multi-kpi"><span>Interacoes vs comp.</span><strong>${delta(kpis.interacoes, ck.interacoes)}</strong></div>
+              <div class="multi-kpi"><span>Base comparada</span><strong>${fmt(ck.total)}</strong></div>
+            </div>
+          </div>
+          <div class="mini-list">
+            ${historico.map(([date, total]) => `<div class="mini-item"><span>${esc(date)}</span><strong>${fmt(total)} menções</strong></div>`).join('') || '<div class="multi-empty">Sem histórico para panorama.</div>'}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderVisuals(rows) {
+      const byTema = frequency(rows, 'tema', 7);
+      const byCanal = frequency(rows, 'canal', 7);
+      const byPublisher = frequency(rows, 'nome_publicador', 7);
+      const words = wordFrequency(rows);
+      const maxTema = Math.max(1, ...byTema.map(item => item[1]));
+      document.getElementById('visualArea').innerHTML = rows.length ? `
+        <div class="multi-split">
+          <div>
+            <div class="multi-label" style="margin-bottom:10px;">Temas por frequencia</div>
+            <div class="mini-list">${byTema.map(([label, value]) => `<div class="bar-row"><span>${esc(label)}</span><div class="bar"><i style="width:${Math.max(8, value / maxTema * 100)}%;"></i></div><strong>${value}</strong></div>`).join('')}</div>
+          </div>
+          <div>
+            <div class="multi-label" style="margin-bottom:10px;">Nuvem de termos</div>
+            <div class="word-cloud">${words.map(([word, value]) => `<span title="Clique para ignorar" onclick="ignoreCloudWord('${esc(word)}')" style="font-size:${Math.min(22, 10 + value * 2)}px;">${esc(word)}</span>`).join('') || '<span>sem termos</span>'}</div>
+            <div class="multi-field" style="margin-top:12px;margin-bottom:0;">
+              <label class="multi-label">Termos Ignorados</label>
+              <textarea id="ignoredWordsInput" class="multi-textarea" style="min-height:70px;" placeholder="Um termo por linha ou separado por virgula" onchange="syncIgnoredWordsFromInput()">${esc([...state.ignoredWords].join('\n'))}</textarea>
+            </div>
+          </div>
+        </div>
+        <div class="multi-split" style="margin-top:14px;">
+          <div><div class="multi-label" style="margin-bottom:8px;">Temas por canal</div><div class="mini-list">${byCanal.map(([label, value]) => `<div class="mini-item"><span>${esc(label)}</span><strong>${value}</strong></div>`).join('')}</div></div>
+          <div><div class="multi-label" style="margin-bottom:8px;">Top publicadores por tema</div><div class="mini-list">${byPublisher.map(([label, value]) => `<div class="mini-item"><span>${esc(label)}</span><strong>${value}</strong></div>`).join('')}</div></div>
+        </div>
+      ` : '<div class="multi-empty">As visualizacoes aparecem quando houver linhas no recorte.</div>';
+    }
+
+    function buildPrompt() {
+      const rows = currentRows();
+      const cliente = state.clientes.find(item => item.id === state.clienteId);
+      const kpis = calcKpis(rows);
+      const topRows = rows.slice().sort((a, b) => num(b.interacoes) - num(a.interacoes)).slice(0, 20);
+      const linhas = topRows.map((row, index) =>
+        `[${index + 1}] ${row.data || row._dataRel || ''} | ${row.canal || '-'} | @${row.nome_publicador || '-'} | ${fmt(row.interacoes)} interações${row.link_publicacao ? ' | link: ' + row.link_publicacao : ''} | "${String(row.conteudo || '').replace(/\s+/g, ' ').slice(0, 240)}"`
+      ).join('\n');
+      const prompt = `${state.prompt.prompt_contexto || 'Você atua como analista de inteligência para monitoramento de narrativas.'}
+
+CLIENTE: ${cliente?.nome || state.clienteId || '-'}
+TIPO DE RELATORIO: ${state.reportType}
+DATA DE REFERENCIA: ${document.getElementById('dataRel').value || 'período carregado'}
+FILTROS APLICADOS: status, data de referência e comparativo quando informado.
+
+REGRAS ESPECIFICAS:
+${state.prompt.prompt_regras || 'Produza uma análise objetiva, baseada apenas nos dados enviados, com riscos, oportunidades e recomendações acionáveis.'}
+
+DADOS SINTETICOS:
+- Mencoes: ${kpis.total}
+- Interacoes: ${fmt(kpis.interacoes)}
+- Alcance estimado: ${fmt(kpis.alcance)}
+- Canal principal: ${kpis.topCanal}
+- Sentimento dominante: ${kpis.topSent}
+
+TOP PUBLICACOES:
+${linhas || '(sem publicações carregadas para o recorte)'}
+
+Responda em JSON com as chaves: destaque, atencao, analise, desafios, oportunidades, tendencias.`;
+      document.getElementById('promptPreview').value = prompt;
+      return prompt;
+    }
+
+    function render() {
+      const dataVal = document.getElementById('dataRel')?.value;
+      if (dataVal) localStorage.setItem('ekklesia_data_rel', dataVal);
+      renderClientes();
+      document.querySelectorAll('.report-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.report === state.reportType));
+      const rows = currentRows();
+      const compare = compareRows();
+      const kpis = calcKpis(rows);
+      const cliente = currentCliente();
+      const cena = cliente?.possui_cena ? calcCena(rows) : null;
+      document.getElementById('rowsCount').textContent = `${rows.length} linhas no recorte`;
+      document.getElementById('kpiArea').innerHTML = rows.length ? `
+        <div class="multi-kpis">
+          <div class="multi-kpi"><span>Menções</span><strong>${fmt(kpis.total)}</strong></div>
+          <div class="multi-kpi"><span>Interações</span><strong>${fmt(kpis.interacoes)}</strong></div>
+          <div class="multi-kpi"><span>Alcance est.</span><strong>${fmt(kpis.alcance)}</strong></div>
+          <div class="multi-kpi"><span>Canal top</span><strong style="font-size:18px;">${esc(kpis.topCanal)}</strong></div>
+          <div class="multi-kpi"><span>Sentimento</span><strong style="font-size:18px;">${esc(kpis.topSent)}</strong></div>
+        </div>
+        ${cena ? `<div class="cena-card" style="margin-top:10px;"><span class="multi-label">Índice CENA</span><strong>${esc(cena.nota)}</strong><div class="multi-status">Sentimento ${cena.sentimento} | Tração ${cena.tracao}</div></div>` : ''}
+      ` : '<div class="multi-empty">Selecione um cliente e suba uma base para iniciar o diário.</div>';
+      renderPanorama(rows, compare);
+      renderVisuals(rows);
+      document.getElementById('tableArea').innerHTML = rows.length ? `
+        <div class="multi-table-wrap">
+          <table class="multi-table">
+            <thead><tr><th>Data</th><th>Canal</th><th>Publicador</th><th>Sent.</th><th>Inter.</th><th>Texto</th></tr></thead>
+            <tbody>${rows.slice(0, 80).map(row => `
+              <tr>
+                <td>${esc(row.data || row._dataRel || '')}</td>
+                <td>${esc(row.canal || '')}</td>
+                <td>${esc(row.nome_publicador ? '@' + row.nome_publicador : '')}</td>
+                <td>${esc(row.sentimento || '')}</td>
+                <td>${fmt(row.interacoes)}</td>
+                <td>${esc(String(row.conteudo || '').slice(0, 120))}</td>
+              </tr>
+            `).join('')}</tbody>
+          </table>
+        </div>
+      ` : '<div class="multi-empty">Nenhuma publicacao carregada para este recorte.</div>';
+      buildPrompt();
+    }
+
+    function toggleConfig() {
+      const panel = document.getElementById('configPanel');
+      panel.classList.toggle('open');
+      if (panel.classList.contains('open')) panel.scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+
+    async function copyPrompt() {
+      await navigator.clipboard.writeText(buildPrompt());
+      showToast('Prompt copiado.');
+    }
+
+    function downloadPrompt() {
+      const blob = new Blob([buildPrompt()], { type:'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `ekklesia_${state.clienteId || 'cliente'}_${state.reportType}_${document.getElementById('dataRel').value || 'prompt'}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadBlob(content, filename, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    async function exportReport(formato) {
+      if (!state.clienteId) { showToast('Selecione um cliente.'); return; }
+      const rows = currentRows();
+      const cliente = currentCliente();
+      const kpis = calcKpis(rows);
+      const payload = {
+        formato,
+        cliente,
+        meta: { tipo_relatorio: state.reportType, data_rel: document.getElementById('dataRel').value },
+        rows,
+        kpis,
+        cena: cliente?.possui_cena ? calcCena(rows) : null
+      };
+      const data = await api('/export', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+      downloadBlob(data.content, data.filename, data.contentType || 'text/plain;charset=utf-8');
+      showToast('Exportacao gerada.');
+    }
+
+    function exportPdf() {
+      showToast('Use a opcao Salvar como PDF na janela de impressao.');
+      window.print();
+    }
+
+    function openRadarReport() {
+      if (!state.clienteId) { showToast('Selecione um cliente.'); return; }
+      const rows = currentRows();
+      if (!rows.length) { showToast('Suba uma base antes de abrir o Radar.'); return; }
+      const cliente = currentCliente();
+      const key = 'radar-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+      try {
+        sessionStorage.setItem('ekklesia_multi_radar_' + key, JSON.stringify({
+          cliente,
+          ignoredWords: [...state.ignoredWords],
+        }));
+      } catch (error) {}
+      const params = new URLSearchParams({
+        draft: key,
+        cliente_id: state.clienteId,
+        tipo_relatorio: state.reportType,
+        data_rel: document.getElementById('dataRel').value || latestBaseDate() || new Date().toISOString().slice(0, 10),
+        compare_date: document.getElementById('compareDate').value || '',
+      });
+      const win = window.open('ekklesia-multi-radar.html?' + params.toString(), '_blank');
+      if (!win) location.href = 'ekklesia-multi-radar.html?' + params.toString();
+    }
+
+    // ─── CLIENTE GOVERNO DO PARÁ LOGIC AND RENDERING ───
+    const paraState = {
+      profile: "Hana Ghassan",
+      period: "29/6/2026 a 5/7/2026",
+      compare: "22/6/2026 a 28/6/2026",
+      editorial: {
+        "Hana Ghassan": [
+          "Em comparação ao período anterior, a redução no volume de publicações ao longo da análise impactou diretamente a queda nos índices de engajamento.",
+          "Repetindo a dinâmica observada nos recortes anteriores, os conteúdos publicados em formato de imagem registraram o melhor desempenho, concentrando os maiores níveis de interação.",
+          "No período analisado, as publicações de caráter institucional mantiveram posição de destaque em termos de alcance e repercussão, reafirmando a tendência identificada nos monitoramentos anteriores."
+        ],
+        "Helder Barbalho": [
+          "Ao longo do período analisado, foi registrada uma leve redução no volume de publicações, movimento que contribuiu para a queda dos índices de engajamento.",
+          "Em contraste com a tendência observada no recorte anterior, os conteúdos publicados nos formatos de vídeos, Reels e Shorts concentraram o maior potencial de interação do público.",
+          "Por fim, em linha com o comportamento identificado nas análises anteriores, as publicações de caráter institucional mantiveram posição de destaque em termos de alcance e repercussão, figurando entre os conteúdos de melhor desempenho ao longo da semana."
+        ]
+      },
+      peaks: {
+        "Hana Ghassan": {
+          D1: "O primeiro pico de destaque (D1) foi registrado na quinta-feira (2), entre 18h e 20h, impulsionado por publicações que repercutiram o fato de o Pará ter apresentado o mês de junho menos violento de sua história recente.",
+          D2: "O segundo destaque (D2) ocorreu no domingo (5), entre 10h e 12h, motivado por conteúdos que retrataram a rotina de domingo nas feiras e evidenciaram programas voltados ao cuidado com a população, à ampliação de oportunidades e à melhoria da qualidade de vida dos paraenses.",
+          D3: "Por sua vez, o terceiro pico (D3) foi identificado na terça-feira (30), entre 20h e 22h, impulsionado por publicações relacionadas à entrega do Hospital São Bento, unidade que conta com 32 leitos."
+        },
+        "Helder Barbalho": {
+          D1: "O primeiro destaque (D1) foi registrado na segunda-feira (29), entre 18h e 20h, impulsionado por publicações em que Helder informou estar acompanhando de perto a situação em Novo Progresso após a ação do ICMBio.",
+          D2: "O segundo destaque (D2) ocorreu no sábado (4), também entre 18h e 20h, motivado por conteúdos que retrataram a forma como é o “farmar aura” do paraense, gerando elevada repercussão entre os usuários.",
+          D3: "Por sua vez, o terceiro destaque (D3) foi identificado na segunda-feira (29), entre 8h e 10h, impulsionado por publicações relacionadas à Copa Ouro da ALEPA, realizada em Itaituba."
+        }
+      },
+      deltas: {
+        "Hana Ghassan": { seguidores: "1,5%", posts: "-19%", interacoes: "-53%" },
+        "Helder Barbalho": { seguidores: "0,04%", posts: "0%", interacoes: "-21%" }
+      },
+      postNarratives: {},
+      workbookPeriod: null
+    };
+
+    const fmtPercent = val => {
+      if (val === undefined || val === null || isNaN(val)) return '-';
+      const prefix = val > 0 ? '+' : '';
+      return prefix + Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + '%';
+    };
+
+    function normalizeParaNetwork(net) {
+      const n = String(net || '').toLowerCase().trim();
+      if (n.includes('instagram') || n === 'ig') return 'Instagram';
+      if (n.includes('facebook') || n === 'fb') return 'Facebook';
+      if (n.includes('tiktok') || n === 'tt') return 'TikTok';
+      if (n.includes('twitter') || n === 'x') return 'X';
+      if (n.includes('youtube') || n === 'yt') return 'YouTube';
+      return net || 'Outro';
+    }
+
+    function getParaPostFormat(row) {
+      const url = String(row.link || '').toLowerCase();
+      if (row.network === 'TikTok' || row.network === 'YouTube') return 'Vídeos/Shorts/Reels';
+      if (url.includes('reel') || url.includes('/video/') || url.includes('/watch')) return 'Vídeos/Shorts/Reels';
+      if (url.includes('/p/')) return row.index % 3 === 0 ? 'Carrossel' : 'Fotos';
+      if (row.imageLink && row.imageLink !== '') return 'Fotos';
+      return 'Status';
+    }
+
+    function generateParaNarrative(row) {
+      const format = getParaPostFormat(row);
+      const network = row.network;
+      const score = fmt(row.reactions + row.commentsShares);
+      if (row.message) {
+        const clean = String(row.message).replace(/\s+/g, ' ').trim();
+        return clean.length > 230 ? clean.slice(0, 227) + '...' : clean;
+      }
+      const verbs = ['publicou', 'compartilhou', 'postou', 'divulgou'];
+      const verb = verbs[row.index % verbs.length];
+      let text = `Conteúdo ${format.toLowerCase()} no ${network} obteve ${score} interações.`;
+      
+      if (row.link) {
+        if (urlContainsKeywords(row.link, ['hospital', 'creche', 'saude', 'obra', 'entrega', 'inauguracao'])) {
+          text = `Institucional — Narrativa: ${paraState.profile} ${verb} sobre a entrega de obras de infraestrutura e serviços públicos do Estado.`;
+        } else if (urlContainsKeywords(row.link, ['seguranca', 'policia', 'viatura', 'comandos'])) {
+          text = `Institucional — Narrativa: Publicação destacando o reforço do efetivo de segurança e a entrega de viaturas para o policiamento metropolitano.`;
+        } else if (urlContainsKeywords(row.link, ['jogo', 'selecao', 'brasil', 'vitoria', 'comemorando'])) {
+          text = `Pessoal — Narrativa: ${paraState.profile} ${verb} imagem em tom pessoal comemorando a vitória do Brasil e desejando sucesso à seleção.`;
+        }
+      }
+      return text;
+    }
+
+    function urlContainsKeywords(url, keywords) {
+      const u = url.toLowerCase();
+      return keywords.some(k => u.includes(k));
+    }
+
+    function parseParaRows(rawRows, sourceSheet = 'Visão Geral') {
+      return rawRows.map((row, index) => {
+        const profile = String(pick(row, ['Profile', 'Perfil', 'Nome']) || '').trim();
+        const network = String(pick(row, ['Network', 'Rede', 'Rede Social', 'Canal']) || '').trim();
+        const follower = num(pick(row, ['Follower', 'Seguidores', 'Followers', 'Audience', 'Seguidor']));
+        const growth = num(pick(row, ['Follower Growth (absolute)', 'Crescimento de base', 'Crescimento', 'Growth', 'Follower Growth', 'Crescimento de base (absoluto)']));
+        const numPosts = num(pick(row, ['Number of posts', 'Numero de posts', 'Publicações', 'Posts', 'Numero de publicacoes', 'Quantidade de posts', 'Qtd de posts']));
+        const postsPerDay = num(pick(row, ['Posts per day', 'Posts por dia', 'Posts/dia', 'Media de posts/dia', 'Media de posts por dia']));
+        
+        // Pick reactions/likes/engagement sum first
+        const reactions = num(pick(row, ['Reactions, Comments & Shares', 'Reactions, Comments & Shares (Sum)', 'Interações', 'Interacoes', 'Interações (absoluto)', 'Total de Interações', 'Total de interacoes', 'Interactions', 'Reactions', 'Reações', 'Reacoes', 'Likes', 'Curtidas']));
+        
+        // Sum comments & shares if they are separate columns, otherwise pick direct column
+        let commentsShares = 0;
+        const commShareCol = pick(row, ['Comments & Shares', 'Comments &amp; Shares', 'Comments and Shares', 'Comentarios e Compartilhamentos', 'Comments/Shares']);
+        if (commShareCol !== '') {
+          commentsShares = num(commShareCol);
+        } else {
+          const commentsVal = num(pick(row, ['Comments', 'Comentarios', 'Comentários', 'Comentarios (absoluto)']));
+          const sharesVal = num(pick(row, ['Shares', 'Compartilhamentos', 'Compartilhamentos (absoluto)']));
+          commentsShares = commentsVal + sharesVal;
+        }
+
+        const profileId = String(pick(row, ['Profile-ID', 'ID do Perfil', 'Id', 'Perfil ID']) || '').trim();
+        const messageId = String(pick(row, ['Message-ID', 'ID da publicação']) || '').trim();
+        const message = String(pick(row, ['Message', 'Mensagem', 'Texto', 'Assunto']) || '').trim();
+        const engagementRate = num(pick(row, ['Engagement', 'Post interaction rate', 'Taxa de engajamento']));
+        const link = String(pick(row, ['Link', 'Link da publicacao', 'URL', 'Url', 'Permalink', 'Link da mencao']) || '').trim();
+        const externalLinks = String(pick(row, ['External Links', 'Links Externos']) || '').trim();
+        const imageLink = String(pick(row, ['Image Link', 'Link da imagem', 'Media Link', 'Imagem', 'Link imagem', 'Imagem Link']) || '').trim();
+        let dateVal = parseDate(pick(row, ['Date', 'Data', 'Data da publicacao', 'Created', 'Timestamp', 'Created At'])) || new Date().toISOString().slice(0, 10);
+        const id = messageId || link || [sourceSheet, profile, network, dateVal, index].join('|');
+        
+        return {
+          id,
+          data: dateVal,
+          data_rel: dateVal.slice(0, 10),
+          tipo_relatorio: 'semanal',
+          profile,
+          network: normalizeParaNetwork(network),
+          follower,
+          growth,
+          numPosts,
+          postsPerDay,
+          reactions,
+          commentsShares,
+          profileId,
+          link,
+          externalLinks,
+          imageLink,
+          message,
+          engagementRate,
+          sourceSheet,
+          isComparison: /comparison period/i.test(profile) || /_SECOND_TIME$/i.test(profileId),
+          date: dateVal,
+          index
+        };
+      }).filter(row => row.profile || row.network || row.link);
+    }
+
+    function paraSheetRows(wb, sheetName) {
+      const ws = wb.Sheets[sheetName];
+      if (!ws) return [];
+      return tableRowsFromAOA(XLSX.utils.sheet_to_json(ws, { header:1, defval:'', blankrows:false }));
+    }
+
+    function parseParaWorkbook(wb) {
+      const supported = ['Visão Geral', 'Top 5 Posts', 'Top 5 Posts_1', 'Top 5 fotos', 'Top 5 vídeos'];
+      const seen = new Set();
+      const rows = [];
+      supported.forEach(sheetName => {
+        paraSheetRows(wb, sheetName).forEach(row => {
+          parseParaRows([row], sheetName).forEach(parsed => {
+            const key = [parsed.sourceSheet === 'Top 5 Posts_1' ? 'Top 5 Posts' : parsed.sourceSheet, parsed.id].join('|');
+            if (!seen.has(key)) { seen.add(key); rows.push(parsed); }
+          });
+        });
+      });
+      const formatName = value => ({
+        'Videos/Reels/Shorts':'Vídeos/Shorts/Reels', Carousels:'Carrossel', Pictures:'Fotos', Status:'Status', Links:'Links'
+      })[value] || value;
+      ['Formatos postados', 'Formato mais engajado'].forEach(sheetName => {
+        paraSheetRows(wb, sheetName).forEach((row, index) => {
+          const label = formatName(String(pick(row, ['Profile']) || '').trim());
+          if (!label) return;
+          ['Hana Ghassan', 'Helder Barbalho'].forEach(profile => rows.push({
+            id:`${sheetName}|${profile}|${label}`,
+            data:new Date().toISOString(), data_rel:new Date().toISOString().slice(0,10), tipo_relatorio:'semanal',
+            profile, network:'', follower:0, growth:0, numPosts:0, postsPerDay:0, reactions:0, commentsShares:0,
+            profileId:'', link:'', externalLinks:'', imageLink:'', message:'', sourceSheet:sheetName, formatLabel:label,
+            formatCount:sheetName === 'Formatos postados' ? num(pick(row, ['Posts per day'])) * 7 : 0,
+            engagementRate:sheetName === 'Formato mais engajado' ? num(pick(row, ['Post interaction rate'])) : 0,
+            isComparison:false, date:new Date().toISOString(), index
+          }));
+        });
+      });
+      return rows;
+    }
+
+    function updateParaPeriodsFromWorkbook(wb) {
+      const raw = wb.Sheets['Visão Geral']?.F2?.v;
+      const match = String(raw || '').match(/([A-Za-z]{3})\s+(\d{1,2}),\s*(\d{4})\s*-\s*([A-Za-z]{3})\s+(\d{1,2}),\s*(\d{4})/);
+      if (!match) return;
+      const months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 };
+      const start = new Date(Date.UTC(+match[3], months[match[1]], +match[2]));
+      const end = new Date(Date.UTC(+match[6], months[match[4]], +match[5]));
+      const previousEnd = new Date(start); previousEnd.setUTCDate(previousEnd.getUTCDate() - 1);
+      const previousStart = new Date(previousEnd); previousStart.setUTCDate(previousStart.getUTCDate() - 6);
+      const short = d => `${d.getUTCDate()}/${d.getUTCMonth()+1}/${d.getUTCFullYear()}`;
+      paraState.period = `${short(start)} a ${short(end)}`;
+      paraState.compare = `${short(previousStart)} a ${short(previousEnd)}`;
+      paraState.workbookPeriod = { start:start.toISOString(), end:end.toISOString() };
+      document.getElementById('paraPeriodInput').value = paraState.period;
+      document.getElementById('paraCompareInput').value = paraState.compare;
+    }
+
+    function calculateParaDeltas(rows) {
+      ['Hana Ghassan', 'Helder Barbalho'].forEach(profile => {
+        const belongs = r => String(r.profile || '').replace(/\s*\(Comparison period\)\s*/i, '').toLowerCase() === profile.toLowerCase() && r.sourceSheet === 'Visão Geral';
+        const current = rows.filter(r => belongs(r) && !r.isComparison);
+        const previous = rows.filter(r => belongs(r) && r.isComparison);
+        const sum = (list, field) => list.reduce((total, row) => total + (Number(row[field]) || 0), 0);
+        const delta = (field) => {
+          const a = sum(current, field), b = sum(previous, field);
+          if (!b) return '0%';
+          return `${((a-b)/b*100).toLocaleString('pt-BR', { maximumFractionDigits:1 })}%`;
+        };
+        paraState.deltas[profile] = { seguidores:delta('follower'), posts:delta('numPosts'), interacoes:delta('reactions') };
+      });
+    }
+
+    async function handleParaFile(file) {
+      const statusEl = document.getElementById('paraUploadStatus');
+      statusEl.textContent = `Processando ${file.name}...`;
+      try {
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (ext === 'csv') await loadPapaParse();
+        else await loadXlsx();
+        
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          try {
+            let aoa;
+            if (ext === 'csv') {
+              aoa = Papa.parse(e.target.result, { header:false, skipEmptyLines:true }).data;
+            } else {
+              const wb = XLSX.read(new Uint8Array(e.target.result), { type:'array', cellDates:true });
+              updateParaPeriodsFromWorkbook(wb);
+              const rows = parseParaWorkbook(wb);
+              calculateParaDeltas(rows);
+              aoa = rows;
+            }
+
+            const rows = ext === 'csv' ? parseParaRows(tableRowsFromAOA(aoa), 'CSV') : aoa;
+            
+            if (rows.length === 0) throw new Error("Nenhuma linha válida encontrada. Verifique as colunas.");
+            
+            statusEl.textContent = `Salvando no banco...`;
+            
+            const result = await api('/base', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                cliente_id: 'governo-para',
+                tipo_relatorio: 'semanal',
+                rows,
+                force: true
+              })
+            });
+            
+            statusEl.textContent = `${result.salvas || 0} registros salvos.`;
+            showToast("Planilha semanal salva!");
+            await loadBase();
+            renderParaAll();
+          } catch (err) {
+            console.error(err);
+            statusEl.textContent = "Erro ao processar conteúdo.";
+            showToast("Erro: " + err.message);
+          }
+        };
+        if (ext === 'csv') reader.readAsText(file, 'UTF-8');
+        else reader.readAsArrayBuffer(file);
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Erro ao ler arquivo.";
+        showToast("Erro ao carregar arquivo.");
+      }
+    }
+
+    function changeParaProfile() {
+      paraState.profile = document.getElementById('paraProfileSelect').value;
+      clearParaProfileTheme();
+      if (paraState.profile === "Hana Ghassan") {
+        document.body.classList.add('theme-hana');
+        document.getElementById('paraBannerPage1').src = "../assets/banner-hana-2.png";
+        document.getElementById('paraBannerPage2').src = "../assets/banner-hana-1.png";
+        document.getElementById('paraBannerPage3').src = "../assets/banner-hana-1.png";
+        document.getElementById('paraBannerPage4').src = "../assets/banner-hana-1.png";
+      } else {
+        document.body.classList.add('theme-helder');
+        document.getElementById('paraBannerPage1').src = "../assets/banner-helder-1.png";
+        document.getElementById('paraBannerPage2').src = "../assets/banner-helder-2.png";
+        document.getElementById('paraBannerPage3').src = "../assets/banner-helder-2.png";
+        document.getElementById('paraBannerPage4').src = "../assets/banner-helder-2.png";
+      }
+      const savedAi = localStorage.getItem(`govpa_ai_${paraState.profile}`) || '';
+      const aiResponse = document.getElementById('paraAiResponse');
+      if (aiResponse) aiResponse.value = savedAi;
+      populateParaSidebarFields();
+      updateParaReportMeta();
+      renderParaAll();
+    }
+
+    function updateParaReportMeta() {
+      paraState.period = document.getElementById('paraPeriodInput').value;
+      paraState.compare = document.getElementById('paraCompareInput').value;
+      const text = `Período: ${paraState.period}<br>Comparativo: ${paraState.compare}`;
+      document.getElementById('paraDateOverlay1').innerHTML = text;
+      document.getElementById('paraDateOverlay2').innerHTML = text;
+      document.getElementById('paraDateOverlay3').innerHTML = text;
+      document.getElementById('paraDateOverlay4').innerHTML = text;
+
+      // Update active deltas from inputs
+      paraState.deltas[paraState.profile] = {
+        seguidores: document.getElementById('paraDeltaSeguidores').value,
+        posts: document.getElementById('paraDeltaPosts').value,
+        interacoes: document.getElementById('paraDeltaInteracoes').value
+      };
+      
+      // Update UI deltas on page 1
+      const d = paraState.deltas[paraState.profile];
+      document.getElementById('paraKpiSeguidoresDelta').innerHTML = `<span class="para-kpi-delta ${!d.seguidores.includes('-') ? 'pos' : 'neg'}">${d.seguidores}</span>`;
+      document.getElementById('paraKpiPostsDelta').innerHTML = `<span class="para-kpi-delta ${!d.posts.includes('-') ? 'pos' : 'neg'}">${d.posts}</span>`;
+      document.getElementById('paraKpiInteracoesDelta').innerHTML = `<span class="para-kpi-delta ${!d.interacoes.includes('-') ? 'pos' : 'neg'}">${d.interacoes}</span>`;
+    }
+
+    function populateParaSidebarFields() {
+      const bullets = paraState.editorial[paraState.profile];
+      document.getElementById('paraBullet1').value = bullets[0] || '';
+      document.getElementById('paraBullet2').value = bullets[1] || '';
+      document.getElementById('paraBullet3').value = bullets[2] || '';
+      const p = paraState.peaks[paraState.profile];
+      document.getElementById('paraPeakD1Text').value = p.D1 || '';
+      document.getElementById('paraPeakD2Text').value = p.D2 || '';
+      document.getElementById('paraPeakD3Text').value = p.D3 || '';
+
+      const d = paraState.deltas[paraState.profile];
+      document.getElementById('paraDeltaSeguidores').value = d.seguidores || '';
+      document.getElementById('paraDeltaPosts').value = d.posts || '';
+      document.getElementById('paraDeltaInteracoes').value = d.interacoes || '';
+    }
+
+    function updateParaEditorial() {
+      const b1 = document.getElementById('paraBullet1').value.trim();
+      const b2 = document.getElementById('paraBullet2').value.trim();
+      const b3 = document.getElementById('paraBullet3').value.trim();
+      paraState.editorial[paraState.profile] = [b1, b2, b3];
+      const list = document.getElementById('paraEditorialList');
+      list.innerHTML = '';
+      if (b1) list.innerHTML += `<li>${b1}</li>`;
+      if (b2) list.innerHTML += `<li>${b2}</li>`;
+      if (b3) list.innerHTML += `<li>${b3}</li>`;
+    }
+
+    function updateParaPeaks() {
+      const d1 = document.getElementById('paraPeakD1Text').value.trim();
+      const d2 = document.getElementById('paraPeakD2Text').value.trim();
+      const d3 = document.getElementById('paraPeakD3Text').value.trim();
+      paraState.peaks[paraState.profile] = { D1: d1, D2: d2, D3: d3 };
+      document.getElementById('paraTextD1').textContent = d1 || 'Não informado';
+      document.getElementById('paraTextD2').textContent = d2 || 'Não informado';
+      document.getElementById('paraTextD3').textContent = d3 || 'Não informado';
+    }
+
+    function initParaWorkspace() {
+      document.getElementById('paraProfileSelect').value = paraState.profile;
+      changeParaProfile();
+      updateParaReportMeta();
+    }
+
+    function renderParaAll() {
+      const profileName = paraState.profile.toLowerCase();
+      const filtered = state.rows.filter(r => String(r.profile || '').replace(/\s*\(Comparison period\)\s*/i, '').toLowerCase() === profileName && !r.isComparison);
+      renderParaPage1(filtered);
+      renderParaPage2(filtered);
+      renderParaPage3(filtered);
+      renderParaPage4(filtered);
+    }
+
+    function renderParaPage1(rows) {
+      const isHana = paraState.profile === "Hana Ghassan";
+      const bannerImg = document.getElementById('paraBannerPage1');
+      if (isHana) {
+        bannerImg.src = "../assets/banner-hana-2.png";
+      } else {
+        bannerImg.src = "../assets/banner-helder-1.png";
+      }
+      if (rows.length === 0) {
+        document.getElementById('paraKpiSeguidores').textContent = "-";
+        document.getElementById('paraKpiPosts').textContent = "-";
+        document.getElementById('paraKpiInteracoes').textContent = "-";
+        document.getElementById('paraKpiSeguidoresDelta').innerHTML = "";
+        document.getElementById('paraKpiPostsDelta').innerHTML = "";
+        document.getElementById('paraKpiInteracoesDelta').innerHTML = "";
+        document.getElementById('paraRedeTable').querySelector('tbody').innerHTML = `
+          <tr><td colspan="6" style="text-align:center;color:#64748b;">Nenhum registro para o perfil ativo. Suba a base semanal.</td></tr>
+        `;
+        return;
+      }
+      
+      const networkData = {};
+      rows.filter(row => !row.sourceSheet || row.sourceSheet === 'Visão Geral' || row.sourceSheet === 'CSV').forEach(row => {
+        const net = row.network;
+        if (!networkData[net]) {
+          networkData[net] = {
+            name: net,
+            followers: 0,
+            growth: 0,
+            posts: 0,
+            postsPerDay: 0,
+            reactions: 0,
+            commentsShares: 0,
+            postsList: []
+          };
+        }
+        networkData[net].followers += row.follower || 0;
+        networkData[net].growth += row.growth || 0;
+        networkData[net].posts += row.numPosts || 0;
+        networkData[net].postsPerDay += row.postsPerDay || 0;
+        networkData[net].reactions += row.reactions || 0;
+        networkData[net].commentsShares += row.commentsShares || 0;
+        networkData[net].postsList.push(row);
+      });
+      
+      let totalFollowers = 0;
+      let totalGrowth = 0;
+      let totalPosts = 0;
+      let totalInteractions = 0;
+      
+      Object.values(networkData).forEach(net => {
+        totalFollowers += net.followers;
+        totalGrowth += net.growth;
+        totalPosts += net.posts || net.postsList.length;
+        totalInteractions += (net.reactions + net.commentsShares);
+      });
+      
+      document.getElementById('paraKpiSeguidores').textContent = fmt(totalFollowers);
+      document.getElementById('paraKpiPosts').textContent = totalPosts;
+      document.getElementById('paraKpiInteracoes').textContent = fmt(totalInteractions);
+      
+      const d = paraState.deltas[paraState.profile];
+      document.getElementById('paraKpiSeguidoresDelta').innerHTML = `<span class="para-kpi-delta ${!d.seguidores.includes('-') ? 'pos' : 'neg'}">${d.seguidores}</span>`;
+      document.getElementById('paraKpiPostsDelta').innerHTML = `<span class="para-kpi-delta ${!d.posts.includes('-') ? 'pos' : 'neg'}">${d.posts}</span>`;
+      document.getElementById('paraKpiInteracoesDelta').innerHTML = `<span class="para-kpi-delta ${!d.interacoes.includes('-') ? 'pos' : 'neg'}">${d.interacoes}</span>`;
+      
+      const tbody = document.getElementById('paraRedeTable').querySelector('tbody');
+      tbody.innerHTML = '';
+      const order = ['Instagram', 'Facebook', 'TikTok', 'X', 'YouTube'];
+      const sortedNets = Object.values(networkData).sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
+      
+      sortedNets.forEach(net => {
+        const netTotalInters = net.reactions + net.commentsShares;
+        tbody.innerHTML += `
+          <tr>
+            <td>
+              <div class="para-network-cell">
+                <span class="para-cand-badge">${net.name[0]}</span>
+                <span>${net.name}</span>
+              </div>
+            </td>
+            <td>${fmt(net.followers)}</td>
+            <td>${fmt(net.growth)}</td>
+            <td>${net.posts || net.postsList.length}</td>
+            <td>${(net.postsPerDay || (net.postsList.length / 7)).toFixed(1).replace('.', ',')}</td>
+            <td style="font-weight:700;">${fmt(netTotalInters)}</td>
+          </tr>
+        `;
+      });
+      const editorialList = document.getElementById('paraEditorialList');
+      editorialList.innerHTML = '';
+      (paraState.editorial[paraState.profile] || []).filter(Boolean).forEach(text => {
+        editorialList.innerHTML += `<li>${text}</li>`;
+      });
+    }
+
+    function renderParaPage2(rows) {
+      const container = document.getElementById('paraTopPostsList');
+      if (rows.length === 0) {
+        container.innerHTML = `<div style="text-align:center;padding:40px;color:#64748b;">Sem posts para exibir. Suba a base semanal.</div>`;
+        return;
+      }
+      const postRows = rows.filter(r => /^Top 5 Posts/.test(r.sourceSheet || '') || r.sourceSheet === 'CSV');
+      const sorted = postRows.slice().sort((a, b) => (b.reactions + b.commentsShares) - (a.reactions + a.commentsShares));
+      const top5 = sorted.slice(0, 5);
+      container.innerHTML = '';
+      
+      top5.forEach((post) => {
+        const inters = post.reactions + post.commentsShares;
+        const format = getParaPostFormat(post);
+        const narrativeId = `narrative_${post.id || post.link || post.index}`;
+        if (!paraState.postNarratives[narrativeId]) {
+          paraState.postNarratives[narrativeId] = generateParaNarrative(post);
+        }
+        const badgeText = post.network === 'Instagram' ? 'IG' : post.network === 'Facebook' ? 'FB' : post.network === 'TikTok' ? 'TT' : post.network === 'X' ? 'X' : 'YT';
+        const postUrl = /^https?:\/\//i.test(post.link || '') ? post.link : '';
+        const cardOpen = postUrl ? `<a class="para-post-link" href="${esc(postUrl)}" target="_blank" rel="noopener noreferrer">` : '<div class="para-post-link">';
+        const cardClose = postUrl ? '</a>' : '</div>';
+        
+        container.innerHTML += `
+          ${cardOpen}
+          <div class="para-post-card">
+            <div class="para-post-visual">
+              <div class="para-format-block"><span class="para-network-glyph">◎</span><span>${format}</span></div>
+              <div class="para-post-media">
+                ${post.imageLink ? `<img src="${post.imageLink}" class="para-post-img" onerror="this.src='../assets/logomini.png';" />` : `<div style="font-size:9px;color:#94a3b8;padding:8px;">Post</div>`}
+                <span class="para-post-badge">${badgeText}</span>
+              </div>
+            </div>
+            <div class="para-post-info">
+              <div class="para-post-category">Institucional</div>
+              <div class="para-post-narrative" contenteditable="true" onclick="event.preventDefault();event.stopPropagation();" onblur="saveParaPostNarrative('${narrativeId}', this.innerText)" title="Clique para editar narrativa">
+                ${paraState.postNarratives[narrativeId]}
+              </div>
+            </div>
+            <div class="para-post-interactions">
+              <div class="para-post-inter-val">${fmt(inters)}</div>
+              <div class="para-post-inter-lbl">Interações</div>
+            </div>
+          </div>
+          ${cardClose}
+        `;
+      });
+    }
+
+    function saveParaPostNarrative(id, text) {
+      paraState.postNarratives[id] = text;
+      showToast("Narrativa salva!");
+      renderParaPage3(state.rows.filter(r => String(r.profile || '').toLowerCase().includes(paraState.profile.toLowerCase())));
+    }
+
+    function renderParaPage3(rows) {
+      if (rows.length === 0) {
+        document.getElementById('paraFormatCountChart').innerHTML = '';
+        document.getElementById('paraFormatEngageChart').innerHTML = '';
+        document.getElementById('paraTop5Fotos').innerHTML = '<div style="font-size:9px;color:#64748b;text-align:center;padding:15px;">Sem dados</div>';
+        document.getElementById('paraTop5Videos').innerHTML = '<div style="font-size:9px;color:#64748b;text-align:center;padding:15px;">Sem dados</div>';
+        return;
+      }
+      
+      const formats = {
+        'Vídeos/Shorts/Reels': { count: 0, interactions: 0, followersSum: 0, postCountForFollowers: 0 },
+        'Fotos': { count: 0, interactions: 0, followersSum: 0, postCountForFollowers: 0 },
+        'Carrossel': { count: 0, interactions: 0, followersSum: 0, postCountForFollowers: 0 },
+        'Status': { count: 0, interactions: 0, followersSum: 0, postCountForFollowers: 0 },
+        'Links': { count: 0, interactions: 0, followersSum: 0, postCountForFollowers: 0 }
+      };
+
+      const formatRows = rows.filter(row => row.sourceSheet === 'Formatos postados' || row.sourceSheet === 'Formato mais engajado');
+      const contentRows = rows.filter(row => /^Top 5/.test(row.sourceSheet || '') || row.sourceSheet === 'CSV');
+      contentRows.forEach(row => {
+        const fmtVal = getParaPostFormat(row);
+        if (formats[fmtVal]) {
+          formats[fmtVal].count++;
+          formats[fmtVal].interactions += (row.reactions + row.commentsShares);
+          formats[fmtVal].followersSum += row.follower || 10000;
+          formats[fmtVal].postCountForFollowers++;
+        }
+      });
+      formatRows.forEach(row => {
+        if (!formats[row.formatLabel]) formats[row.formatLabel] = { count:0, interactions:0, followersSum:0, postCountForFollowers:0 };
+        if (row.sourceSheet === 'Formatos postados') formats[row.formatLabel].count = row.formatCount;
+      });
+      
+      const formatCountData = [];
+      const formatEngageData = [];
+      
+      Object.entries(formats).forEach(([name, data]) => {
+        formatCountData.push({ name, value: data.count });
+        let avgFollowers = data.followersSum / (data.postCountForFollowers || 1);
+        const importedRate = formatRows.find(row => row.sourceSheet === 'Formato mais engajado' && row.formatLabel === name)?.engagementRate;
+        let rate = importedRate || (avgFollowers > 0 ? (data.interactions / avgFollowers) : 0);
+        formatEngageData.push({ name, value: rate });
+      });
+      
+      const maxCount = Math.max(1, ...formatCountData.map(d => d.value));
+      const countChart = document.getElementById('paraFormatCountChart');
+      countChart.innerHTML = '';
+      formatCountData.forEach(d => {
+        const pct = (d.value / maxCount) * 100;
+        countChart.innerHTML += `
+          <div class="para-chart-bar-row">
+            <span style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${d.name}</span>
+            <div class="para-bar-track">
+              <div class="para-bar-fill" style="height: ${pct}%; background:var(--para-primary);"></div>
+            </div>
+            <span style="text-align:right; font-weight:800;">${Number(d.value).toFixed(2).replace('.', ',')}</span>
+          </div>
+        `;
+      });
+      
+      const maxRate = Math.max(0.001, ...formatEngageData.map(d => d.value));
+      const engageChart = document.getElementById('paraFormatEngageChart');
+      engageChart.innerHTML = '';
+      formatEngageData.forEach(d => {
+        const pct = (d.value / maxRate) * 100;
+        const displayVal = (d.value * 100).toFixed(2).replace('.', ',') + '%';
+        engageChart.innerHTML += `
+          <div class="para-chart-bar-row">
+            <span style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${d.name}</span>
+            <div class="para-bar-track">
+              <div class="para-bar-fill" style="height: ${pct}%; background:var(--para-primary);"></div>
+            </div>
+            <span style="text-align:right; font-weight:800;">${displayVal}</span>
+          </div>
+        `;
+      });
+      
+      const fotosList = rows.filter(r => r.sourceSheet === 'Top 5 fotos' || ((r.sourceSheet === 'CSV') && (getParaPostFormat(r) === 'Fotos' || getParaPostFormat(r) === 'Carrossel')));
+      const videosList = rows.filter(r => r.sourceSheet === 'Top 5 vídeos' || ((r.sourceSheet === 'CSV') && getParaPostFormat(r) === 'Vídeos/Shorts/Reels'));
+      
+      const sortFn = (a, b) => {
+        const rateA = a.engagementRate || (a.follower > 0 ? (a.reactions + a.commentsShares) / a.follower : 0);
+        const rateB = b.engagementRate || (b.follower > 0 ? (b.reactions + b.commentsShares) / b.follower : 0);
+        return rateB - rateA;
+      };
+      
+      const topFotos = fotosList.sort(sortFn).slice(0, 5);
+      const topVideos = videosList.sort(sortFn).slice(0, 5);
+      
+      const renderTop5List = (list, containerId) => {
+        const el = document.getElementById(containerId);
+        el.innerHTML = '';
+        if (list.length === 0) {
+          el.innerHTML = '<div style="font-size:9px;color:#64748b;text-align:center;padding:15px;">Sem dados</div>';
+          return;
+        }
+        list.forEach((post) => {
+          const rate = post.engagementRate || (post.follower > 0 ? (post.reactions + post.commentsShares) / post.follower : 0);
+          const displayRate = (rate * 100).toFixed(2).replace('.', ',') + '%';
+          const narrativeId = `narrative_${post.id || post.link || post.index}`;
+          const narrative = paraState.postNarratives[narrativeId] || generateParaNarrative(post);
+          const postUrl = /^https?:\/\//i.test(post.link || '') ? post.link : '';
+          const itemOpen = postUrl ? `<a class="para-top5-link" href="${esc(postUrl)}" target="_blank" rel="noopener noreferrer">` : '<div class="para-top5-link">';
+          const itemClose = postUrl ? '</a>' : '</div>';
+          
+          el.innerHTML += `
+            ${itemOpen}
+            <div class="para-top5-item">
+              <div class="para-top5-img-wrap">
+                ${post.imageLink ? `<img src="${post.imageLink}" style="width:100%;height:100%;object-fit:cover;" onerror="this.src='../assets/logomini.png';" />` : `<div style="font-size:8px;color:#94a3b8;padding:4px;text-align:center;">Post</div>`}
+              </div>
+              <div class="para-top5-info">
+                <div class="para-top5-meta">@${post.profile || paraState.profile} · ${post.network}</div>
+                <div class="para-top5-text" title="${narrative}">${narrative}</div>
+              </div>
+              <div class="para-top5-rate">${displayRate}</div>
+            </div>
+            ${itemClose}
+          `;
+        });
+      };
+      
+      renderTop5List(topFotos, 'paraTop5Fotos');
+      renderTop5List(topVideos, 'paraTop5Videos');
+    }
+
+    function renderParaPage4(rows) {
+      updateParaPeaks();
+      const weekdays = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'];
+      const hourSlots = ['0', '2', '4', '6', '8', '10', '12', '14', '16', '18', '20', '22', '24'];
+      
+      const grid = document.getElementById('paraBubbleGridContainer');
+      grid.innerHTML = '';
+      const counts = {};
+      const isHana = paraState.profile === "Hana Ghassan";
+      for (let h = 0; h < 12; h++) {
+        for (let d = 0; d < 7; d++) {
+          counts[`${d}_${h}`] = { count: 0, interactions: 0 };
+        }
+      }
+      
+      rows.forEach(row => {
+        if (row.date) {
+          const dt = new Date(row.date);
+          if (!isNaN(dt.getTime())) {
+            let d = dt.getUTCDay();
+            d = d === 0 ? 6 : d - 1;
+            const hour = dt.getUTCHours();
+            const h = Math.floor(hour / 2);
+            if (d >= 0 && d < 7 && h >= 0 && h < 12) {
+              counts[`${d}_${h}`].count++;
+              counts[`${d}_${h}`].interactions += (row.reactions + row.commentsShares);
+            }
+          }
+        }
+      });
+      
+      const maxInters = Math.max(1, ...Object.values(counts).map(c => c.interactions));
+      
+      for (let h = 0; h < 13; h++) {
+        grid.innerHTML += `<div class="para-bubble-row-lbl">${hourSlots[h]}</div>`;
+        for (let d = 0; d < 7; d++) {
+          const key = `${d}_${h}`;
+          const cellData = counts[key] || { count: 0, interactions: 0 };
+          
+          let highlightLabel = "";
+          if (isHana) {
+            if (d === 3 && h === 9) highlightLabel = "D1";
+            else if (d === 6 && h === 5) highlightLabel = "D2";
+            else if (d === 1 && h === 10) highlightLabel = "D3";
+          } else {
+            if (d === 0 && h === 9) highlightLabel = "D1";
+            else if (d === 5 && h === 9) highlightLabel = "D2";
+            else if (d === 0 && h === 4) highlightLabel = "D3";
+          }
+          
+          let bubbleHTML = '';
+          if (cellData.count > 0) {
+            const size = Math.min(18, 8 + cellData.count * 1.2);
+            const pct = cellData.interactions / maxInters;
+            let bgColor = "#dc2626";
+            if (pct > 0.6) bgColor = "#16a34a";
+            else if (pct > 0.25) bgColor = "#f59e0b";
+            bubbleHTML = `<span class="para-bubble-span" style="width:${size}px; height:${size}px; background:${bgColor}; opacity:0.85;" title="${cellData.count} posts, ${fmt(cellData.interactions)} interações"></span>`;
+          }
+          
+          let highlightBoxHTML = '';
+          if (highlightLabel !== '') {
+            highlightBoxHTML = `
+              <div class="para-bubble-highlight-box" style="width: 100%; height: 100%;">
+                <span class="para-bubble-highlight-label">${highlightLabel}</span>
+              </div>
+            `;
+          }
+          
+          grid.innerHTML += `
+            <div class="para-bubble-cell">
+              ${bubbleHTML}
+              ${highlightBoxHTML}
+            </div>
+          `;
+        }
+      }
+      grid.innerHTML += `<div class="para-bubble-header"></div>`;
+      weekdays.forEach(day => {
+        grid.innerHTML += `<div class="para-bubble-header">${day}</div>`;
+      });
+    }
+
+    function buildParaPrompt() {
+      const profile = paraState.profile;
+      const rows = state.rows.filter(row =>
+        String(row.profile || '').replace(/\s*\(Comparison period\)\s*/i, '').toLowerCase() === profile.toLowerCase() &&
+        !row.isComparison
+      );
+      const summary = rows.filter(row => row.sourceSheet === 'Visão Geral');
+      const posts = rows
+        .filter(row => /^Top 5 Posts/.test(row.sourceSheet || ''))
+        .sort((a, b) => (b.reactions + b.commentsShares) - (a.reactions + a.commentsShares))
+        .slice(0, 5)
+        .map(row => ({
+          id: row.id,
+          rede: row.network,
+          interacoes: row.reactions + row.commentsShares,
+          mensagem: row.message,
+          link: row.link
+        }));
+      const networks = summary.map(row => ({
+        rede: row.network,
+        seguidores: row.follower,
+        crescimento: row.growth,
+        publicacoes: row.numPosts,
+        interacoes: row.reactions + row.commentsShares
+      }));
+      const totals = networks.reduce((acc, row) => ({
+        seguidores:acc.seguidores + row.seguidores,
+        publicacoes:acc.publicacoes + row.publicacoes,
+        interacoes:acc.interacoes + row.interacoes
+      }), { seguidores:0, publicacoes:0, interacoes:0 });
+
+      return `Você é analista sênior de comunicação governamental. Preencha os textos do relatório semanal de performance em redes sociais usando somente os dados fornecidos.
+
+PERFIL: ${profile}
+PERÍODO: ${paraState.period}
+COMPARATIVO: ${paraState.compare}
+VARIAÇÕES: ${JSON.stringify(paraState.deltas[profile] || {})}
+TOTAIS: ${JSON.stringify(totals)}
+REDES: ${JSON.stringify(networks, null, 2)}
+TOP POSTS: ${JSON.stringify(posts, null, 2)}
+
+REGRAS:
+1. Não invente fatos, obras, datas, percentuais ou causas que não estejam nos dados.
+2. Escreva em português do Brasil, tom executivo, claro e objetivo.
+3. Gere exatamente 3 destaques da semana, cada um com no máximo 280 caracteres.
+4. Para cada top post, gere uma narrativa analítica curta com categoria "Institucional" ou "Pessoal".
+5. Gere D1, D2 e D3 apenas quando data, horário e interações permitirem identificar picos. Se não houver evidência, use "Sem evidência suficiente no período".
+6. Responda somente com JSON válido, sem markdown e sem comentários.
+
+FORMATO OBRIGATÓRIO:
+{
+  "destaques": ["texto 1", "texto 2", "texto 3"],
+  "posts": [{"id": "mesmo id recebido", "narrativa": "texto"}],
+  "picos": {"D1": "texto", "D2": "texto", "D3": "texto"}
+}`;
+    }
+
+    async function copyParaPrompt() {
+      const prompt = buildParaPrompt();
+      try {
+        await navigator.clipboard.writeText(prompt);
+        document.getElementById('paraAiStatus').textContent = 'Prompt copiado.';
+        showToast('Prompt do relatório copiado!');
+      } catch (error) {
+        document.getElementById('paraAiStatus').textContent = 'Não foi possível copiar. Use Baixar TXT.';
+      }
+    }
+
+    function downloadParaPrompt() {
+      const prompt = buildParaPrompt();
+      const blob = new Blob([prompt], { type:'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `govpa_${paraState.profile.toLowerCase().replace(/\s+/g, '_')}_${paraState.period.replace(/[^0-9]+/g, '-')}_prompt.txt`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      document.getElementById('paraAiStatus').textContent = 'TXT gerado com prompt e dados do perfil.';
+    }
+
+    function applyParaAiResponse() {
+      const status = document.getElementById('paraAiStatus');
+      try {
+        const raw = document.getElementById('paraAiResponse').value.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+        const result = JSON.parse(raw);
+        if (!Array.isArray(result.destaques) || result.destaques.length < 3) throw new Error('O JSON precisa conter 3 destaques.');
+        paraState.editorial[paraState.profile] = result.destaques.slice(0, 3).map(value => String(value || '').trim());
+        if (result.picos && typeof result.picos === 'object') {
+          paraState.peaks[paraState.profile] = {
+            D1:String(result.picos.D1 || '').trim(),
+            D2:String(result.picos.D2 || '').trim(),
+            D3:String(result.picos.D3 || '').trim()
+          };
+        }
+        if (Array.isArray(result.posts)) {
+          result.posts.forEach(item => {
+            if (item?.id && item?.narrativa) paraState.postNarratives[`narrative_${item.id}`] = String(item.narrativa).trim();
+          });
+        }
+        localStorage.setItem(`govpa_ai_${paraState.profile}`, raw);
+        populateParaSidebarFields();
+        renderParaAll();
+        status.textContent = 'Textos preenchidos com sucesso.';
+        showToast('Textos do relatório preenchidos!');
+      } catch (error) {
+        status.textContent = error.message || 'JSON inválido.';
+        showToast('Não foi possível preencher. Verifique o JSON.');
+      }
+    }
+
+    async function exportParaPDF() {
+      showToast("Preparando as oito páginas dos dois perfis...");
+      const originalProfile = paraState.profile;
+      const staging = document.createElement('div');
+      staging.id = 'paraPrintStaging';
+      document.body.appendChild(staging);
+      for (const profile of ['Hana Ghassan', 'Helder Barbalho']) {
+        paraState.profile = profile;
+        const isHana = profile === 'Hana Ghassan';
+        document.getElementById('paraBannerPage1').src = isHana ? '../assets/banner-hana-2.png' : '../assets/banner-helder-1.png';
+        ['paraBannerPage2','paraBannerPage3','paraBannerPage4'].forEach(id => {
+          document.getElementById(id).src = isHana ? '../assets/banner-hana-1.png' : '../assets/banner-helder-2.png';
+        });
+        renderParaAll();
+        document.querySelectorAll('.report-pages-container .para-report-page').forEach(page => {
+          const clone = page.cloneNode(true);
+          clone.style.setProperty('--para-primary', profile === 'Hana Ghassan' ? '#D92626' : '#0060B6');
+          clone.style.setProperty('--para-primary-rgb', profile === 'Hana Ghassan' ? '217, 38, 38' : '0, 96, 182');
+          staging.appendChild(clone);
+        });
+      }
+      paraState.profile = originalProfile;
+      const originalIsHana = originalProfile === 'Hana Ghassan';
+      document.getElementById('paraBannerPage1').src = originalIsHana ? '../assets/banner-hana-2.png' : '../assets/banner-helder-1.png';
+      ['paraBannerPage2','paraBannerPage3','paraBannerPage4'].forEach(id => {
+        document.getElementById(id).src = originalIsHana ? '../assets/banner-hana-1.png' : '../assets/banner-helder-2.png';
+      });
+      renderParaAll();
+      await Promise.all(Array.from(staging.querySelectorAll('img')).map(img => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        return new Promise(resolve => {
+          img.addEventListener('load', resolve, { once:true });
+          img.addEventListener('error', resolve, { once:true });
+          setTimeout(resolve, 5000);
+        });
+      }));
+      if (document.fonts?.ready) await document.fonts.ready;
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      window.print();
+      setTimeout(() => staging.remove(), 1500);
+    }
+
+    function exportParaJSON() {
+      if (state.rows.length === 0) {
+        showToast("Nenhum dado para exportar.");
+        return;
+      }
+      const payload = {
+        cliente: "Governo do Pará",
+        profile: paraState.profile,
+        periodo: paraState.period,
+        comparativo: paraState.compare,
+        editorial: paraState.editorial[paraState.profile],
+        peaks: paraState.peaks[paraState.profile],
+        postNarratives: paraState.postNarratives,
+        rows: state.rows
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ekklesia_para_${paraState.profile.toLowerCase().replace(/\s+/g, '_')}_semanal.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast("JSON baixado!");
+    }
+
+    async function loadAll() {
+      try {
+        await loadClientes();
+      } catch (error) {
+        showToast(error.message || 'Erro ao carregar modulo.');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('dataRel').value = localStorage.getItem('ekklesia_data_rel') || new Date().toISOString().slice(0, 10);
+      renderCover();
+      loadAll().then(() => {
+        const params = new URLSearchParams(window.location.search);
+        const urlClient = params.get('client') || params.get('cliente') || params.get('id') || params.get('client_id');
+        if (urlClient) {
+          openClient(urlClient);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HUB.nexus — Editor de relatório</title>
+  <link rel="icon" href="../assets/logo.png" type="image/png"/>
+  <link rel="stylesheet" href="../css/global.css" />
+  <style>
+    body { height:100vh; margin:0; overflow:hidden; background:var(--bg); color:var(--text-primary); font-family:Inter, var(--font-ui), system-ui, sans-serif; }
+    .multi-shell { height:100vh; display:flex; flex-direction:column; }
+    .tab-body { flex:1; overflow-y:auto; overflow-x:hidden; padding:20px; }
+    .multi-page { width:min(900px, 100%); margin:0 auto; }
+    .multi-head { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:18px 4px 14px; border-bottom:1px solid rgba(255,255,255,.07); margin-bottom:18px; flex-wrap:wrap; }
+    .multi-kicker { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--orange-2); margin-bottom:4px; }
+    .multi-h1 { font-size:22px; font-weight:700; line-height:1.15; margin:0; color:var(--text-primary); }
+    .multi-sub { margin:3px 0 0; font-size:12px; color:var(--text-muted); }
+    .multi-section { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09); border-radius:14px; padding:20px; margin-bottom:14px; }
+    .multi-section.compact { padding:14px 16px; }
+    .multi-panel-title { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:14px; color:var(--orange-2); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; }
+    .multi-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .multi-row.stretch > * { flex:1 1 180px; }
+    .multi-field { display:flex; flex-direction:column; gap:5px; margin-bottom:10px; min-width:0; }
+    .multi-label { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.45px; }
+    .multi-input, .multi-textarea { width:100%; box-sizing:border-box; border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.06); color:var(--text-primary); border-radius:8px; padding:8px 11px; font:12px Inter, var(--font-ui), sans-serif; outline:none; }
+    .multi-textarea { min-height:88px; resize:vertical; line-height:1.6; }
+    .multi-input:focus, .multi-textarea:focus { border-color:hsla(var(--theme-h),90%,50%,.40); }
+    .multi-btn { border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.07); color:var(--text-secondary); border-radius:8px; padding:8px 14px; font:700 11px Inter, var(--font-ui), sans-serif; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; transition:all .18s; white-space:nowrap; }
+    .multi-btn:hover { background:rgba(255,255,255,.12); color:var(--text-primary); }
+    .multi-btn.primary { background:var(--orange); border-color:var(--orange); color:#fff; }
+    .multi-btn.primary:hover { background:var(--orange-2); transform:translateY(-1px); }
+    .multi-btn.danger { border-color:rgba(239,68,68,.4); color:#f5a3a3; }
+    .multi-btn.danger:hover { background:rgba(239,68,68,.14); color:#ffb4b4; }
+    .icon-btn { width:30px; height:30px; border-radius:8px; border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.055); color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; font-weight:800; }
+    .icon-btn:hover { background:rgba(255,255,255,.12); color:var(--text-primary); }
+    .multi-status { min-height:16px; font-size:11px; color:var(--text-muted); padding:0 4px; }
+    .rm-cover { position:relative; border:1.5px dashed rgba(255,255,255,.16); border-radius:12px; min-height:160px; background-size:cover; background-position:center; display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; }
+    .rm-cover input { position:absolute; inset:0; opacity:0; cursor:pointer; }
+    .rm-cover-empty { color:var(--text-muted); font-size:12px; text-align:center; padding:20px; pointer-events:none; }
+    .rm-secoes { display:flex; flex-direction:column; gap:12px; }
+    .rm-secao-card { border:1px solid rgba(255,255,255,.09); border-radius:10px; padding:14px; background:rgba(255,255,255,.03); }
+    .rm-secao-head { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+    .rm-secao-titulo { flex:1; font-weight:700; }
+    .rm-secao-actions { display:flex; gap:6px; flex-shrink:0; }
+    .rm-secao-type { width:140px; flex:0 0 140px; }
+    .rm-secao-img-preview { display:block; max-width:220px; max-height:120px; border-radius:8px; object-fit:cover; margin-bottom:8px; border:1px solid rgba(255,255,255,.10); }
+    .rm-materias { display:grid; gap:10px; margin-top:10px; }
+    .rm-materia-card { border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:12px; background:rgba(255,255,255,.035); }
+    .rm-materia-grid { display:grid; grid-template-columns:1fr 1fr 120px; gap:8px; }
+    .rm-materia-url { margin-top:8px; }
+    .rm-empty { color:var(--text-muted); font-size:12px; padding:20px; text-align:center; }
+    body.light .multi-section { background:rgba(255,255,255,.72); border-color:rgba(160,80,20,.16); }
+    body.light .multi-input, body.light .multi-textarea { background:#fff; border-color:rgba(160,80,20,.22); color:#2a0e00; color-scheme:light; }
+    body.light .rm-secao-card { background:rgba(255,255,255,.6); border-color:rgba(160,80,20,.14); }
+    body.light .rm-materia-card { background:rgba(255,255,255,.72); border-color:rgba(160,80,20,.14); }
+    @media (max-width:720px) {
+      .rm-secao-head, .rm-materia-grid { display:grid; grid-template-columns:1fr; }
+      .rm-secao-type { width:100%; flex:auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="multi-shell">
+    <div id="navbar-container"></div>
+    <div class="tab-body">
+      <main class="multi-page">
+        <div class="multi-head">
+          <div>
+            <p class="multi-kicker" id="rmKicker">RELATÓRIO</p>
+            <h1 class="multi-h1">Editor de relatório</h1>
+            <p class="multi-sub">Personalize capa, título e seções deste relatório.</p>
+          </div>
+          <div class="multi-row">
+            <button class="multi-btn" onclick="location.href='ekklesia-multi.html'">← Voltar</button>
+            <button class="multi-btn" onclick="salvar()">Salvar rascunho</button>
+            <button class="multi-btn primary" onclick="publicar()">Publicar</button>
+          </div>
+        </div>
+
+        <section class="multi-section compact">
+          <div class="multi-row stretch">
+            <div class="multi-field" style="margin-bottom:0;">
+              <label class="multi-label">Nome do cliente</label>
+              <input id="rmNomeCliente" class="multi-input" placeholder="Ex: Cliente X" />
+            </div>
+            <div class="multi-field" style="margin-bottom:0;">
+              <label class="multi-label">Título do relatório</label>
+              <input id="rmTitulo" class="multi-input" placeholder="Ex: Boletim Semanal" />
+            </div>
+          </div>
+        </section>
+
+        <section class="multi-section">
+          <div class="multi-panel-title"><span>Capa</span></div>
+          <label class="rm-cover" id="rmCoverPreview">
+            <div class="rm-cover-empty">Sem imagem de capa — clique para enviar uma.</div>
+            <input type="file" id="rmCoverInput" accept="image/*" onchange="handleCoverUpload(this.files[0])" />
+          </label>
+          <div class="multi-row" style="margin-top:10px;">
+            <button class="multi-btn" onclick="removerCapa()">Remover capa</button>
+          </div>
+        </section>
+
+        <section class="multi-section">
+          <div class="multi-panel-title">
+            <span>Seções do relatório</span>
+            <div class="multi-row">
+              <button class="multi-btn" id="rmAddImprensaBtn" style="display:none;" onclick="adicionarSecaoImprensa()">+ Imprensa</button>
+              <button class="multi-btn primary" onclick="adicionarSecao()">+ Adicionar seção</button>
+            </div>
+          </div>
+          <div id="rmSecoes" class="rm-secoes"></div>
+        </section>
+
+        <section class="multi-section compact" id="rmPublicado" style="display:none;">
+          <div class="multi-panel-title"><span>Link público</span></div>
+          <div class="multi-row stretch">
+            <input id="rmLink" class="multi-input" readonly />
+            <button class="multi-btn" onclick="copiarLink()">Copiar link</button>
+            <button class="multi-btn" onclick="window.open(document.getElementById('rmLink').value,'_blank')">Abrir</button>
+          </div>
+        </section>
+
+        <div class="multi-row" style="justify-content:space-between;">
+          <div id="rmStatus" class="multi-status"></div>
+          <button class="multi-btn danger" id="rmDeleteBtn" style="display:none;" onclick="excluirRelatorio()">Excluir relatório</button>
+        </div>
+      </main>
+    </div>
+  </div>
+  <div id="toast" class="toast"></div>
+  <script src="../js/utils.js"></script>
+  <script src="../js/theme.js"></script>
+  <script>
+    checkAuth();
+    initMode();
+    if (typeof initTheme === 'function') initTheme();
+    const _nc = document.getElementById('navbar-container');
+    if (_nc && typeof renderSidebar === 'function') _nc.innerHTML = renderSidebar('ekklesia-multi');
+    if (typeof setNavLabel === 'function') setNavLabel('');
+
+    const API = '/api/relatorio-modelo';
+    const params = new URLSearchParams(location.search);
+    const docId = params.get('id') || 'modelo-padrao';
+    let doc = { id: docId, nome_cliente: '', titulo: '', capa: '', secoes: [], is_template: false };
+    let publishedToken = null;
+
+    const esc = value => String(value || '').replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
+    const norm = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const isEditorEmbraturNacional = () => {
+      const hay = norm([doc.id, doc.nome_cliente, doc.titulo].join(' '));
+      return hay.includes('embratur') && hay.includes('nacional');
+    };
+    const newSecaoId = () => 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+    async function api(path, options) {
+      const res = await fetch(API + path, options);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error) throw new Error(data.error || 'Falha na API');
+      return data;
+    }
+
+    function compressImage(file, maxW, quality) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = reject;
+        reader.onload = () => {
+          const img = new Image();
+          img.onerror = reject;
+          img.onload = () => {
+            const scale = Math.min(1, maxW / img.width);
+            const w = Math.round(img.width * scale);
+            const h = Math.round(img.height * scale);
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function load() {
+      try {
+        const data = await api('/doc?' + new URLSearchParams({ id: docId }));
+        doc = data.doc;
+      } catch (e) {
+        showToast('Relatório não encontrado, criando um novo.');
+        doc = { id: docId, nome_cliente: '', titulo: '', capa: '', secoes: [], is_template: false };
+      }
+      render();
+    }
+
+    function render() {
+      document.getElementById('rmKicker').textContent = doc.is_template ? 'MODELO PADRÃO' : (doc.nome_cliente || 'RELATÓRIO');
+      document.getElementById('rmNomeCliente').value = doc.nome_cliente || '';
+      document.getElementById('rmTitulo').value = doc.titulo || '';
+      document.getElementById('rmDeleteBtn').style.display = doc.is_template ? 'none' : 'inline-flex';
+      document.querySelector('.multi-sub').textContent = doc.is_template
+        ? 'Este é o modelo padrão — as alterações viram a base para novos relatórios duplicados.'
+        : 'Personalize capa, título e seções deste relatório.';
+      const addImprensaBtn = document.getElementById('rmAddImprensaBtn');
+      if (addImprensaBtn) addImprensaBtn.style.display = isEditorEmbraturNacional() ? 'inline-flex' : 'none';
+      renderCapa();
+      renderSecoes();
+    }
+
+    function renderCapa() {
+      const el = document.getElementById('rmCoverPreview');
+      if (doc.capa) {
+        el.style.backgroundImage = `url('${doc.capa}')`;
+        el.querySelector('.rm-cover-empty').style.display = 'none';
+      } else {
+        el.style.backgroundImage = 'none';
+        el.querySelector('.rm-cover-empty').style.display = 'block';
+      }
+    }
+
+    function renderMateriasEditor(s) {
+      const materias = Array.isArray(s.materias) ? s.materias : [];
+      return `
+        <div class="rm-materias">
+          ${materias.length ? materias.map((m, idx) => `
+            <div class="rm-materia-card">
+              <div class="rm-materia-grid">
+                <input class="multi-input" value="${esc(m.fonte)}" placeholder="Fonte: Folha, Valor..." oninput="updateMateriaField('${s.id}',${idx},'fonte',this.value)" />
+                <input class="multi-input" value="${esc(m.titulo)}" placeholder="Título da matéria" oninput="updateMateriaField('${s.id}',${idx},'titulo',this.value)" />
+                <input class="multi-input" value="${esc(m.tom)}" placeholder="Tom" oninput="updateMateriaField('${s.id}',${idx},'tom',this.value)" />
+              </div>
+              <textarea class="multi-textarea" style="min-height:64px;margin-top:8px;" placeholder="Resumo curto do impacto para o relatório..." oninput="updateMateriaField('${s.id}',${idx},'resumo',this.value)">${esc(m.resumo)}</textarea>
+              <div class="multi-row rm-materia-url">
+                <input class="multi-input" value="${esc(m.url)}" placeholder="URL da matéria (opcional)" oninput="updateMateriaField('${s.id}',${idx},'url',this.value)" />
+                <button class="multi-btn danger" onclick="removerMateria('${s.id}',${idx})">Remover</button>
+              </div>
+            </div>
+          `).join('') : '<div class="rm-empty">Nenhuma matéria cadastrada nesta seção.</div>'}
+          <button class="multi-btn" onclick="adicionarMateria('${s.id}')">+ Adicionar matéria</button>
+        </div>
+      `;
+    }
+
+    function renderSecoes() {
+      const wrap = document.getElementById('rmSecoes');
+      if (!doc.secoes.length) {
+        wrap.innerHTML = '<div class="rm-empty">Nenhuma seção ainda. Clique em "+ Adicionar seção".</div>';
+        return;
+      }
+      wrap.innerHTML = doc.secoes.map((s, i) => `
+        <div class="rm-secao-card">
+          <div class="rm-secao-head">
+            ${isEditorEmbraturNacional() || s.tipo === 'imprensa' ? `<select class="multi-input rm-secao-type" onchange="updateSecaoTipo('${s.id}',this.value)">
+              <option value="texto" ${(s.tipo || 'texto') === 'texto' ? 'selected' : ''}>Texto</option>
+              <option value="imprensa" ${s.tipo === 'imprensa' ? 'selected' : ''}>Imprensa</option>
+            </select>` : ''}
+            <input class="multi-input rm-secao-titulo" value="${esc(s.titulo)}" placeholder="Título da seção" oninput="updateSecaoField('${s.id}','titulo',this.value)" />
+            <div class="rm-secao-actions">
+              <button class="icon-btn" title="Mover para cima" ${i === 0 ? 'disabled' : ''} onclick="moverSecao('${s.id}',-1)">↑</button>
+              <button class="icon-btn" title="Mover para baixo" ${i === doc.secoes.length - 1 ? 'disabled' : ''} onclick="moverSecao('${s.id}',1)">↓</button>
+              <button class="icon-btn" title="Remover seção" onclick="removerSecao('${s.id}')">✕</button>
+            </div>
+          </div>
+          <textarea class="multi-textarea" placeholder="Texto da seção..." oninput="updateSecaoField('${s.id}','corpo',this.value)">${esc(s.corpo)}</textarea>
+          ${s.tipo === 'imprensa' ? renderMateriasEditor(s) : ''}
+          <div class="rm-secao-img" style="margin-top:8px;">
+            ${s.imagem ? `<img src="${esc(s.imagem)}" class="rm-secao-img-preview" />` : ''}
+            <div class="multi-row">
+              <label class="multi-btn">Imagem <input type="file" accept="image/*" style="display:none" onchange="handleSecaoImageUpload('${s.id}', this.files[0])" /></label>
+              ${s.imagem ? `<button class="multi-btn" onclick="removerSecaoImagem('${s.id}')">Remover imagem</button>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateSecaoField(id, field, value) {
+      const s = doc.secoes.find(item => item.id === id);
+      if (s) s[field] = value;
+    }
+
+    function updateSecaoTipo(id, tipo) {
+      const s = doc.secoes.find(item => item.id === id);
+      if (!s) return;
+      s.tipo = tipo;
+      if (tipo === 'imprensa' && !Array.isArray(s.materias)) s.materias = [];
+      renderSecoes();
+    }
+
+    function updateMateriaField(secaoId, idx, field, value) {
+      const s = doc.secoes.find(item => item.id === secaoId);
+      if (!s || !Array.isArray(s.materias) || !s.materias[idx]) return;
+      s.materias[idx][field] = value;
+    }
+
+    function adicionarMateria(secaoId) {
+      const s = doc.secoes.find(item => item.id === secaoId);
+      if (!s) return;
+      if (!Array.isArray(s.materias)) s.materias = [];
+      s.materias.push({ fonte: '', titulo: '', resumo: '', tom: '', url: '' });
+      renderSecoes();
+    }
+
+    function removerMateria(secaoId, idx) {
+      const s = doc.secoes.find(item => item.id === secaoId);
+      if (!s || !Array.isArray(s.materias)) return;
+      s.materias.splice(idx, 1);
+      renderSecoes();
+    }
+
+    function moverSecao(id, delta) {
+      const i = doc.secoes.findIndex(item => item.id === id);
+      const j = i + delta;
+      if (i < 0 || j < 0 || j >= doc.secoes.length) return;
+      [doc.secoes[i], doc.secoes[j]] = [doc.secoes[j], doc.secoes[i]];
+      renderSecoes();
+    }
+
+    function removerSecao(id) {
+      doc.secoes = doc.secoes.filter(item => item.id !== id);
+      renderSecoes();
+    }
+
+    function adicionarSecao() {
+      doc.secoes.push({ id: newSecaoId(), tipo: 'texto', titulo: 'Nova seção', corpo: '', imagem: '', materias: [] });
+      renderSecoes();
+    }
+
+    function adicionarSecaoImprensa() {
+      if (!isEditorEmbraturNacional()) return;
+      doc.secoes.push({
+        id: newSecaoId(),
+        tipo: 'imprensa',
+        titulo: 'Imprensa · noticiário',
+        corpo: 'Manchetes e matérias que ajudam a contextualizar o ambiente informativo do período.',
+        imagem: '',
+        materias: [
+          { fonte: 'Folha', titulo: '', resumo: '', tom: 'neutro', url: '' },
+          { fonte: 'Valor', titulo: '', resumo: '', tom: 'neutro', url: '' },
+          { fonte: 'Metrópoles', titulo: '', resumo: '', tom: 'favorável', url: '' },
+        ],
+      });
+      renderSecoes();
+    }
+
+    async function handleCoverUpload(file) {
+      if (!file) return;
+      doc.capa = await compressImage(file, 1600, 0.75);
+      renderCapa();
+    }
+
+    function removerCapa() {
+      doc.capa = '';
+      renderCapa();
+    }
+
+    async function handleSecaoImageUpload(id, file) {
+      if (!file) return;
+      const s = doc.secoes.find(item => item.id === id);
+      if (!s) return;
+      s.imagem = await compressImage(file, 900, 0.72);
+      renderSecoes();
+    }
+
+    function removerSecaoImagem(id) {
+      const s = doc.secoes.find(item => item.id === id);
+      if (s) { s.imagem = ''; renderSecoes(); }
+    }
+
+    async function salvar(silent) {
+      doc.nome_cliente = document.getElementById('rmNomeCliente').value.trim();
+      doc.titulo = document.getElementById('rmTitulo').value.trim();
+      document.getElementById('rmStatus').textContent = 'Salvando...';
+      await api('/doc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: doc.id, nome_cliente: doc.nome_cliente, titulo: doc.titulo, capa: doc.capa, secoes: doc.secoes })
+      });
+      document.getElementById('rmStatus').textContent = 'Rascunho salvo.';
+      if (!silent) showToast('Relatório salvo.');
+    }
+
+    async function publicar() {
+      await salvar(true);
+      const data = await api('/publicar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: doc.id })
+      });
+      publishedToken = data.token;
+      const url = location.origin + '/pages/relatorio-modelo-share.html?token=' + publishedToken;
+      document.getElementById('rmLink').value = url;
+      document.getElementById('rmPublicado').style.display = 'block';
+      document.getElementById('rmStatus').textContent = 'Relatório publicado.';
+      showToast('Link público gerado.');
+    }
+
+    function copiarLink() {
+      const input = document.getElementById('rmLink');
+      input.select();
+      navigator.clipboard?.writeText(input.value).catch(() => document.execCommand('copy'));
+      showToast('Link copiado.');
+    }
+
+    async function excluirRelatorio() {
+      if (!confirm('Excluir este relatório? Essa ação não pode ser desfeita.')) return;
+      await api('/excluir', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: doc.id })
+      });
+      location.href = 'ekklesia-multi.html';
+    }
+
+    load();
+  </script>
+</body>
+</html>

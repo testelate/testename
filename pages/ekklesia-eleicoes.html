@@ -1,0 +1,2610 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HUB.nexus — Nexus Eleições 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/global.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <style>
+    body { display:flex; flex-direction:column; overflow:hidden; height:100vh; background:var(--bg); }
+    .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; padding:0 20px; height:52px; flex-shrink:0; backdrop-filter:blur(30px); background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.07); z-index:5; }
+    .topbar-left { display:flex; align-items:center; gap:10px; }
+    .topbar-badge { font-size:10px; padding:3px 9px; background:hsla(var(--theme-h),90%,50%,0.10); border:1px solid hsla(var(--theme-h),90%,50%,0.22); border-radius:var(--r-pill); color:var(--orange-2); display:flex; align-items:center; gap:5px; }
+    .topbar-title { font-size:13px; font-weight:500; color:var(--text-primary); letter-spacing:-0.2px; }
+    .topbar-right { display:flex; align-items:center; gap:8px; }
+    .tbtn { display:inline-flex; align-items:center; gap:5px; padding:6px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); border-radius:var(--r-sm); font-size:11px; color:var(--text-secondary); cursor:pointer; font-family:'Inter',sans-serif; transition:all var(--t-normal); }
+    .tbtn:hover { background:rgba(255,255,255,0.09); }
+    .tbtn-primary { background:hsla(var(--theme-h),90%,50%,0.12); border-color:hsla(var(--theme-h),90%,50%,0.28); color:var(--orange-2); }
+    .tbtn-primary:hover { background:hsla(var(--theme-h),90%,50%,0.22); }
+    .tab-body { flex:1; overflow-y:auto; overflow-x:hidden; padding:20px; }
+    .spinner { display:inline-block; width:12px; height:12px; border:2px solid rgba(255,128,64,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; margin-right:5px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    body.light .tbtn { background:rgba(255,255,255,0.70); border-color:rgba(180,100,40,0.18); color:#7a4a30; }
+    body.light .topbar { background:rgba(255,255,255,0.55); border-bottom-color:rgba(180,100,40,0.10); }
+    body.light .topbar-title { color:#3a1200; }
+
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+    @media (max-width:1100px) { .grid3 { grid-template-columns:1fr 1fr; } }
+    @media (max-width:900px) { .grid2, .grid3 { grid-template-columns:1fr; } }
+    .card { background:var(--surface,rgba(255,255,255,0.04)); border:1px solid rgba(255,255,255,0.08); border-radius:var(--r-md,14px); padding:18px; margin-bottom:16px; }
+    body.light .card { background:#fff; border-color:rgba(180,100,40,0.12); }
+    .card h3 { margin:0 0 4px; font-size:14px; color:var(--text-primary); display:flex; align-items:center; gap:8px; }
+    .card .sub { font-size:11px; color:var(--text-muted); margin-bottom:14px; }
+    .drop { border:1.5px dashed rgba(255,255,255,0.18); border-radius:10px; padding:22px; text-align:center; cursor:pointer; transition:all .15s; font-size:12px; color:var(--text-secondary); }
+    .drop:hover { border-color:var(--orange-2); background:hsla(var(--theme-h),90%,50%,0.06); }
+    .drop.drag { border-color:var(--orange-2); background:hsla(var(--theme-h),90%,50%,0.10); }
+    .drop svg { width:22px; height:22px; margin-bottom:6px; opacity:.6; }
+    .kpi-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+    .kpi { flex:1; min-width:110px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:9px; padding:10px 12px; }
+    body.light .kpi { background:#FAF6F2; border-color:rgba(180,100,40,0.10); }
+    .kpi .n { font-size:19px; font-weight:700; color:var(--text-primary); }
+    .kpi .l { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.4px; }
+    textarea.ta { width:100%; box-sizing:border-box; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:10px 12px; font-size:12.5px; color:var(--text-primary); font-family:'Inter',sans-serif; resize:vertical; min-height:120px; }
+    input.inp, select.inp { width:100%; box-sizing:border-box; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:9px 12px; font-size:12.5px; color:var(--text-primary); font-family:'Inter',sans-serif; }
+    select.inp option { background:#1a1512; color:inherit; }
+    label.lbl { font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:5px; display:block; }
+    .field { margin-bottom:14px; }
+    .baselist { max-height:170px; overflow-y:auto; margin-top:10px; font-size:11.5px; }
+    .baselist-row { display:flex; justify-content:space-between; padding:6px 8px; border-radius:6px; }
+    .baselist-row:hover { background:rgba(255,255,255,0.05); }
+    .baselist-row .del { cursor:pointer; color:var(--text-muted); opacity:.6; }
+    .baselist-row .del:hover { opacity:1; color:#ff7070; }
+    .promptbox { background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.14); border-radius:9px; padding:12px 14px; font-size:11px; color:var(--text-secondary); line-height:1.55; white-space:pre-wrap; }
+    .copybtn { margin-top:8px; }
+    .publish-banner { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .link-pill { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:var(--r-pill); padding:7px 14px; font-size:11.5px; color:var(--text-secondary); }
+
+    /* Hub navbar: hide only the logo/title part of old topbar */
+    #navbar-container:not(:empty) ~ .main > .topbar .topbar-left { display: none !important; }
+    #navbar-container:not(:empty) ~ .main > .topbar {
+      justify-content: flex-end;
+      padding-left: 8px;
+      height: 46px;
+    }
+    .page-navbar { width: 100%; }
+  </style>
+</head>
+<body>
+
+<div id="navbar-container"></div>
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <img src="../assets/logo.png" alt="HUB.nexus" style="height:32px;width:auto;object-fit:contain;filter:drop-shadow(0 0 4px hsla(var(--theme-h),90%,50%,0.2));flex-shrink:0;"/>
+      <span class="topbar-title">Nexus Eleições 2026</span>
+      <div class="topbar-badge"><span class="pulse-dot"></span> Prisma Eleitoral</div>
+    </div>
+    <div class="topbar-right">
+      <button class="tbtn tbtn-primary" onclick="publicarDashboard()">
+        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Publicar / atualizar dashboard público
+      </button>
+      <button class="tbtn" onclick="toggleMode()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="tab-body">
+
+    <div class="publish-banner card" style="margin-bottom:20px;">
+      <div>
+        <h3 style="margin-bottom:6px;">🔗 Link público</h3>
+        <div class="sub" style="margin-bottom:0;">Dashboard vivo — sempre reflete o último "Publicar" abaixo. Sem senha.</div>
+      </div>
+      <div class="link-pill">
+        <span id="linkPublicoTxt">…/eleicoes-diario-share.html</span>
+        <span class="tbtn" style="padding:3px 9px;" onclick="copiarLink()">Copiar</span>
+      </div>
+    </div>
+
+    <div class="grid3">
+
+      <!-- ── Redes Sociais — via Ekklesia Social embutido ── -->
+      <div class="card">
+        <h3>📡 Redes sociais <span style="font-size:10px;color:var(--text-muted);font-weight:400;">via Ekklesia Social</span></h3>
+        <div class="sub">Abre o Ekklesia for Social num painel embutido. Trate/normalize as fontes lá dentro (Brandwatch, Stilingue, Apify etc.) e clique em "Usar esta base".</div>
+        <div class="drop" onclick="abrirEkklesiaModal('redes')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
+          <div>🏛️ Abrir Ekklesia Social</div>
+        </div>
+        <div class="drop" id="dropBW" onclick="document.getElementById('fileBW').click()" style="margin-top:8px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div>📤 Subir base Brandwatch direto (XLSX/CSV)</div>
+        </div>
+        <input type="file" id="fileBW" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleBWDireto(this.files[0]); this.value='';">
+        <div id="bwStatus" style="font-size:11px;color:var(--text-muted);margin-top:6px;"></div>
+        <div class="kpi-row">
+          <div class="kpi"><div class="n" id="kpiRedesTotal">0</div><div class="l">Menções (30d)</div></div>
+          <div class="kpi"><div class="n" id="kpiRedesHoje">0</div><div class="l">Hoje</div></div>
+        </div>
+        <div class="baselist" id="listRedes"></div>
+      </div>
+
+      <!-- ── Imprensa — via Ekklesia Press embutido ── -->
+      <div class="card">
+        <h3>📰 Imprensa <span style="font-size:10px;color:var(--text-muted);font-weight:400;">via Ekklesia Press</span></h3>
+        <div class="sub">Abre o Ekklesia for Press num painel embutido. Suba as clipadoras (Knewin, Info4, BoxNet etc.) lá dentro e clique em "Unificar bases" — a base volta pra cá sozinha.</div>
+        <div class="drop" onclick="abrirEkklesiaModal('imprensa')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
+          <div>📰 Abrir Ekklesia Press</div>
+        </div>
+        <div class="kpi-row">
+          <div class="kpi"><div class="n" id="kpiImprensaTotal">0</div><div class="l">Matérias (30d)</div></div>
+          <div class="kpi"><div class="n" id="kpiImprensaHoje">0</div><div class="l">Hoje</div></div>
+        </div>
+        <div class="baselist" id="listImprensa"></div>
+      </div>
+
+      <!-- ── Pesquisa Nexus — upload direto do PDF (BTG-Nexus) ── -->
+      <div class="card">
+        <h3>📊 Pesquisa Nexus <span style="font-size:10px;color:var(--text-muted);font-weight:400;">PDF da rodada</span></h3>
+        <div class="sub">Sobe o PDF da rodada (BTG-Nexus) — o Hub lê o texto direto do arquivo, sem precisar copiar nada.</div>
+        <div class="drop" id="dropPesquisa" onclick="document.getElementById('filePesquisa').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div>📄 Enviar PDF da pesquisa</div>
+        </div>
+        <input type="file" id="filePesquisa" accept=".pdf" style="display:none" onchange="handlePesquisaPDF(this.files[0])">
+        <div id="pesqExtractStatus" style="font-size:11px;color:var(--text-muted);margin-top:8px;"></div>
+        <div class="baselist" id="listPesquisas" style="margin-top:10px;"></div>
+      </div>
+    </div>
+
+    <!-- ── Preview/revisão da pesquisa extraída do PDF ── -->
+    <div class="card" id="pesqPreview" style="display:none;">
+      <h3>📊 Revisar rodada extraída do PDF</h3>
+      <div class="sub"><strong>Sempre confira antes de salvar</strong> — PDF com colunas às vezes embaralha o 2º turno.</div>
+      <div class="grid2">
+        <div class="field"><label class="lbl">Rodada</label><input class="inp" id="pesqRodada" placeholder="Ex.: 5"></div>
+        <div class="field"><label class="lbl">Data de divulgação</label><input class="inp" id="pesqDivulgacao" placeholder="AAAA-MM-DD"></div>
+      </div>
+      <div class="field"><label class="lbl">Campo (período de coleta)</label><input class="inp" id="pesqCampo" placeholder="Ex.: 26 a 28/06/2026"></div>
+
+      <div class="sub" style="color:var(--orange-2);margin-top:10px;margin-bottom:4px;">⚠️ Ficha técnica — obrigatória para publicar pesquisa eleitoral (exigência do Marcelo/TSE)</div>
+      <div class="grid2">
+        <div class="field"><label class="lbl">Registro no TSE</label><input class="inp" id="pesqRegistro" placeholder="Ex.: BR-08521/2026"></div>
+        <div class="field"><label class="lbl">Entrevistados (amostra)</label><input class="inp" id="pesqEntrevistados" placeholder="Ex.: 2.009"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label class="lbl">Margem de erro (p.p.)</label><input class="inp" id="pesqMargemErro" placeholder="Ex.: 2"></div>
+        <div class="field"><label class="lbl">Nível de confiança (%)</label><input class="inp" id="pesqConfianca" placeholder="Ex.: 95"></div>
+      </div>
+
+      <label class="lbl">1º Turno — Cenário 1 (um por linha, formato "Nome | NN")</label>
+      <textarea class="ta" id="pesqTurno1" style="min-height:110px;"></textarea>
+
+      <label class="lbl" style="margin-top:10px;">2º Turno — confrontos (um por linha, formato "Lula 47 x 44 Flávio Bolsonaro")</label>
+      <textarea class="ta" id="pesqTurno2" style="min-height:90px;"></textarea>
+
+      <button class="tbtn tbtn-primary" style="margin-top:10px;" onclick="salvarPesquisa()">Salvar rodada</button>
+      <span id="pesqSaveStatus" style="font-size:11px;color:var(--text-muted);margin-left:8px;"></span>
+    </div>
+
+    <!-- ── Perfis oficiais — base do IR² de redes ── -->
+    <div class="card">
+      <h3>👤 Perfis oficiais dos candidatos</h3>
+      <div class="sub">O IR² de redes conta as <strong>publicações do perfil oficial</strong> de cada candidato (Instagram/X/Facebook). Informe o @handle ou o link do perfil. Candidato sem perfil mapeado cai para a contagem de menções gerais e aparece como <strong>"estimado"</strong> no dashboard público.</div>
+      <div id="perfisOficiaisList"><div style="color:var(--text-muted);font-size:12px;padding:6px 0;">Carregando candidatos da pesquisa Nexus...</div></div>
+      <button class="tbtn tbtn-primary" style="margin-top:10px;" onclick="salvarPerfisOficiais()">Salvar perfis</button>
+      <span id="perfisStatus" style="font-size:11px;color:var(--text-muted);margin-left:8px;"></span>
+    </div>
+
+    <!-- ── Candidatos de outros cargos — cadastro manual (sem pesquisa Nexus) ── -->
+    <div class="card">
+      <h3>🗳️ Candidatos — Governador / Senador / Deputado</h3>
+      <div class="sub">Cadastro manual por cargo e UF. Ainda <strong>não há pesquisa Nexus</strong> para esses cargos: o desempenho no dashboard é medido só por menções em redes e imprensa (IR² sem o componente de pesquisa).</div>
+      <div id="candidatosCargosList"></div>
+      <div style="display:flex;gap:8px;margin-top:10px;align-items:center;">
+        <button class="tbtn" onclick="adicionarCandidatoCargo()">+ Adicionar candidato</button>
+        <button class="tbtn tbtn-primary" onclick="salvarCandidatosCargos()">Salvar candidatos</button>
+        <span id="candCargosStatus" style="font-size:11px;color:var(--text-muted);"></span>
+      </div>
+    </div>
+
+    <!-- ── Análises do dia — fluxo externo via NotebookLM (mesmo padrão do Reputaition) ── -->
+    <div class="card">
+      <h3>🤖 Análises do dia <span style="font-size:10px;color:var(--text-muted);font-weight:400;">via NotebookLM (fluxo externo)</span></h3>
+      <div class="sub">
+        ① Baixe o pacote de PDFs abaixo (redes, imprensa e pesquisa) — ② suba tudo como fonte no NotebookLM — ③ copie o prompt e cole lá — ④ cole a resposta (JSON) na caixa e clique em "Aplicar resposta". Sempre revise antes de publicar.
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="tbtn tbtn-primary" onclick="baixarPacoteNotebookLM()">📦 Baixar pacote para NotebookLM (ZIP)</button>
+        <button class="tbtn" onclick="copiarPromptNotebookLM()">📋 Copiar prompt</button>
+      </div>
+      <span id="iaStatus" style="font-size:11px;color:var(--text-muted);display:block;margin-top:8px;"></span>
+      <div class="promptbox" id="elPromptBox" style="margin-top:10px;"></div>
+
+      <div class="field" style="margin-top:14px;">
+        <label class="lbl">Cole a resposta (JSON) da IA</label>
+        <textarea class="ta" id="elRespostaIA" style="min-height:70px;" placeholder="Cole aqui o JSON que a IA devolveu..."></textarea>
+        <button class="tbtn tbtn-primary copybtn" onclick="aplicarRespostaNotebookLM()">✓ Aplicar resposta</button>
+      </div>
+
+      <div class="grid2" style="margin-top:16px;">
+        <div class="field"><label class="lbl">Headline / manchete curta</label><input class="inp" id="inpHeadline" placeholder="Ex.: Tarifaço domina as redes no terceiro dia de debate"></div>
+        <div class="field"><label class="lbl">Tema da semana</label><input class="inp" id="inpTema" placeholder="Ex.: Tarifaço"></div>
+      </div>
+      <div class="field">
+        <label class="lbl">Imagens de fundo do hero <span style="text-transform:none;">— envia direto, sem precisar subir no GitHub (comprime automaticamente)</span></label>
+        <input type="file" id="inpHeroImagensFile" accept="image/*" multiple onchange="adicionarImagensHero(this.files)">
+        <div id="heroImagensPreview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"></div>
+      </div>
+      <div class="field"><label class="lbl">Análise — Redes e Imprensa (assinada por Ana Klarissa) <span style="text-transform:none;">— pra linkar uma fonte, use [texto](url)</span></label><textarea class="ta" id="inpAnaliseRedesImprensa" placeholder="Texto único cruzando redes sociais e imprensa, gerado pela IA a partir das bases carregadas... ex.: Segundo [matéria do G1](https://...)"></textarea></div>
+      <div class="field"><label class="lbl">Análise — Pesquisa eleitoral (assinada por Marcelo Tokarski) <span style="text-transform:none;">— pra linkar uma fonte, use [texto](url)</span></label><textarea class="ta" id="inpAnaliseIaPesquisa" placeholder="Leitura estratégica da pesquisa eleitoral nacional (sem citar IA), com contexto político e metodológico..."></textarea></div>
+      <div class="field" style="opacity:.55;">
+        <label class="lbl">Análise — TSE <span style="text-transform:none;">(em breve — ainda sem integração de dados)</span></label>
+        <textarea class="ta" id="inpAnaliseTse" placeholder="Disponível quando a base de candidatos do TSE for integrada" disabled></textarea>
+      </div>
+      <div class="field">
+        <label class="lbl">Temas mais mencionados <span style="text-transform:none;">(preenchido ao "Aplicar resposta" — vem do JSON da IA)</span></label>
+        <div id="rankingTemasPreview" style="font-size:12px;color:var(--text-muted);">Nenhum tema aplicado ainda.</div>
+      </div>
+      <div class="field"><label class="lbl">Análise — Volume de temas (assinada por Aline Araújo) <span style="text-transform:none;">— pra linkar uma fonte, use [texto](url)</span></label><textarea class="ta" id="inpAnaliseTemas" placeholder="O que o volume de temas acima revela, gerado pela IA a partir das mesmas fontes..."></textarea></div>
+      <div class="field"><label class="lbl">Análise — Pesquisa Nexus (assinada por André Jácomo)</label><textarea class="ta" id="inpAnalisePesquisaRodada" placeholder="Leitura da rodada de pesquisa atual, aparece dentro do card da Pesquisa Nexus na página pública..."></textarea></div>
+      <div class="field">
+        <label class="lbl">Análises por estado <span style="text-transform:none;">(preenchido ao "Aplicar resposta" — cobre os estados mais mencionados no momento em que o prompt foi copiado)</span></label>
+        <div id="analisesPorEstadoPreview" style="font-size:12px;color:var(--text-muted);">Nenhuma análise por estado aplicada ainda.</div>
+      </div>
+      <div class="field">
+        <label class="lbl">Cobertura cargo × estado <span style="text-transform:none;">(matriz completa de 27 UFs × 4 cargos; mostra o que já veio no JSON da IA)</span></label>
+        <div id="analisesPorCargoEstadoPreview" style="font-size:12px;color:var(--text-muted);">Nenhuma análise por cargo/estado aplicada ainda.</div>
+      </div>
+      <div class="field">
+        <label class="lbl">Textos por estado para revisão <span style="text-transform:none;">(prévia completa do que foi aplicado via JSON da IA)</span></label>
+        <div id="analisesEstadoTextosPreview" style="font-size:12px;color:var(--text-muted);">Nenhum texto de estado aplicado ainda.</div>
+      </div>
+
+      <button class="tbtn tbtn-primary" onclick="salvarAnalise()">Salvar análises</button>
+      <span id="analiseStatus" style="font-size:11px;color:var(--text-muted);margin-left:8px;"></span>
+    </div>
+
+    <!-- ── Grafo de narrativas — rede de termos animada por período (port do ekklesia.html) ── -->
+    <div class="card">
+      <h3>🕸️ Grafo de narrativas</h3>
+      <div class="sub">Rede de termos que coocorrem nos textos de redes + imprensa, animada período a período. Gere aqui e clique em "Publicar" pra levar ao dashboard público.</div>
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px;">
+        <div>
+          <label class="lbl">Agrupamento</label>
+          <!-- Sem opção de hora: o eleicoes_base guarda só a data (sem hora) de cada
+               linha — agrupar por hora exigiria mudar todo o pipeline de upload/armazenamento. -->
+          <select class="inp" id="elGrafAgrup" style="width:auto;">
+            <option value="1" selected>Por dia (sincroniza com a linha do tempo)</option>
+            <option value="7">Por semana (7 dias)</option>
+            <option value="30">Por mês (30 dias)</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">Termos por período</label>
+          <select class="inp" id="elGrafTerms" style="width:auto;">
+            <option value="12">12 termos</option>
+            <option value="16" selected>16 termos</option>
+            <option value="24">24 termos</option>
+            <option value="32">32 termos</option>
+          </select>
+        </div>
+        <button class="tbtn tbtn-primary" id="elGrafBtn" onclick="_elCalcGrafo()">🔄 Gerar grafo de narrativas</button>
+        <span id="elGrafStatus" style="font-size:11px;color:var(--text-muted);align-self:center;"></span>
+      </div>
+      <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.08);border-radius:10px;overflow:hidden;position:relative;min-height:200px;">
+        <div id="elGrafEmpty" style="display:flex;align-items:center;justify-content:center;height:200px;font-size:12px;color:var(--text-muted);opacity:.6;">Clique em "Gerar grafo de narrativas" para visualizar</div>
+        <div id="elGrafDiv" style="width:100%;height:520px;display:none;"></div>
+      </div>
+      <div id="elGrafProgress" style="display:none;margin-top:10px;">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;" id="elGrafProgressLabel">Processando…</div>
+        <div style="background:rgba(255,255,255,0.07);border-radius:4px;height:4px;overflow:hidden;">
+          <div id="elGrafProgressBar" style="height:100%;background:#FF6B1A;border-radius:4px;width:0%;transition:width 0.3s;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-color:#c0392b;">
+      <h3 style="color:#c0392b;">⚠️ Zona de risco</h3>
+      <div class="sub">Apaga TUDO deste módulo no banco (redes, imprensa, pesquisa, análises, candidatos cadastrados e o link público) — ação irreversível. Use só pra começar o acompanhamento do zero.</div>
+      <button class="tbtn" style="border-color:#c0392b;color:#c0392b;" onclick="limparTudo()">🗑️ Limpar tudo e começar do zero</button>
+      <span id="limparTudoStatus" style="font-size:11px;color:var(--text-muted);margin-left:8px;"></span>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Modal do Ekklesia embutido (iframe same-origin, mesmo padrão do Embratur/Reputaition) ── -->
+<div id="ekModal" style="display:none;position:fixed;inset:0;z-index:9990;background:rgba(0,0,0,.72);backdrop-filter:blur(6px);flex-direction:column;">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:hsl(var(--theme-h),22%,11%);border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;">
+    <div>
+      <span id="ekModalTitle" style="font-size:13px;font-weight:600;color:var(--text-primary);">Ekklesia</span>
+      <div id="ekModalStatus" style="font-size:11px;color:var(--text-muted);margin-top:2px;"></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0;">
+      <button class="tbtn tbtn-primary" id="ekUsarBaseBtn" onclick="_ekPedirBaseSocial()" style="display:none;">✅ Usar esta base</button>
+      <button class="tbtn" onclick="fecharEkklesiaModal()">✕ Fechar</button>
+    </div>
+  </div>
+  <iframe id="ekIframe" src="" style="flex:1;width:100%;border:none;background:#0a0a0a;"></iframe>
+</div>
+
+<div id="toast" class="toast"></div>
+<script src="../js/utils.js"></script>
+<script src="../js/theme.js"></script>
+<script>
+checkAuth();
+initMode();
+document.getElementById('navbar-container').innerHTML = renderNavbar('ekklesia-eleicoes');
+initTheme();
+
+const API = '/api/ekklesia';
+let basesRedes = [];
+let basesImprensa = [];
+let baseTotals = { redes: 0, imprensa: 0 };
+
+document.getElementById('linkPublicoTxt').textContent =
+  location.origin + '/pages/eleicoes-diario-share.html';
+
+function copiarLink() {
+  navigator.clipboard.writeText(location.origin + '/pages/eleicoes-diario-share.html');
+  toast('Link copiado');
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ── Normalização de data (BR, ISO ou serial Excel) — ainda usada
+   pra normalizar o que vem do Ekklesia embutido, caso a data chegue
+   em formato variado ── */
+function parseDataBR(v) {
+  if (v === undefined || v === null || v === '') return '';
+  const s = String(v).trim();
+  let m = s.match(/^(\d{2})\/(\d{2})\/(\d{2,4})/);
+  if (m) { const yr = m[3].length===2?'20'+m[3]:m[3]; return `${yr}-${m[2]}-${m[1]}`; }
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  const n = Number(s.replace(',', '.'));
+  if (!isNaN(n) && n > 25569 && n < 73050) {
+    return new Date(Math.round((n - 25569) * 86400 * 1000)).toISOString().substring(0, 10);
+  }
+  return '';
+}
+
+/* ═══════════════════════════════════════════════════════
+   EMBED — Ekklesia Social (redes) e Ekklesia Press (imprensa)
+   Mesmo contrato de postMessage já usado em produção pelo
+   Diário Embratur (ekklesia.html) e pelo Reputaition (ekklesia-press.html).
+   Não precisa mexer em nada dentro do ekklesia.html/ekklesia-press.html —
+   os dois já respondem a esses eventos.
+   ═══════════════════════════════════════════════════════ */
+let _ekTipoAtual = null; // 'redes' | 'imprensa'
+
+function abrirEkklesiaModal(tipo) {
+  _ekTipoAtual = tipo;
+  const modal  = document.getElementById('ekModal');
+  const iframe = document.getElementById('ekIframe');
+  const title  = document.getElementById('ekModalTitle');
+  const status = document.getElementById('ekModalStatus');
+  const btnUsar = document.getElementById('ekUsarBaseBtn');
+
+  if (tipo === 'redes') {
+    title.textContent = '🏛️ Ekklesia Social — trate/normalize as fontes e clique em "Usar esta base"';
+    iframe.src = 'ekklesia.html?_t=' + Date.now(); // recarrega do zero — evita base de sessão anterior vazar
+    btnUsar.style.display = 'inline-flex';
+    btnUsar.disabled = false;
+    btnUsar.innerHTML = '✅ Usar esta base';
+  } else {
+    title.textContent = '📰 Ekklesia Press — suba as clipadoras e clique em "Unificar bases" lá dentro';
+    iframe.src = 'ekklesia-press.html?mode=iframe';
+    btnUsar.style.display = 'none'; // Press empurra sozinho via postMessage ao unificar
+  }
+  status.textContent = '';
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function fecharEkklesiaModal() {
+  const modal = document.getElementById('ekModal');
+  const iframe = document.getElementById('ekIframe');
+  modal.style.display = 'none';
+  iframe.src = ''; // descarrega
+  document.body.style.overflow = '';
+  clearTimeout(window._ekSolicitarTimeout);
+  _ekTipoAtual = null;
+}
+function _ekPedirBaseSocial() {
+  const iframe = document.getElementById('ekIframe');
+  const btn = document.getElementById('ekUsarBaseBtn');
+  if (!iframe?.contentWindow) return;
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Buscando base…';
+  iframe.contentWindow.postMessage({ type: 'embratur:solicitar-base' }, '*');
+  clearTimeout(window._ekSolicitarTimeout);
+  window._ekSolicitarTimeout = setTimeout(() => {
+    btn.disabled = false; btn.innerHTML = '✅ Usar esta base';
+    document.getElementById('ekModalStatus').textContent = '⚠️ Sem resposta do Ekklesia Social — confirme que a base já foi carregada/tratada lá dentro.';
+  }, 6000);
+}
+
+/* ═══════════════════════════════════════════════════════
+   UPLOAD DIRETO — Brandwatch (XLSX/CSV), sem passar pelo
+   Ekklesia Social. Reaproveita a mesma extração de colunas
+   do parser do ekklesia.html (fonte 'brandwatch'), já que a
+   base do Eleições vai ser só Brandwatch daqui pra frente.
+   ═══════════════════════════════════════════════════════ */
+function _bwNorm(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+}
+function _bwMakeGetFn(obj, hdr) {
+  const idx = {};
+  hdr.forEach(h => { idx[_bwNorm(h)] = h; });
+  return function get(...keys) {
+    for (const k of keys) {
+      const exact = idx[_bwNorm(k)];
+      if (exact !== undefined) {
+        const v = obj[exact];
+        if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
+      }
+    }
+    return null;
+  };
+}
+function _bwToFloat(v) { if (v === null || v === undefined || v === '') return null; const n = parseFloat(String(v).replace(/[^\d.\-]/g, '')); return isNaN(n) ? null : n; }
+function _bwCanonRede(v) {
+  if (!v) return 'desconhecido';
+  v = String(v).toLowerCase().replace(/https?:\/\/|www\./g, '').split('/')[0].split('.')[0].trim();
+  const MAP = { instagram_public: 'instagram', ig: 'instagram', instagram: 'instagram', facebook_public: 'facebook', fb: 'facebook', brandwatch: 'facebook', facebook: 'facebook', twitter: 'x', yt: 'youtube' };
+  return MAP[v] || v || 'desconhecido';
+}
+function _bwHost(url) {
+  const raw = String(url || '').trim();
+  if (!raw) return '';
+  const candidate = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  try {
+    const u = new URL(candidate);
+    return String(u.hostname || '').toLowerCase().replace(/^www\./, '');
+  } catch (e) {
+    return '';
+  }
+}
+function _bwIsSocialHost(host) {
+  if (!host) return false;
+  return /(instagram\.com|facebook\.com|fb\.com|x\.com|twitter\.com|youtube\.com|youtu\.be|tiktok\.com|threads\.net|linkedin\.com|reddit\.com|bluesky\.app|t\.me|telegram\.org|whatsapp\.com)/.test(host);
+}
+function _bwIsPortalOnline(v) {
+  const l = _bwNorm(v);
+  if (!l) return false;
+  // BW pode variar o rótulo editorial (ex.: "portais e blogs online",
+  // "portais e blogs oneline", "online news"). Todas essas variações
+  // devem cair em imprensa.
+  if (l.includes('portais e blogs online') || l.includes('portais e blogs oneline')) return true;
+  if (l.includes('portais online') || l.includes('blogs online') || l.includes('blogs oneline')) return true;
+  if (/\b(oneline|online|portal|portais|site|web|digital|news|blog|blogs)\b/.test(l)) return true;
+  return false;
+}
+function _bwClassificarCanal(canalBruto, url, domainBruto) {
+  const canalNorm = _bwNorm(canalBruto);
+  if (_bwIsPortalOnline(canalNorm)) return 'portais_online';
+
+  const rede = _bwCanonRede(canalBruto);
+  const host = _bwHost(url || domainBruto);
+  if (host && !_bwIsSocialHost(host)) return 'portais_online';
+
+  // Quando o campo de canal vem como domínio editorial (ex.: g1, uol, cnnbrasil),
+  // tratar como imprensa para não cair no filtro de redes sem interação.
+  if (rede === 'desconhecido' && canalNorm && !/\b(instagram|facebook|twitter|x|youtube|tiktok|threads|linkedin|reddit|bluesky)\b/.test(canalNorm)) {
+    return 'portais_online';
+  }
+  return rede;
+}
+// Rótulo amigável do canal p/ exibição (PDF, dashboard público) — a base do
+// Brandwatch traz imprensa misturada com redes sociais; esses registros viram
+// canal='portais_online' e aparecem como "Portal online" em vez do domínio cru.
+function _bwCanalLabel(canal) {
+  const LABELS = {
+    instagram: 'Instagram', facebook: 'Facebook', x: 'X (Twitter)', youtube: 'YouTube',
+    tiktok: 'TikTok', threads: 'Threads', linkedin: 'LinkedIn', reddit: 'Reddit', bluesky: 'Bluesky',
+    portais_online: 'Portal online', desconhecido: 'Rede social',
+  };
+  if (!canal) return '';
+  return LABELS[canal] || (canal.charAt(0).toUpperCase() + canal.slice(1));
+}
+function _bwParseDate(dStr) {
+  if (!dStr && dStr !== 0) return null;
+  const raw = typeof dStr === 'number' ? dStr : null;
+  const asNum = raw ?? (typeof dStr === 'string' && /^\d+([.,]\d+)?$/.test(String(dStr).trim()) ? Number(String(dStr).trim().replace(',', '.')) : NaN);
+  if (!isNaN(asNum)) {
+    if (asNum > 25569 && asNum < 73050) {
+      const d = new Date(Math.round((asNum - 25569) * 86400 * 1000));
+      return isNaN(d) ? null : d.toISOString().substring(0, 19).replace('T', ' ');
+    }
+    return null;
+  }
+  const s = String(dStr).trim();
+  if (!s) return null;
+  const mBR = s.match(/^(\d{2})\/(\d{2})\/(\d{2,4})([\s,T](.*))?$/);
+  if (mBR) { const yr = mBR[3].length === 2 ? '20' + mBR[3] : mBR[3]; return `${yr}-${mBR[2]}-${mBR[1]}` + (mBR[5] ? ' ' + mBR[5].trim() : ''); }
+  const mISO = s.match(/^(\d{4})[-\/](\d{2})[-\/](\d{2})/);
+  if (mISO) return s.replace(/\//g, '-').substring(0, 19);
+  const d = new Date(s);
+  if (!isNaN(d)) return d.toISOString().substring(0, 19).replace('T', ' ');
+  return null;
+}
+// Extrai o cabeçalho de fato dentro do XLSX bruto do Brandwatch (às vezes vem
+// com linhas de metadados antes) — mesma heurística usada no ekklesia.html.
+function _bwSheetToRows(ws) {
+  const ref = ws['!ref'];
+  if (!ref) return [];
+  const range = XLSX.utils.decode_range(ref);
+  const numRows = range.e.r - range.s.r + 1, numCols = range.e.c - range.s.c + 1;
+  const aoa = [];
+  for (let r = 0; r < numRows; r++) {
+    const row = [];
+    for (let c = 0; c < numCols; c++) {
+      const cell = ws[XLSX.utils.encode_cell({ r: range.s.r + r, c: range.s.c + c })];
+      row.push(cell ? (cell.v !== undefined ? cell.v : '') : '');
+    }
+    aoa.push(row);
+  }
+  let headerRowIdx = -1;
+  for (let i = 0; i < Math.min(20, aoa.length); i++) {
+    let hasUrl = false, hasDate = false;
+    for (let j = 0; j < 300; j++) {
+      const c = String(aoa[i][j] ?? '').trim().toLowerCase();
+      if (c === 'url') hasUrl = true;
+      if (c === 'date' || c === 'data') hasDate = true;
+      if (hasUrl && hasDate) break;
+    }
+    if (hasUrl && hasDate) { headerRowIdx = i; break; }
+  }
+  if (headerRowIdx === -1) headerRowIdx = 0;
+  const hdrRow = aoa[headerRowIdx] || [];
+  const hdrs = [];
+  for (let j = 0; j < 300; j++) hdrs[j] = hdrRow[j] !== undefined ? String(hdrRow[j]).trim() : '';
+  while (hdrs.length > 0 && hdrs[hdrs.length - 1] === '') hdrs.pop();
+  const rows = [];
+  for (let i = headerRowIdx + 1; i < aoa.length; i++) {
+    const row = aoa[i];
+    let hasData = false;
+    const obj = {};
+    for (let j = 0; j < hdrs.length; j++) {
+      const v = row[j];
+      obj[hdrs[j] || ('col' + j)] = (v !== undefined && v !== null) ? v : '';
+      if (v !== undefined && v !== null && v !== '') hasData = true;
+    }
+    if (hasData) rows.push(obj);
+  }
+  return rows;
+}
+async function _bwLerArquivo(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'csv') {
+    // CSV grande: parse em worker reduz travamento do main thread e acelera UX.
+    return new Promise((resolve, reject) => {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        worker: true,
+        fastMode: true,
+        transformHeader: h => String(h || '').trim(),
+        complete: (res) => resolve(res?.data || []),
+        error: reject,
+      });
+    });
+  }
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
+  return _bwSheetToRows(wb.Sheets[wb.SheetNames[0]]);
+}
+// Mesmo mapeamento de colunas do Brandwatch usado no ekklesia.html (parseRows,
+// ramo 'brandwatch') — produz o shape nativo do Ekklesia (canal, data,
+// link_publicacao, nome_publicador, conteudo, curtidas, interacoes...).
+function _bwParseRows(rows) {
+  if (!rows.length) return [];
+  const parseRow = _bwMakeParser(Object.keys(rows[0]));
+  return rows.map(parseRow).filter(r => r && (r.canal || r.conteudo || r.data));
+}
+function _bwMakeParser(hdr) {
+  return function parseRow(r) {
+    const get = _bwMakeGetFn(r, hdr);
+    const obj = {};
+    const canalBruto = get('Page Type', 'Source Type', 'Media Type', 'Type', 'Domain', 'page type', 'page_type', 'network', 'canal');
+    obj.data = _bwParseDate(get('Date', 'date', 'data', 'created'));
+    obj.link_publicacao = get('Url', 'url', 'link');
+    const domainBruto = get('Domain', 'domain', 'Website', 'website', 'Site', 'site');
+    obj.canal = _bwClassificarCanal(canalBruto, obj.link_publicacao, domainBruto);
+    obj.nome_publicador = get('Author', 'Full Name', 'author', 'full name', 'perfil', 'username');
+    obj.conteudo = get('Full Text', 'full text', 'Content', 'content', 'conteudo', 'texto', 'text');
+    obj.sentimento = '';
+    obj.curtidas = _bwToFloat(get('Total_Curtidas', 'X Likes', 'Instagram Likes', 'Facebook Likes', 'Reddit Score', 'Tiktok Likes', 'Youtube Likes', 'Threads Likes', 'Bluesky Likes', 'Linkedin Likes', 'Likes', 'likes', 'curtidas'));
+    obj.comentarios = _bwToFloat(get('Total_Comentarios', 'X Replies', 'Instagram Comments', 'Facebook Comments', 'Reddit Comments', 'Tiktok Comments', 'Youtube Comments', 'Threads Replies', 'Bluesky Replies', 'Linkedin Comments', 'Comments', 'comments', 'comentarios'));
+    obj.compartilhamentos = _bwToFloat(get('Total_Compartilhamentos', 'X Reposts', 'Facebook Shares', 'Tiktok Shares', 'Threads Reposts', 'Bluesky Reposts', 'Linkedin Shares', 'Shares', 'shares', 'compartilhamentos', 'Retweets'));
+    const eng = _bwToFloat(get('Engagement Score', 'engagement score', 'Total Interactions', 'Total Interações', 'total interações', 'total interacoes', 'Instagram Interactions Count', 'Linkedin Engagement', 'interacoes', 'engagements'));
+    if (eng !== null) {
+      obj.interacoes = eng;
+    } else {
+      const parts = [obj.curtidas, obj.comentarios, obj.compartilhamentos].filter(v => v !== null);
+      obj.interacoes = parts.length ? parts.reduce((a, b) => a + b, 0) : null;
+    }
+    return obj;
+  };
+}
+function _ekRowEhImprensa(r) {
+  const canal = _bwNorm(r?.canal || r?.veiculo || r?.tipo_midia || '');
+  if (canal === 'portais_online' || _bwIsPortalOnline(canal)) return true;
+  const host = _bwHost(r?.link_publicacao || r?.link || '');
+  return !!(host && !_bwIsSocialHost(host));
+}
+async function handleBWDireto(file) {
+  if (!file) return;
+  const status = document.getElementById('bwStatus');
+  status.textContent = '⏳ Lendo arquivo...';
+  try {
+    const t0 = performance.now();
+    const rowsBrutas = await _bwLerArquivo(file);
+    if (!rowsBrutas.length) { status.textContent = '⚠️ Nenhuma linha reconhecida — confira se é um export do Brandwatch (precisa de colunas Url/Date).'; return; }
+
+    // Passagem única: parse/classifica/mapeia sem criar arrays intermediárias grandes.
+    const mapeadasRedes = [];
+    const mapeadasImprensa = [];
+    const idsRedes = new Set();
+    const idsImprensa = new Set();
+    const parseRow = _bwMakeParser(Object.keys(rowsBrutas[0] || {}));
+    for (const bruto of rowsBrutas) {
+      const r = parseRow(bruto);
+      if (!r) continue;
+      if (r.canal === 'portais_online') {
+        const m = _ekMapRowImprensa(r);
+        if (!m || !m.id || idsImprensa.has(m.id)) continue;
+        idsImprensa.add(m.id);
+        mapeadasImprensa.push(m);
+      } else {
+        const m = _ekMapRowRedes(r);
+        if (!m || (m.interacoes || 0) < 1 || !m.id || idsRedes.has(m.id)) continue;
+        idsRedes.add(m.id);
+        mapeadasRedes.push(m);
+      }
+    }
+    const totalMapeadas = mapeadasRedes.length + mapeadasImprensa.length;
+    if (!totalMapeadas) { status.textContent = '⚠️ Nenhuma linha com link + data válidos — confira as colunas Url/Date do arquivo.'; return; }
+    status.textContent = `⏳ Enviando ${totalMapeadas} de ${rowsBrutas.length} linhas válidas (${mapeadasRedes.length} redes, ${mapeadasImprensa.length} imprensa)...`;
+
+    const total = mapeadasRedes.length + mapeadasImprensa.length;
+    let progressoRedes = 0;
+    let progressoImprensa = 0;
+    const onProgress = () => {
+      const feito = progressoRedes + progressoImprensa;
+      status.textContent = `⏳ Enviando... ${feito.toLocaleString('pt-BR')} de ${total.toLocaleString('pt-BR')} registros`;
+    };
+    const tarefas = [];
+    if (mapeadasRedes.length) {
+      tarefas.push(_ekEnviarBase('redes', mapeadasRedes, (f) => { progressoRedes = f; onProgress(); }, { skipReload: true }));
+    }
+    if (mapeadasImprensa.length) {
+      tarefas.push(_ekEnviarBase('imprensa', mapeadasImprensa, (f) => { progressoImprensa = f; onProgress(); }, { skipReload: true }));
+    }
+    const resultados = await Promise.all(tarefas);
+    carregarBases();
+
+    const totalInseridas = resultados.reduce((a, r) => a + r.totalInseridas, 0);
+    const totalIgnoradas = resultados.reduce((a, r) => a + r.totalIgnoradas, 0);
+    const errosVistos = resultados.flatMap(r => r.errosVistos);
+    const seg = ((performance.now() - t0) / 1000).toFixed(1);
+    if (errosVistos.length) {
+      status.textContent = `❌ Falhou ao salvar: ${totalInseridas} inseridas antes do erro — ${errosVistos[0]}`;
+    } else {
+      status.textContent = `✅ ${totalInseridas} novas, ${totalIgnoradas} já existiam (${totalMapeadas} linhas válidas de ${rowsBrutas.length} lidas — ${mapeadasRedes.length} redes, ${mapeadasImprensa.length} imprensa) em ${seg}s.`;
+    }
+  } catch (e) {
+    console.error(e);
+    status.textContent = '❌ Erro ao ler/enviar arquivo: ' + e.message;
+  }
+}
+
+// Mapeia linha nativa do Ekklesia Social → shape do eleicoes_base (tipo=redes)
+function _ekMapRowRedes(r) {
+  const link = r.link_publicacao || r.link || '';
+  const dataRel = parseDataBR(r.data || r._dataRel || '');
+  if (!link || !dataRel) return null;
+  return {
+    id: link, data_rel: dataRel, link_publicacao: link,
+    autor: r.nome_publicador || r.autor || '', conteudo: r.conteudo || '',
+    canal: r.canal || '', alcance: Number(r.alcance) || 0,
+    interacoes: Number(r.interacoes ?? r.curtidas + (r.comentarios||0) + (r.compartilhamentos||0)) || 0,
+    sentimento: r.sentimento || '',
+  };
+}
+// Mapeia linha nativa do Ekklesia Press → shape do eleicoes_base (tipo=imprensa)
+function _ekMapRowImprensa(r) {
+  const link = r.link_publicacao || r.link || '';
+  const dataRel = parseDataBR(r.data || '');
+  if (!link || !dataRel) return null;
+  return {
+    id: link, data_rel: dataRel, link_publicacao: link,
+    veiculo: r.canal || r.veiculo || '', titulo: r.titulo || '',
+    conteudo: r.conteudo || '',
+    tipo_midia: r.tipo_midia || '', valoracao: Number(r.valoracao) || 0,
+    sentimento: r.sentimento || '',
+  };
+}
+
+function _elWait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function _elFetchJsonRetry(url, options = {}, tentativas = 4) {
+  let ultimoErro = null;
+  for (let i = 0; i < tentativas; i++) {
+    try {
+      const resp = await fetch(url, options);
+      const res = await resp.json().catch(() => null);
+      if (resp.ok && res?.ok !== false) return { resp, res };
+      ultimoErro = res?.error || `HTTP ${resp.status}`;
+      if (![429, 500, 502, 503, 504].includes(resp.status)) return { resp, res };
+    } catch (e) {
+      ultimoErro = e?.message || String(e);
+    }
+    await _elWait(450 * Math.pow(2, i));
+  }
+  return { resp: null, res: { ok: false, error: ultimoErro || 'Falha de rede' } };
+}
+
+async function _ekEnviarBase(tipo, rowsMapeadas, onProgress, opts = {}) {
+  if (!rowsMapeadas.length) { toast('⚠️ Nenhuma linha válida veio do Ekklesia (confira data/link)'); return { totalInseridas: 0, totalIgnoradas: 0, errosVistos: [] }; }
+
+  function tamanhoJson(row) {
+    try { return new Blob([JSON.stringify(row)]).size; }
+    catch { return String(JSON.stringify(row || {})).length; }
+  }
+  function montarPartes(rows, maxRows, maxBytes) {
+    const out = [];
+    let atual = [];
+    let bytes = 0;
+    rows.forEach(row => {
+      const rowBytes = tamanhoJson(row) + 64;
+      if (atual.length && (atual.length >= maxRows || bytes + rowBytes > maxBytes)) {
+        out.push(atual);
+        atual = [];
+        bytes = 0;
+      }
+      atual.push(row);
+      bytes += rowBytes;
+    });
+    if (atual.length) out.push(atual);
+    return out;
+  }
+
+  // Integras de imprensa deixam o JSON bem maior; nesses casos o envio usa
+  // lotes menores sem afetar o caminho rapido das bases leves.
+  const temTextoLongo = rowsMapeadas.some(r => String(r?.conteudo || '').length > 1000);
+  const LOTE = temTextoLongo ? 120 : 4000;
+  const MAX_BYTES = temTextoLongo ? 700000 : 3500000;
+  const cpu = Number(navigator.hardwareConcurrency || 4);
+  const PARALELO = temTextoLongo ? 1 : Math.max(3, Math.min(8, Math.ceil(cpu / 2)));
+  let totalInseridas = 0, totalIgnoradas = 0, processadas = 0;
+  const errosVistos = [];
+  const partes = montarPartes(rowsMapeadas, LOTE, MAX_BYTES);
+  toast('Enviando ' + rowsMapeadas.length + ' registros...');
+
+  async function enviarParte(parte) {
+    const { resp, res } = await _elFetchJsonRetry(API + '/eleicoes-base', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo, rows: parte }),
+    }, temTextoLongo ? 5 : 3);
+    if (!resp?.ok || !res?.ok) {
+      errosVistos.push(res?.error || (resp ? `HTTP ${resp.status}` : 'Falha de rede'));
+    } else {
+      totalInseridas += res.inseridas || 0;
+      totalIgnoradas += res.ignoradas || 0;
+      if (res.erros?.length) errosVistos.push(...res.erros);
+    }
+    processadas += parte.length;
+    if (onProgress) onProgress(processadas > rowsMapeadas.length ? rowsMapeadas.length : processadas, rowsMapeadas.length);
+  }
+
+  let proximo = 0;
+  async function worker() {
+    while (proximo < partes.length) { const idx = proximo++; await enviarParte(partes[idx]); }
+  }
+  await Promise.all(Array.from({ length: Math.min(PARALELO, partes.length) }, worker));
+
+  if (!opts?.skipReload) carregarBases();
+  if (errosVistos.length) {
+    toast(`⚠️ ${totalInseridas} novas, mas houve erro: ${errosVistos[0]}`);
+    console.error('Erros ao enviar base do Eleições:', errosVistos);
+  } else {
+    toast(`✅ ${totalInseridas} novas, ${totalIgnoradas} já existiam`);
+  }
+  return { totalInseridas, totalIgnoradas, errosVistos };
+}
+
+window.addEventListener('message', (ev) => {
+  if (!ev.data) return;
+
+  // Ekklesia Social respondeu ao pedido de base (fluxo "puxar")
+  if (ev.data.type === 'embratur:base-pronta') {
+    clearTimeout(window._ekSolicitarTimeout);
+    const rows = Array.isArray(ev.data.rows) ? ev.data.rows : [];
+    const rowsImprensa = rows.filter(_ekRowEhImprensa);
+    const rowsRedes = rows.filter(r => !_ekRowEhImprensa(r));
+    const mapeadasRedes = rowsRedes.map(_ekMapRowRedes).filter(Boolean);
+    const mapeadasImprensa = rowsImprensa.map(_ekMapRowImprensa).filter(Boolean);
+    fecharEkklesiaModal();
+    if (mapeadasRedes.length) _ekEnviarBase('redes', mapeadasRedes);
+    if (mapeadasImprensa.length) _ekEnviarBase('imprensa', mapeadasImprensa);
+    return;
+  }
+  if (ev.data.type === 'embratur:base-erro') {
+    clearTimeout(window._ekSolicitarTimeout);
+    document.getElementById('ekModalStatus').textContent = '❌ Erro ao obter base: ' + (ev.data.erro || '');
+    return;
+  }
+
+  // Ekklesia Press empurrou a base unificada sozinho (fluxo "push")
+  if (ev.data.type === 'ekklesia-unificado') {
+    const rows = Array.isArray(ev.data.rows) ? ev.data.rows : [];
+    const mapeadas = rows.map(_ekMapRowImprensa).filter(Boolean);
+    fecharEkklesiaModal();
+    _ekEnviarBase('imprensa', mapeadas);
+    return;
+  }
+});
+
+/* ── Carrega bases já salvas (KPIs + lista por dia) ──
+   Busca os últimos 120 dias (máximo que o backend guarda) pra listagem/
+   verificação de upload não ficar cega a bases mais antigas (ex.: export
+   do Brandwatch cobrindo desde o início da campanha) — só o KPI de topo
+   continua contando apenas os últimos 30 dias, que é o que o rótulo diz. */
+async function fetchEleicoesBaseCompleta(tipo, dias = 120) {
+  const limit = tipo === 'imprensa' ? 100 : 5000;
+  let offset = 0;
+  let primeira = null;
+  const rows = [];
+  const maxPaginas = tipo === 'imprensa' ? 500 : 50;
+
+  for (let pagina = 0; pagina < maxPaginas; pagina++) {
+    const { res } = await _elFetchJsonRetry(`${API}/eleicoes-base?tipo=${tipo}&dias=${dias}&limit=${limit}&offset=${offset}`, {}, 4);
+    if (!res?.ok) return primeira || { ok: false, rows };
+    if (!primeira) primeira = res;
+    rows.push(...(res.rows || []));
+    if (!res.hasMore || !res.rows?.length) break;
+    offset = res.nextOffset ?? (offset + res.rows.length);
+  }
+
+  return { ...primeira, rows };
+}
+
+async function carregarBases() {
+  const corte30 = new Date();
+  corte30.setUTCDate(corte30.getUTCDate() - 30);
+  const corte30ISO = corte30.toISOString().substring(0, 10);
+  for (const tipo of ['redes', 'imprensa']) {
+    const res = await fetchEleicoesBaseCompleta(tipo, 120);
+    const rows = res?.rows || [];
+    const porDia = {};
+    rows.forEach(r => { porDia[r._dataRel] = (porDia[r._dataRel] || 0) + 1; });
+    // total/hojeN vêm de COUNT(*) no backend — não do array acima, que é
+    // limitado a 8000 linhas e subcontaria bases grandes.
+    const total = res?.total ?? rows.filter(r => r._dataRel >= corte30ISO).length;
+    const hojeN = res?.hoje ?? 0;
+    baseTotals[tipo] = total;
+    document.getElementById(tipo === 'redes' ? 'kpiRedesTotal' : 'kpiImprensaTotal').textContent = total;
+    document.getElementById(tipo === 'redes' ? 'kpiRedesHoje' : 'kpiImprensaHoje').textContent = hojeN;
+    const listEl = document.getElementById(tipo === 'redes' ? 'listRedes' : 'listImprensa');
+    listEl.innerHTML = Object.keys(porDia).sort().reverse().slice(0, 14).map(d => `
+      <div class="baselist-row">
+        <span>${d}</span>
+        <span>${porDia[d]} registros <span class="del" onclick="apagarDia('${tipo}','${d}')">✕</span></span>
+      </div>`).join('') || '<div style="color:var(--text-muted);padding:8px;">Nenhuma base carregada ainda</div>';
+    // basesRedes/basesImprensa alimentam a IA e o snapshot publicado — mantém
+    // a janela de 30 dias original aqui, só a listagem acima usa os 120 dias.
+    const rows30 = rows.filter(r => r._dataRel >= corte30ISO);
+    if (tipo === 'redes') basesRedes = rows30; else basesImprensa = rows30;
+  }
+}
+async function apagarDia(tipo, data_rel) {
+  if (!confirm(`Apagar todos os registros de ${tipo} em ${data_rel}?`)) return;
+  await fetch(`${API}/eleicoes-base?tipo=${tipo}&data_rel=${data_rel}`, { method: 'DELETE' });
+  carregarBases();
+}
+
+/* ── Análise editorial (config singleton) — agora um texto por bloco ── */
+async function carregarConfig() {
+  const res = await fetch(API + '/eleicoes-config').then(r => r.json()).catch(() => null);
+  const c = res?.config || {};
+  document.getElementById('inpHeadline').value = c.headline || '';
+  document.getElementById('inpTema').value = c.temaSemana || '';
+  document.getElementById('inpAnaliseRedesImprensa').value = c.analiseRedesImprensa || '';
+  document.getElementById('inpAnaliseIaPesquisa').value = c.analiseIaPesquisa || '';
+  document.getElementById('inpAnaliseTemas').value = c.analiseTemas || '';
+  document.getElementById('inpAnalisePesquisaRodada').value = c.analisePesquisaRodada || '';
+  heroImagensAtual = Array.isArray(c.heroImagens) ? c.heroImagens : [];
+  renderHeroImagensPreview();
+  rankingTemasAtual = Array.isArray(c.rankingTemas) ? c.rankingTemas : [];
+  renderRankingTemasPreview();
+  analisesPorEstadoAtual = (c.analisesPorEstado && typeof c.analisesPorEstado === 'object') ? c.analisesPorEstado : {};
+  analisesPorCargoAtual = (c.analisesPorCargo && typeof c.analisesPorCargo === 'object') ? c.analisesPorCargo : {};
+  renderAnalisesPorEstadoPreview();
+  renderAnalisesPorCargoEstadoPreview();
+  renderAnalisesEstadoTextosPreview();
+  perfisOficiais = c.perfisOficiais || {};
+  renderPerfisOficiais();
+  candidatosOutrosCargos = Array.isArray(c.candidatosOutrosCargos) ? c.candidatosOutrosCargos : [];
+  renderCandidatosCargos();
+}
+
+/* ── Perfis oficiais por candidato (chave = nome do turno1 da pesquisa) ── */
+let perfisOficiais = {};
+let _perfisCandidatosT1 = [];
+async function carregarPerfisOficiais() {
+  const res = await fetch(API + '/eleicoes-pesquisa').then(r => r.json()).catch(() => null);
+  _perfisCandidatosT1 = res?.rodadas?.[0]?.dados?.turno1 || [];
+  renderPerfisOficiais();
+}
+function renderPerfisOficiais() {
+  const box = document.getElementById('perfisOficiaisList');
+  if (!_perfisCandidatosT1.length) {
+    box.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:6px 0;">Nenhuma rodada da pesquisa Nexus cadastrada ainda — os candidatos aparecem aqui depois de salvar uma rodada.</div>';
+    return;
+  }
+  box.innerHTML = _perfisCandidatosT1.map((c, i) => {
+    const nome = c.nome || c.candidato || '';
+    const valor = perfisOficiais[nome] || '';
+    const semPerfil = !String(valor).trim();
+    return `
+      <div class="field" style="margin-bottom:8px;">
+        <label class="lbl">${nome}${c.partido || c.sigla ? ' (' + (c.partido || c.sigla) + ')' : ''}${semPerfil ? ' <span style="color:var(--orange-2);text-transform:none;">— sem perfil: IR² usará menções gerais (estimado)</span>' : ''}</label>
+        <input class="inp" data-perfil-idx="${i}" value="${String(valor).replace(/"/g, '&quot;')}" placeholder="@perfil ou URL (ex.: https://instagram.com/perfil)">
+      </div>`;
+  }).join('');
+}
+async function salvarPerfisOficiais() {
+  const mapa = {};
+  document.querySelectorAll('#perfisOficiaisList input[data-perfil-idx]').forEach(inp => {
+    const c = _perfisCandidatosT1[Number(inp.dataset.perfilIdx)];
+    const nome = c?.nome || c?.candidato || '';
+    const v = inp.value.trim();
+    if (nome && v) mapa[nome] = v;
+  });
+  perfisOficiais = mapa;
+  const res = await fetch(API + '/eleicoes-config', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ perfisOficiais: mapa }),
+  }).then(r => r.json()).catch(() => null);
+  document.getElementById('perfisStatus').textContent = res?.ok ? 'Salvo ✓ — lembre de "Publicar" para refletir no link público' : 'Erro ao salvar';
+  renderPerfisOficiais();
+}
+
+/* ── Candidatos de outros cargos — cadastro manual, sem pesquisa Nexus ── */
+let candidatosOutrosCargos = [];
+const _elCargosManuais = ['Governador', 'Senador', 'Deputado'];
+const _elUfsSiglas = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
+function renderCandidatosCargos() {
+  const box = document.getElementById('candidatosCargosList');
+  if (!box) return;
+  if (!candidatosOutrosCargos.length) {
+    box.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:6px 0;">Nenhum candidato cadastrado ainda — use "+ Adicionar candidato".</div>';
+    return;
+  }
+  const esc = v => String(v || '').replace(/"/g, '&quot;');
+  box.innerHTML = candidatosOutrosCargos.map((cand, i) => `
+    <div style="display:grid;grid-template-columns:2fr 1fr 1.1fr .7fr auto;gap:8px;align-items:center;margin-bottom:8px;">
+      <input class="inp" data-cc-idx="${i}" data-cc-campo="nome" value="${esc(cand.nome)}" placeholder="Nome do candidato">
+      <input class="inp" data-cc-idx="${i}" data-cc-campo="partido" value="${esc(cand.partido)}" placeholder="Partido/sigla">
+      <select class="inp" data-cc-idx="${i}" data-cc-campo="cargo">${_elCargosManuais.map(cg => `<option value="${cg}"${(cand.cargo || 'Governador') === cg ? ' selected' : ''}>${cg}</option>`).join('')}</select>
+      <select class="inp" data-cc-idx="${i}" data-cc-campo="uf"><option value="">UF</option>${_elUfsSiglas.map(u => `<option value="${u}"${String(cand.uf || '').toUpperCase() === u ? ' selected' : ''}>${u}</option>`).join('')}</select>
+      <button class="tbtn" title="Remover candidato" onclick="removerCandidatoCargo(${i})">✕</button>
+    </div>`).join('');
+}
+function _lerCandidatosCargosUI() {
+  document.querySelectorAll('#candidatosCargosList [data-cc-idx]').forEach(el => {
+    const c = candidatosOutrosCargos[Number(el.dataset.ccIdx)];
+    if (c) c[el.dataset.ccCampo] = el.value.trim();
+  });
+}
+function adicionarCandidatoCargo() {
+  _lerCandidatosCargosUI();
+  candidatosOutrosCargos.push({ nome: '', partido: '', cargo: 'Governador', uf: '' });
+  renderCandidatosCargos();
+}
+function removerCandidatoCargo(i) {
+  _lerCandidatosCargosUI();
+  candidatosOutrosCargos.splice(i, 1);
+  renderCandidatosCargos();
+}
+async function salvarCandidatosCargos() {
+  _lerCandidatosCargosUI();
+  candidatosOutrosCargos = candidatosOutrosCargos.filter(c => (c.nome || '').trim());
+  const res = await fetch(API + '/eleicoes-config', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ candidatosOutrosCargos }),
+  }).then(r => r.json()).catch(() => null);
+  document.getElementById('candCargosStatus').textContent = res?.ok ? 'Salvo ✓ — lembre de "Publicar" para refletir no link público' : 'Erro ao salvar';
+  renderCandidatosCargos();
+}
+function _elLerAnaliseDaTela() {
+  return {
+    headline: document.getElementById('inpHeadline').value.trim(),
+    temaSemana: document.getElementById('inpTema').value.trim(),
+    analiseRedesImprensa: document.getElementById('inpAnaliseRedesImprensa').value.trim(),
+    analiseIaPesquisa: document.getElementById('inpAnaliseIaPesquisa').value.trim(),
+    analiseTemas: document.getElementById('inpAnaliseTemas').value.trim(),
+    analisePesquisaRodada: document.getElementById('inpAnalisePesquisaRodada').value.trim(),
+    heroImagens: heroImagensAtual,
+    rankingTemas: rankingTemasAtual,
+    analisesPorEstado: analisesPorEstadoAtual,
+    analisesPorCargo: analisesPorCargoAtual,
+  };
+}
+async function salvarAnalise() {
+  const body = _elLerAnaliseDaTela();
+  const res = await fetch(API + '/eleicoes-config', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  }).then(r => r.json()).catch(() => null);
+  document.getElementById('analiseStatus').textContent = res?.ok ? 'Salvo ✓ — lembre de "Publicar" para refletir no link público' : 'Erro ao salvar';
+}
+
+/* ═══════════════════════════════════════════════════════
+   ANÁLISE POR IA — fluxo externo (NotebookLM), mesmo padrão
+   já usado no Reputaition: baixa PDFs zipados das bases +
+   pesquisa, dá o prompt pra colar lá, e aplica o JSON que a
+   IA devolver. Nenhuma chamada de IA acontece dentro do Hub.
+   ═══════════════════════════════════════════════════════ */
+function _elToLatin1(str) { return String(str || '').replace(/[^\x20-\xFF]/g, '?'); }
+function _elWordCount(s) { const t = String(s ?? '').trim(); return t ? t.split(/\s+/).length : 0; }
+
+// Gera PDF(s) a partir de uma tabela (headers+rows), dividindo por limite de
+// palavras/linhas do NotebookLM — mesma lógica do Reputaition/Ekklesia Social.
+function _elTabelaParaPDFs(baseName, headers, rows) {
+  if (!window.jspdf || !rows.length) return [];
+  const { jsPDF } = window.jspdf;
+  const sep = ' | ';
+  const LIMITE_PALAVRAS = Math.floor(500000 * 0.9);
+  const linhasPorArq = 500;
+
+  const headerPalavras = _elWordCount(headers.join(' '));
+  const blocos = [];
+  let atual = [], palavrasAtual = headerPalavras;
+  for (const row of rows) {
+    const pLinha = _elWordCount(row.join(' '));
+    if (atual.length && (palavrasAtual + pLinha > LIMITE_PALAVRAS || atual.length >= linhasPorArq)) {
+      blocos.push(atual); atual = []; palavrasAtual = headerPalavras;
+    }
+    atual.push(row); palavrasAtual += pLinha;
+  }
+  if (atual.length) blocos.push(atual);
+  const numArquivos = blocos.length || 1;
+  const generated = [];
+
+  for (let i = 0; i < numArquivos; i++) {
+    const bloco = blocos[i] || [];
+    const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+    const pageW = 210, marginL = 15, marginR = 15, marginT = 20;
+    const usableW = pageW - marginL - marginR;
+    let y = marginT;
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(40, 40, 40);
+    doc.text(_elToLatin1(numArquivos > 1 ? `${baseName} - Parte ${i + 1} de ${numArquivos}` : baseName), marginL, y);
+    y += 6;
+
+    doc.setDrawColor(200, 100, 0); doc.setLineWidth(0.4);
+    doc.line(marginL, y, pageW - marginR, y); y += 5;
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(80, 80, 80);
+    const hLines = doc.splitTextToSize(_elToLatin1(headers.join(sep)), usableW);
+    doc.text(hLines, marginL, y); y += hLines.length * 3.5 + 2;
+
+    doc.setDrawColor(220, 220, 220); doc.setLineWidth(0.2);
+    doc.line(marginL, y - 1, pageW - marginR, y - 1);
+
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(50, 50, 50);
+    for (const row of bloco) {
+      const line = headers.map((_, ci) => _elToLatin1(String(row[ci] ?? ''))).join(sep);
+      const wrapped = doc.splitTextToSize(line, usableW);
+      const lineH = wrapped.length * 3.2 + 1.5;
+      if (y + lineH > 285) { doc.addPage(); y = marginT; }
+      doc.text(wrapped, marginL, y); y += lineH;
+    }
+
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let p = 1; p <= totalPages; p++) {
+      doc.setPage(p);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(6); doc.setTextColor(160, 160, 160);
+      doc.text(_elToLatin1(`Nexus Eleições / HUB.nexus - ${baseName} - Pag. ${p}/${totalPages}`), marginL, 292);
+    }
+
+    generated.push({ fileName: numArquivos > 1 ? `${baseName}_parte_${i + 1}.pdf` : `${baseName}.pdf`, blob: doc.output('blob') });
+  }
+  return generated;
+}
+
+async function baixarPacoteNotebookLM() {
+  const status = document.getElementById('iaStatus');
+  if (!window.jspdf) { status.textContent = '⏳ jsPDF ainda carregando, tente em instantes...'; return; }
+  if (!window.JSZip) { status.textContent = '⏳ JSZip ainda carregando, tente em instantes...'; return; }
+
+  status.textContent = '⏳ Gerando PDFs...';
+  const allGenerated = [];
+
+  if (basesRedes.length) {
+    const headers = ['Data', 'Rede', 'Autor', 'Conteúdo', 'Interações', 'Sentimento'];
+    const rows = basesRedes.map(r => [r._dataRel || '', _bwCanalLabel(r.canal) || r.canal || '', r.autor || '', (r.conteudo || '').slice(0, 500), r.interacoes || '', r.sentimento || '']);
+    allGenerated.push(..._elTabelaParaPDFs('redes_sociais', headers, rows));
+  }
+  if (basesImprensa.length) {
+    const headers = ['Data', 'Veículo', 'Título', 'Tipo de mídia', 'Valoração', 'Sentimento'];
+    const rows = basesImprensa.map(r => [r._dataRel || '', r.veiculo || '', r.titulo || '', r.tipo_midia || '', r.valoracao || '', r.sentimento || '']);
+    allGenerated.push(..._elTabelaParaPDFs('imprensa', headers, rows));
+  }
+  const pesqRes = await fetch(API + '/eleicoes-pesquisa').then(r => r.json()).catch(() => null);
+  const rodada = pesqRes?.rodadas?.[0];
+  if (rodada?.dados?.turno1?.length) {
+    const headers = ['Candidato', '%'];
+    const rows = rodada.dados.turno1.map(t => [t.nome || '', t.pct != null ? String(t.pct) : '']);
+    allGenerated.push(..._elTabelaParaPDFs(`pesquisa_rodada_${rodada.rodada || ''}`, headers, rows));
+  }
+
+  if (!allGenerated.length) { status.textContent = '⚠️ Nenhuma base carregada ainda pra gerar PDFs.'; return; }
+
+  const zip = new JSZip();
+  for (const g of allGenerated) zip.file(g.fileName, await g.blob.arrayBuffer());
+  const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(zipBlob);
+  a.download = `nexus_eleicoes_notebooklm_${new Date().toISOString().slice(0, 10)}.zip`;
+  document.body.appendChild(a); a.click(); a.remove();
+
+  status.textContent = `✅ ${allGenerated.length} PDF(s) baixado(s) em ZIP — suba no NotebookLM, copie o prompt abaixo e cole lá.`;
+}
+
+function promptNotebookLM() {
+  // Estados calculados na hora (bases já carregadas em memória) — o prompt só
+  // pede análise dos estados que de fato têm volume, não uma lista fixa de 27.
+  const topEstados = _elAgrupaEstados([...basesRedes, ...basesImprensa], 8).map(e => e.uf).filter(Boolean);
+  const listaEstados = topEstados.length ? topEstados.join(', ') : 'nenhuma UF obrigatória';
+  return `Você é analista sênior da Nexus. Produza análise eleitoral técnica e neutra com base APENAS nas fontes anexadas.
+
+Regras:
+- Tom jornalístico, objetivo, sem partidário, sem emoji, sem slogan.
+- Se faltar base, declare limitação; não invente dados.
+- Evite termos acusatórios sem prova (ex.: censura, fraude, manipulação).
+- Headline: 70-110 caracteres, com sujeito + fenômeno + contexto (sem vagueza).
+- Cada texto com até 90 palavras.
+- Em "analiseIaPesquisa", não use a expressão "IA" no texto final; trate como análise de pesquisa eleitoral nacional.
+
+Entregue JSON válido (sem markdown) com esta estrutura:
+{
+  "headline":"",
+  "temaSemana":"",
+  "analiseRedesImprensa":"",
+  "analiseIaPesquisa":"",
+  "analisePesquisaRodada":"",
+  "rankingTemas":[{"tema":"","total":0}],
+  "temasPorDestaque":[{"tipo":"redes|imprensa","tituloOuTrecho":"","tema":""}],
+  "analiseTemas":"",
+  "analisesPorCargo":{
+    "Presidencial":{"redesImprensa":"","iaPesquisa":"(NACIONAL)","porEstado":{"UF":{"redesImprensa":"..."}}},
+    "Governador":{"redesImprensa":"","iaPesquisa":"(NACIONAL)","porEstado":{"UF":{"redesImprensa":"..."}}},
+    "Senador":{"redesImprensa":"","iaPesquisa":"(NACIONAL)","porEstado":{"UF":{"redesImprensa":"..."}}},
+    "Deputado":{"redesImprensa":"","iaPesquisa":"(NACIONAL)","porEstado":{"UF":{"redesImprensa":"..."}}}
+  },
+  "analisesPorEstado":{}
+}
+
+Para porEstado em cada cargo, priorize UFs com mais volume: ${listaEstados}.
+Formato por UF: "UF":{"redesImprensa":"..."}.
+Pesquisa é apenas nacional: mantenha conteúdo de pesquisa em "analiseIaPesquisa", "analisePesquisaRodada" e em "analisesPorCargo.<cargo>.iaPesquisa" (sempre nacional, nunca por UF).
+Se não houver base por UF, deixe fora; não preencher com texto genérico.
+Em analisesPorEstado, use {"UF":"texto"} só quando houver evidência clara.`;
+}
+const UF_NOMES_PROMPT = {
+  AC:'Acre', AL:'Alagoas', AP:'Amapá', AM:'Amazonas', BA:'Bahia', CE:'Ceará', DF:'Distrito Federal',
+  ES:'Espírito Santo', GO:'Goiás', MA:'Maranhão', MT:'Mato Grosso', MS:'Mato Grosso do Sul', MG:'Minas Gerais',
+  PA:'Pará', PB:'Paraíba', PR:'Paraná', PE:'Pernambuco', PI:'Piauí', RJ:'Rio de Janeiro', RN:'Rio Grande do Norte',
+  RS:'Rio Grande do Sul', RO:'Rondônia', RR:'Roraima', SC:'Santa Catarina', SP:'São Paulo', SE:'Sergipe', TO:'Tocantins',
+};
+function copiarPromptNotebookLM() {
+  navigator.clipboard.writeText(promptNotebookLM()).then(
+    () => toast('📋 Prompt copiado! Cole no chat do NotebookLM.'),
+    () => toast('❌ Não foi possível copiar.')
+  );
+}
+function _elHeadlineDiagnostico(headline) {
+  const h = String(headline || '').trim();
+  if (!h) return 'vazia';
+  const n = h.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const palavras = n.split(/\s+/).filter(Boolean);
+  if (h.length < 45) return 'curta_demais';
+  if (h.length > 140) return 'longa_demais';
+  if (palavras.length < 7) return 'pouca_densidade';
+  const genericos = ['eleicao', 'eleicoes', 'politica', 'cenario', 'rodada', 'crise', 'disputa', 'brasil'];
+  const especificos = palavras.filter(p => p.length >= 5 && !genericos.includes(p));
+  if (especificos.length < 3) return 'generica';
+  return '';
+}
+function _elHeadlineFallback(parsed) {
+  const tema = String(parsed?.temaSemana || '').trim();
+  if (tema) return `Eleições 2026: ${tema}`;
+  return 'Eleições 2026: principais sinais do recorte monitorado';
+}
+function _elSanitizarTextoNeutro(v) {
+  let texto = String(v || '');
+  let ajustes = 0;
+  const trocas = [
+    [/\bcensura\s+(das?|às?|as?)\s+pesquisas?\s+(do|pelo)\s+tse\b/gi, 'questionamentos sobre pesquisas eleitorais e decisões do TSE'],
+    [/\bcensura\s+de\s+pesquisas?\s+(do|pelo)\s+tse\b/gi, 'questionamentos sobre pesquisas eleitorais e decisões do TSE'],
+    [/\bcensura\s+do\s+tse\b/gi, 'decisões institucionais do TSE alvo de contestação'],
+    [/\bcensura\b/gi, 'contestação institucional'],
+    [/\bfraude\s+eleitoral\b/gi, 'suspeita levantada no debate eleitoral'],
+    [/\bfraude\b/gi, 'suspeita em debate'],
+    [/\bmanipulacao\b/gi, 'interpretação controversa'],
+    [/\bmanipulação\b/gi, 'interpretação controversa'],
+  ];
+  trocas.forEach(([re, subst]) => {
+    if (re.test(texto)) {
+      texto = texto.replace(re, subst);
+      ajustes++;
+    }
+  });
+  return { texto, ajustes };
+}
+function _elSanitizarPayloadIA(parsed) {
+  const out = JSON.parse(JSON.stringify(parsed || {}));
+  let ajustes = 0;
+  const camposTexto = ['headline', 'temaSemana', 'analiseRedesImprensa', 'analiseIaPesquisa', 'analisePesquisaRodada', 'analiseTemas'];
+  camposTexto.forEach(k => {
+    const s = _elSanitizarTextoNeutro(out[k]);
+    out[k] = s.texto;
+    ajustes += s.ajustes;
+  });
+  if (out.analisesPorEstado && typeof out.analisesPorEstado === 'object') {
+    Object.keys(out.analisesPorEstado).forEach(uf => {
+      const s = _elSanitizarTextoNeutro(out.analisesPorEstado[uf]);
+      out.analisesPorEstado[uf] = s.texto;
+      ajustes += s.ajustes;
+    });
+  }
+  if (out.analisesPorCargo && typeof out.analisesPorCargo === 'object') {
+    Object.keys(out.analisesPorCargo).forEach(cargo => {
+      const bloco = out.analisesPorCargo[cargo] || {};
+      ['redesImprensa', 'iaPesquisa'].forEach(campo => {
+        const s = _elSanitizarTextoNeutro(bloco[campo]);
+        bloco[campo] = s.texto;
+        ajustes += s.ajustes;
+      });
+      if (bloco.porEstado && typeof bloco.porEstado === 'object') {
+        Object.keys(bloco.porEstado).forEach(uf => {
+          const p = bloco.porEstado[uf] || {};
+          ['redesImprensa', 'iaPesquisa'].forEach(campo => {
+            const s = _elSanitizarTextoNeutro(p[campo]);
+            p[campo] = s.texto;
+            ajustes += s.ajustes;
+          });
+          bloco.porEstado[uf] = p;
+        });
+      }
+      out.analisesPorCargo[cargo] = bloco;
+    });
+  }
+  return { payload: out, ajustes };
+}
+function aplicarRespostaNotebookLM() {
+  const status = document.getElementById('iaStatus');
+  const raw = (document.getElementById('elRespostaIA')?.value || '').trim();
+  if (!raw) { status.textContent = '⚠️ Cole o JSON da IA primeiro.'; return; }
+  let parsed;
+  try {
+    const cleaned = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+    const m = cleaned.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('JSON não encontrado');
+    parsed = JSON.parse(m[0]);
+  } catch (e) {
+    status.textContent = '⚠️ Não consegui ler o JSON — confira o que foi colado.';
+    return;
+  }
+  const saneado = _elSanitizarPayloadIA(parsed);
+  parsed = saneado.payload;
+  const headlineDiagnostico = _elHeadlineDiagnostico(parsed.headline);
+  if (!headlineDiagnostico) {
+    document.getElementById('inpHeadline').value = parsed.headline || '';
+  }
+  document.getElementById('inpTema').value = parsed.temaSemana || '';
+  document.getElementById('inpAnaliseRedesImprensa').value = parsed.analiseRedesImprensa || '';
+  document.getElementById('inpAnaliseIaPesquisa').value = parsed.analiseIaPesquisa || '';
+  document.getElementById('inpAnalisePesquisaRodada').value = parsed.analisePesquisaRodada || '';
+  document.getElementById('inpAnaliseTemas').value = parsed.analiseTemas || '';
+  rankingTemasAtual = Array.isArray(parsed.rankingTemas)
+    ? parsed.rankingTemas.filter(t => t && t.tema).map(t => ({ tema: String(t.tema), total: Number(t.total) || 0 }))
+    : [];
+  renderRankingTemasPreview();
+  analisesPorEstadoAtual = (parsed.analisesPorEstado && typeof parsed.analisesPorEstado === 'object')
+    ? Object.fromEntries(Object.entries(parsed.analisesPorEstado).filter(([uf, txt]) => uf && String(txt || '').trim()).map(([uf, txt]) => [uf.toUpperCase().slice(0, 2), String(txt)]))
+    : {};
+  analisesPorCargoAtual = (parsed.analisesPorCargo && typeof parsed.analisesPorCargo === 'object') ? parsed.analisesPorCargo : {};
+  renderAnalisesPorEstadoPreview();
+  renderAnalisesPorCargoEstadoPreview();
+  renderAnalisesEstadoTextosPreview();
+  if (headlineDiagnostico) {
+    document.getElementById('inpHeadline').value = _elHeadlineFallback(parsed);
+    status.textContent = saneado.ajustes
+      ? '⚠️ Aplicado com ajuste automático de headline e neutralização de termos sensíveis. Revise antes de salvar.'
+      : '⚠️ Aplicado com ajuste automático de headline (baixa qualidade semântica). Revise antes de salvar.';
+  } else {
+    status.textContent = saneado.ajustes
+      ? '⚠️ Aplicado com neutralização automática de termos sensíveis. Revise antes de salvar e publicar.'
+      : '✅ Aplicado — revise antes de salvar e publicar';
+  }
+}
+
+/* ── Análise curta por estado — mesmo fluxo externo (NotebookLM), aplicada
+   junto do resto do JSON. Chave = sigla do estado. ── */
+let analisesPorEstadoAtual = {};
+let analisesPorCargoAtual = {};
+function renderAnalisesPorEstadoPreview() {
+  const el = document.getElementById('analisesPorEstadoPreview');
+  if (!el) return;
+  const entradas = Object.entries(analisesPorEstadoAtual);
+  el.textContent = entradas.length
+    ? entradas.map(([uf, txt]) => `${uf}: ${txt}`).join(' · ')
+    : 'Nenhuma análise por estado aplicada ainda.';
+}
+function _elTemTexto(v) {
+  return !!String(v || '').trim();
+}
+function renderAnalisesPorCargoEstadoPreview() {
+  const el = document.getElementById('analisesPorCargoEstadoPreview');
+  if (!el) return;
+  const cargos = ['Presidencial', 'Governador', 'Senador', 'Deputado'];
+  const ufs = Array.isArray(_elUfsSiglas) && _elUfsSiglas.length
+    ? _elUfsSiglas
+    : ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
+
+  const resumo = cargos.map(cargo => {
+    const totalUf = ufs.length;
+    const completas = ufs.filter(uf => {
+      const porUf = analisesPorCargoAtual?.[cargo]?.porEstado?.[uf] || {};
+      const okRedes = cargo === 'Presidencial'
+        ? (_elTemTexto(porUf.redesImprensa) || _elTemTexto(analisesPorEstadoAtual?.[uf]))
+        : _elTemTexto(porUf.redesImprensa);
+      return okRedes;
+    }).length;
+    return `${cargo}: ${completas}/${totalUf}`;
+  }).join(' · ');
+
+  const head = `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+      <span style="color:var(--text-primary);font-weight:700;">Cobertura preenchida (UF com redes/imprensa; pesquisa é apenas nacional)</span>
+      <span style="color:var(--text-muted);">${resumo}</span>
+    </div>`;
+
+  const thead = `<tr><th style="position:sticky;left:0;background:hsl(var(--theme-h),22%,13%);z-index:2;">UF</th>${cargos.map(c => `<th>${c}</th>`).join('')}</tr>`;
+  const rows = ufs.map(uf => {
+    const nomeUf = UF_NOMES_PROMPT?.[uf] || uf;
+    const tds = cargos.map(cargo => {
+      const porUf = analisesPorCargoAtual?.[cargo]?.porEstado?.[uf] || {};
+      const okRedes = cargo === 'Presidencial'
+        ? (_elTemTexto(porUf.redesImprensa) || _elTemTexto(analisesPorEstadoAtual?.[uf]))
+        : _elTemTexto(porUf.redesImprensa);
+      const badge = okRedes
+        ? '<span style="color:#20bf6b;font-weight:700;">OK</span>'
+        : '<span style="color:#ff7675;font-weight:700;">FALTA</span>';
+      return `<td style="text-align:center;white-space:nowrap;">${badge}</td>`;
+    }).join('');
+    return `<tr><td style="position:sticky;left:0;background:hsl(var(--theme-h),22%,13%);font-weight:700;">${uf} <span style="color:var(--text-muted);font-weight:400;">${nomeUf}</span></td>${tds}</tr>`;
+  }).join('');
+
+  el.innerHTML = `${head}
+    <div style="max-height:340px;overflow:auto;border:1px solid rgba(255,255,255,0.08);border-radius:8px;">
+      <table style="width:100%;border-collapse:collapse;font-size:11.5px;">
+        <thead style="position:sticky;top:0;background:hsl(var(--theme-h),22%,13%);z-index:3;">${thead}</thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+function renderAnalisesEstadoTextosPreview() {
+  const el = document.getElementById('analisesEstadoTextosPreview');
+  if (!el) return;
+  const cargos = ['Presidencial', 'Governador', 'Senador', 'Deputado'];
+  const ufsPadrao = Array.isArray(_elUfsSiglas) && _elUfsSiglas.length
+    ? _elUfsSiglas
+    : ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
+  const ufsBase = new Set(ufsPadrao);
+  Object.keys(analisesPorEstadoAtual || {}).forEach(uf => ufsBase.add(String(uf || '').toUpperCase()));
+  cargos.forEach(cargo => {
+    const porEstado = analisesPorCargoAtual?.[cargo]?.porEstado || {};
+    Object.keys(porEstado).forEach(uf => ufsBase.add(String(uf || '').toUpperCase()));
+  });
+  const ufsExtras = [...ufsBase].filter(uf => uf && !ufsPadrao.includes(uf)).sort();
+  const ufs = [...ufsPadrao, ...ufsExtras];
+  const comTexto = ufs.filter(uf => {
+    if (_elTemTexto(analisesPorEstadoAtual?.[uf])) return true;
+    return cargos.some(cargo => {
+      const blocoCargo = analisesPorCargoAtual?.[cargo]?.porEstado?.[uf] || {};
+      return _elTemTexto(blocoCargo.redesImprensa);
+    });
+  }).length;
+  const blocos = ufs.map((uf, idx) => {
+    const linhas = [];
+    const txtEstado = String(analisesPorEstadoAtual?.[uf] || '').trim();
+    if (txtEstado) {
+      linhas.push(`
+        <div style="margin-top:8px;">
+          <div style="font-weight:700;color:var(--text-primary);margin-bottom:4px;">Análise por estado (geral)</div>
+          <div style="line-height:1.55;">${txtEstado}</div>
+        </div>`);
+    }
+    cargos.forEach(cargo => {
+      const blocoCargo = analisesPorCargoAtual?.[cargo]?.porEstado?.[uf] || {};
+      const redes = String(blocoCargo.redesImprensa || '').trim();
+      if (!redes) return;
+      linhas.push(`
+        <div style="margin-top:10px;padding-top:8px;border-top:1px dashed rgba(255,255,255,0.10);">
+          <div style="font-weight:700;color:var(--text-primary);margin-bottom:4px;">${cargo}</div>
+          <div style="margin-bottom:6px;"><b style="color:var(--text-muted);">Redes e imprensa:</b> ${redes}</div>
+        </div>`);
+    });
+    const conteudo = linhas.length ? linhas.join('') : '<div style="color:var(--text-muted);">Sem texto aplicado para este estado.</div>';
+    const nomeUf = UF_NOMES_PROMPT?.[uf] || uf;
+    const temTexto = linhas.length > 0;
+    return `
+      <details ${(temTexto && idx < 2) ? 'open' : ''} style="border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 10px;background:hsl(var(--theme-h),22%,12%);">
+        <summary style="cursor:pointer;font-weight:700;color:var(--text-primary);">${uf} — ${nomeUf} ${temTexto ? '<span style="color:#20bf6b;font-weight:700;">• com texto</span>' : '<span style="color:#ff7675;font-weight:700;">• sem texto</span>'}</summary>
+        <div style="margin-top:6px;color:var(--text-muted);">${conteudo}</div>
+      </details>`;
+  }).join('');
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+      <span style="color:var(--text-primary);font-weight:700;">Prévia textual por UF</span>
+      <span style="color:var(--text-muted);">${comTexto}/${ufs.length} UFs com texto aplicado</span>
+    </div>
+    <div style="display:grid;gap:8px;max-height:420px;overflow:auto;">${blocos}</div>`;
+}
+
+/* ── Ranking de temas — texto vem da leitura humana/IA externa dos PDFs
+   (mesmo fluxo do NotebookLM acima), não de classificação automática por
+   linha: não há chamada de IA dentro do Hub pra isso. ── */
+let rankingTemasAtual = [];
+function renderRankingTemasPreview() {
+  const el = document.getElementById('rankingTemasPreview');
+  if (!el) return;
+  el.textContent = rankingTemasAtual.length
+    ? rankingTemasAtual.map(t => `${t.tema} (${t.total})`).join(' · ')
+    : 'Nenhum tema aplicado ainda.';
+}
+
+/* ── Imagens de fundo do hero — upload direto (sem GitHub/R2): comprime no
+   navegador via canvas (máx. 1600px de largura, JPEG ~82%) e guarda como
+   data URL dentro do próprio config (heroImagens já era um array de strings,
+   path ou data URL funcionam igual pro crossfade da página pública). ── */
+let heroImagensAtual = [];
+function renderHeroImagensPreview() {
+  const el = document.getElementById('heroImagensPreview');
+  if (!el) return;
+  el.innerHTML = heroImagensAtual.map((src, i) => `
+    <div style="position:relative;">
+      <img src="${src}" style="width:90px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">
+      <span onclick="removerImagemHero(${i})" style="position:absolute;top:-6px;right:-6px;background:#c0392b;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;">✕</span>
+    </div>`).join('') || '<span style="font-size:12px;color:var(--text-muted);">Nenhuma imagem ainda.</span>';
+}
+function removerImagemHero(i) {
+  heroImagensAtual.splice(i, 1);
+  renderHeroImagensPreview();
+}
+function _elComprimirImagem(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      img.onerror = reject;
+      img.onload = () => {
+        const MAX_W = 1600;
+        const escala = Math.min(1, MAX_W / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * escala;
+        canvas.height = img.height * escala;
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+async function adicionarImagensHero(files) {
+  for (const file of files) {
+    try { heroImagensAtual.push(await _elComprimirImagem(file)); }
+    catch (e) { toast('❌ Falha ao processar ' + file.name); }
+  }
+  renderHeroImagensPreview();
+  toast('Imagem(ns) prontas — clique em "Salvar análises" pra gravar.');
+}
+
+/* ── Publica o snapshot atual (KPIs + análises por bloco + top posts) no link público ── */
+function _elNormTxt(v) {
+  return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+function _elRowTxt(r) {
+  if (!r || typeof r !== 'object') return String(r || '');
+  return r.__txt !== undefined ? r.__txt : (r.__txt = [r.autor, r.conteudo, r.canal, r.veiculo, r.titulo, r.tipo_midia].map(v => v || '').join(' '));
+}
+function _elAliasesCandidato(nome) {
+  const n = _elNormTxt(nome).replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!n) return [];
+  const partes = n.split(' ').filter(p => p.length > 2);
+  const aliases = new Set([n]);
+  if (partes.length >= 2) aliases.add(`${partes[0]} ${partes[partes.length - 1]}`);
+  const ultimo = partes[partes.length - 1];
+  if (ultimo && ultimo.length > 4 && !['silva', 'santos', 'souza', 'costa', 'oliveira'].includes(ultimo)) aliases.add(ultimo);
+  return [...aliases];
+}
+// Texto normalizado memoizado na própria linha — essa função roda 1x por
+// candidato (até 8x) sobre o mesmo conjunto de linhas em vários contextos
+// (nacional, por estado, por cargo); sem cache reprocessa a linha toda vez.
+function _elRowNormTxt(r) {
+  return r.__normTxt !== undefined ? r.__normTxt : (r.__normTxt = _elNormTxt(_elRowTxt(r)));
+}
+function _elContaCandidato(rows, nome) {
+  const aliases = _elAliasesCandidato(nome);
+  if (!aliases.length) return 0;
+  return rows.reduce((total, r) => {
+    const texto = _elRowNormTxt(r);
+    return total + (aliases.some(a => texto.includes(a)) ? 1 : 0);
+  }, 0);
+}
+function _elNormHandle(v) {
+  return _elNormTxt(v).trim()
+    .replace(/^https?:\/\/(www\.)?/, '')
+    .replace(/^(instagram\.com|x\.com|twitter\.com|facebook\.com|m\.facebook\.com|tiktok\.com|threads\.net|youtube\.com)\//, '')
+    .split(/[/?#]/)[0]
+    .replace(/^@/, '')
+    .trim();
+}
+// `handle` aceita múltiplos perfis do mesmo candidato separados por vírgula
+// (Instagram, X, Facebook etc.) — cada post bate contra qualquer um deles.
+function _elContaPostsPerfil(rows, handle) {
+  const hs = String(handle || '').split(',').map(_elNormHandle).filter(Boolean);
+  if (!hs.length) return null;
+  const hsCompactos = hs.map(h => h.replace(/\s+/g, ''));
+  return rows.reduce((total, r) => {
+    const a = _elNormHandle(r.autor || r.nome_publicador || '');
+    const aCompacto = a.replace(/\s+/g, '');
+    return total + ((hs.includes(a) || hsCompactos.includes(aCompacto)) ? 1 : 0);
+  }, 0);
+}
+// Cidade → UF (principais capitais + maiores cidades por estado) — cobre o
+// caso "Recife" contar pra Pernambuco sem precisar de classificação por IA
+// (ver prisma-eleitoral-o-que-falta.md, item 4). Propositalmente EXCLUI nomes
+// de cidade que também são palavras comuns do português (Natal, Vitória,
+// Palmas, Serra, Bonito, Alegre) — incluir esses geraria falso-positivo em
+// qualquer menção genérica à palavra, poluindo o mapa em vez de corrigi-lo;
+// pra esses estados o mapa continua dependendo só do nome do estado por
+// extenso (fallback abaixo). Não é uma lista exaustiva dos ~5.570 municípios
+// do Brasil, só as cidades com maior chance real de aparecer em cobertura
+// de imprensa/redes.
+const _elCidadeUf = [
+  ['AC', 'rio branco'], ['AC', 'cruzeiro do sul'],
+  ['AL', 'maceio'], ['AL', 'arapiraca'],
+  ['AP', 'macapa'], ['AP', 'santana'],
+  ['AM', 'manaus'], ['AM', 'parintins'], ['AM', 'itacoatiara'],
+  ['BA', 'salvador'], ['BA', 'feira de santana'], ['BA', 'vitoria da conquista'], ['BA', 'camacari'], ['BA', 'itabuna'], ['BA', 'ilheus'], ['BA', 'juazeiro'], ['BA', 'lauro de freitas'], ['BA', 'barreiras'],
+  ['CE', 'fortaleza'], ['CE', 'caucaia'], ['CE', 'juazeiro do norte'], ['CE', 'sobral'], ['CE', 'maracanau'], ['CE', 'crato'],
+  ['DF', 'brasilia'],
+  ['ES', 'vila velha'], ['ES', 'cariacica'], ['ES', 'cachoeiro de itapemirim'], ['ES', 'linhares'],
+  ['GO', 'goiania'], ['GO', 'aparecida de goiania'], ['GO', 'anapolis'], ['GO', 'rio verde'], ['GO', 'luziania'],
+  ['MA', 'sao luis'], ['MA', 'imperatriz'], ['MA', 'caxias'], ['MA', 'timon'],
+  ['MT', 'cuiaba'], ['MT', 'varzea grande'], ['MT', 'rondonopolis'], ['MT', 'sinop'],
+  ['MS', 'campo grande'], ['MS', 'dourados'], ['MS', 'tres lagoas'], ['MS', 'corumba'],
+  ['MG', 'belo horizonte'], ['MG', 'uberlandia'], ['MG', 'contagem'], ['MG', 'juiz de fora'], ['MG', 'betim'], ['MG', 'montes claros'], ['MG', 'uberaba'], ['MG', 'governador valadares'], ['MG', 'ipatinga'], ['MG', 'sete lagoas'], ['MG', 'divinopolis'], ['MG', 'pocos de caldas'], ['MG', 'varginha'],
+  ['PA', 'belem'], ['PA', 'ananindeua'], ['PA', 'santarem'], ['PA', 'maraba'], ['PA', 'castanhal'], ['PA', 'parauapebas'],
+  ['PB', 'joao pessoa'], ['PB', 'campina grande'], ['PB', 'santa rita'], ['PB', 'patos'], ['PB', 'bayeux'],
+  ['PR', 'curitiba'], ['PR', 'londrina'], ['PR', 'maringa'], ['PR', 'ponta grossa'], ['PR', 'cascavel'], ['PR', 'foz do iguacu'], ['PR', 'guarapuava'], ['PR', 'sao jose dos pinhais'],
+  ['PE', 'recife'], ['PE', 'jaboatao dos guararapes'], ['PE', 'olinda'], ['PE', 'caruaru'], ['PE', 'petrolina'], ['PE', 'paulista'], ['PE', 'garanhuns'],
+  ['PI', 'teresina'], ['PI', 'parnaiba'],
+  ['RJ', 'rio de janeiro'], ['RJ', 'niteroi'], ['RJ', 'duque de caxias'], ['RJ', 'nova iguacu'], ['RJ', 'sao goncalo'], ['RJ', 'volta redonda'], ['RJ', 'petropolis'], ['RJ', 'campos dos goytacazes'], ['RJ', 'cabo frio'], ['RJ', 'macae'], ['RJ', 'angra dos reis'],
+  ['RN', 'mossoro'], ['RN', 'parnamirim'],
+  ['RS', 'porto alegre'], ['RS', 'caxias do sul'], ['RS', 'pelotas'], ['RS', 'canoas'], ['RS', 'santa maria'], ['RS', 'gravatai'], ['RS', 'novo hamburgo'], ['RS', 'passo fundo'], ['RS', 'uruguaiana'], ['RS', 'bage'],
+  ['RO', 'porto velho'], ['RO', 'ji-parana'], ['RO', 'ariquemes'], ['RO', 'vilhena'],
+  ['RR', 'boa vista'],
+  ['SC', 'florianopolis'], ['SC', 'joinville'], ['SC', 'blumenau'], ['SC', 'chapeco'], ['SC', 'criciuma'], ['SC', 'itajai'], ['SC', 'jaragua do sul'], ['SC', 'lages'], ['SC', 'balneario camboriu'],
+  ['SP', 'sao paulo'], ['SP', 'campinas'], ['SP', 'guarulhos'], ['SP', 'sao bernardo do campo'], ['SP', 'santo andre'], ['SP', 'osasco'], ['SP', 'sorocaba'], ['SP', 'ribeirao preto'], ['SP', 'sao jose dos campos'], ['SP', 'santos'], ['SP', 'maua'], ['SP', 'diadema'], ['SP', 'jundiai'], ['SP', 'piracicaba'], ['SP', 'bauru'], ['SP', 'franca'], ['SP', 'presidente prudente'], ['SP', 'sao jose do rio preto'],
+  ['SE', 'aracaju'], ['SE', 'nossa senhora do socorro'], ['SE', 'lagarto'],
+  ['TO', 'araguaina'], ['TO', 'gurupi'],
+];
+const _elParaComAcentoRe = /(^|[^a-zà-ú])pará([^a-zà-ú]|$)/i;
+const _elEstadosUf = [
+  ['AC', 'acre'], ['AL', 'alagoas'], ['AP', 'amapa'], ['AM', 'amazonas'], ['BA', 'bahia'], ['CE', 'ceara'],
+  ['DF', 'distrito federal'], ['ES', 'espirito santo'], ['GO', 'goias'], ['MA', 'maranhao'], ['MT', 'mato grosso'],
+  ['MS', 'mato grosso do sul'], ['MG', 'minas gerais'], ['PB', 'paraiba'], ['PR', 'parana'],
+  ['PE', 'pernambuco'], ['PI', 'piaui'], ['RJ', 'rio de janeiro'], ['RN', 'rio grande do norte'],
+  ['RS', 'rio grande do sul'], ['RO', 'rondonia'], ['RR', 'roraima'], ['SC', 'santa catarina'], ['SP', 'sao paulo'],
+  ['SE', 'sergipe'], ['TO', 'tocantins'],
+];
+// Regex pré-compilada uma única vez (não a cada linha) — bases de 30-50k linhas
+// recompilando ~185 regex por linha (estados+cidades) travava o publish inteiro.
+const _elEstadosUfRe = _elEstadosUf.map(([uf, nome]) => [uf, new RegExp(`(^|\\W)${nome}(\\W|$)`)]);
+const _elCidadeUfRe = _elCidadeUf.map(([uf, nome]) => [uf, new RegExp(`(^|\\W)${nome}(\\W|$)`)]);
+function _elUfPorTexto(texto) {
+  const original = String(texto || '');
+  // "Pará" sem acento vira "para" — uma das preposições mais comuns do
+  // português — e inflava PA em qualquer texto (bug confirmado: 15k+ menções
+  // fantasma). Só conta Pará com o acento presente no texto original; sem
+  // acento, cai pro fallback de cidades abaixo (Belém, Marabá, Santarém...).
+  if (_elParaComAcentoRe.test(original)) return 'PA';
+  const t = _elNormTxt(texto);
+  const porEstado = _elEstadosUfRe.find(([, re]) => re.test(t))?.[0];
+  if (porEstado) return porEstado;
+  return _elCidadeUfRe.find(([, re]) => re.test(t))?.[0] || '';
+}
+// UF memoizada na própria linha — evita reprocessar a mesma linha toda vez
+// que ela aparece em mapaBrasil, porEstado e candidatosPorCargo (mesmo array,
+// consultado ~30x numa publicação com bases grandes).
+function _elUfDaRow(r) {
+  if (r.__uf !== undefined) return r.__uf;
+  return (r.__uf = String(r.uf || r.estado || '').toUpperCase().slice(0, 2) || _elUfPorTexto(_elRowTxt(r)));
+}
+function _elAgrupaEstados(rows, max) {
+  const mapa = {};
+  rows.forEach(r => {
+    const uf = _elUfDaRow(r);
+    if (!uf) return;
+    mapa[uf] = (mapa[uf] || 0) + 1;
+  });
+  return Object.entries(mapa).map(([uf, total]) => ({ uf, total })).sort((a, b) => b.total - a.total).slice(0, max || 12);
+}
+// Uma passada só sobre as linhas em vez de rows.filter(...) por UF (27 estados
+// × filter O(n) virava O(estados×n) — com 50k linhas isso travava o publish).
+function _elPartitionarPorUf(rows) {
+  const mapa = {};
+  rows.forEach(r => {
+    const uf = _elUfDaRow(r);
+    if (!uf) return;
+    (mapa[uf] = mapa[uf] || []).push(r);
+  });
+  return mapa;
+}
+
+/* ── Nuvem de termos por candidato — mesma técnica (tokenização + TF-IDF)
+   usada no ekklesia.html (tokenNar/tfidfTop), aplicada só aos posts de
+   redes+imprensa que citam o candidato. Vira `termos` no snapshot publicado,
+   a nuvem em si é desenhada (SVG) no dashboard público. ── */
+const _elSW = new Set([
+  'o','a','os','as','um','uma','uns','umas','de','do','da','dos','das','em','no','na','nos','nas','ao','aos',
+  'pelo','pela','pelos','pelas','por','para','pra','pro','com','sem','sob','sobre','entre','ate','apos','desde',
+  'que','porque','pois','se','caso','como','quando','onde','quem','qual','quais',
+  'eu','tu','ele','ela','nos','vos','eles','elas','voce','voces','me','te','se','lhe','lhes',
+  'meu','minha','meus','minhas','teu','tua','seu','sua','seus','suas','nosso','nossa',
+  'este','esta','estes','estas','esse','essa','esses','essas','isso','isto','aquilo',
+  'e','ou','mas','porem','contudo','todavia','nem','ja','so','nao','sim','muito','pouco','mais','menos',
+  'ser','estar','ter','haver','vai','vou','foi','sao','era','tem','pode','podem',
+  'rt','via','http','https','www','com','net','org','br','co','bit','ly',
+  'the','and','for','are','but','not','you','all','can','her','was','with','from','they','this','that','have',
+  'candidato','candidata','eleicao','eleicoes','2026','disse','sobre','ainda','hoje','apos',
+]);
+const _elTemaRuido = new Set([
+  'pre', 'feira', 'santana', 'campanha', 'candidato', 'candidata', 'eleicao', 'eleicoes',
+  'instagram', 'facebook', 'whatsapp', 'telegram', 'twitter', 'youtube', 'tiktok',
+  'flavio', 'lula', 'bolsonaro', 'presidente', 'senador', 'governo', 'segundo',
+  'perfil', 'post', 'posts', 'rede', 'redes', 'imprensa', 'globo', 'uol', 'folha', 'estadao', 'metropoles',
+  'terra', 'valor', 'nexus', 'brasil', 'btg', 'datafolha', 'exame', 'veja', 'cnn',
+]);
+const _elTemaTaxonomia = [
+  { tema: 'Disputa eleitoral e campanha', termos: ['eleitoral', 'campanha', 'voto', 'urna', 'debate', 'pesquisa', 'pesquisas', 'turno', 'tse'] },
+  { tema: 'Governo federal e Congresso', termos: ['planalto', 'governo federal', 'congresso', 'camara', 'senado', 'ministerio', 'esplanada'] },
+  { tema: 'Economia e custo de vida', termos: ['economia', 'inflacao', 'juros', 'dolar', 'desemprego', 'imposto', 'tributo', 'orcamento', 'preco', 'combustivel'] },
+  { tema: 'Seguranca publica e justica', termos: ['seguranca', 'crime', 'violencia', 'policia', 'justica', 'stf', 'mpf', 'operacao'] },
+  { tema: 'Politica internacional e diplomacia', termos: ['internacional', 'guerra', 'trump', 'eua', 'china', 'brics', 'diplomacia', 'itamaraty'] },
+  { tema: 'Redes sociais e comunicacao digital', termos: ['instagram', 'facebook', 'x', 'twitter', 'tiktok', 'youtube', 'threads', 'viral', 'engajamento'] },
+  { tema: 'Saude e politicas sociais', termos: ['saude', 'sus', 'hospital', 'medico', 'vacina', 'bolsa familia', 'assistencia', 'beneficio social'] },
+  { tema: 'Educacao e juventude', termos: ['educacao', 'escola', 'universidade', 'enem', 'aluno', 'professor', 'juventude'] },
+  { tema: 'Infraestrutura e servicos urbanos', termos: ['transporte', 'mobilidade', 'saneamento', 'energia', 'obra', 'rodovia', 'infraestrutura'] },
+  { tema: 'Governos estaduais e regionais', termos: ['governador', 'governadora', 'governo estadual', 'assembleia', 'estado', 'regional'] },
+];
+const _elTemaTaxonomiaRe = _elTemaTaxonomia.map(regra => ({
+  tema: regra.tema,
+  termosRe: (regra.termos || []).map(t => {
+    const n = _elNormTxt(t);
+    const esc = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+    return new RegExp(`(^|\\W)${esc}(\\W|$)`);
+  }),
+}));
+function _elDocNorm(doc) {
+  if (doc && typeof doc === 'object') return _elRowNormTxt(doc);
+  return _elNormTxt(doc || '');
+}
+function _elDocTxt(doc) {
+  if (doc && typeof doc === 'object') return _elRowTxt(doc);
+  return String(doc || '');
+}
+function _elClassificarTemas(rows, maxN, opts) {
+  const bloqueados = new Set([...(opts?.bloqueados || []), ..._elTemaRuido]);
+  const cont = {};
+  const docs = rows || [];
+
+  docs.forEach(doc => {
+    const n = _elDocNorm(doc);
+    const achados = new Set();
+    _elTemaTaxonomiaRe.forEach(regra => {
+      const bate = regra.termosRe.some(re => re.test(n));
+      if (bate) achados.add(regra.tema);
+    });
+
+    // Fallback: quando nada casar na taxonomia, pega 1 termo forte do documento.
+    if (!achados.size) {
+      const candidato = _elTokeniza(_elDocTxt(doc)).find(t => t.length >= 5 && !bloqueados.has(t));
+      if (candidato) achados.add(candidato.charAt(0).toUpperCase() + candidato.slice(1));
+    }
+
+    achados.forEach(tema => { cont[tema] = (cont[tema] || 0) + 1; });
+  });
+
+  const minFreq = docs.length >= 200 ? 4 : docs.length >= 80 ? 3 : docs.length >= 30 ? 2 : 1;
+  return Object.entries(cont)
+    .filter(([, total]) => total >= minFreq)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, maxN || 10)
+    .map(([tema, total]) => ({ tema, total }));
+}
+function _elTemaPrincipalDoc(doc, opts) {
+  const n = _elDocNorm(doc);
+  const temaTaxonomia = _elTemaTaxonomiaRe.find(regra => regra.termosRe.some(re => re.test(n)));
+  return temaTaxonomia ? temaTaxonomia.tema : '';
+}
+function _elTokeniza(txt) {
+  return String(txt || '')
+    .replace(/https?:\/\/[^\s]*/gi, ' ').replace(/@\w+/g, ' ').replace(/#\w+/g, ' ')
+    .toLowerCase().normalize('NFD').replace(new RegExp('[\\u0300-\\u036f]', 'g'), '')
+    .replace(/[^a-z\s]/g, ' ').split(/\s+/)
+    .filter(t => t.length >= 3 && !_elSW.has(t) && !/^\d+$/.test(t));
+}
+function _elTfidfTop(docs, maxN) {
+  const sample = docs.length > 2000 ? docs.filter((_, i) => Math.random() < 2000 / docs.length) : docs;
+  const N = sample.length || 1;
+  const tf = sample.map(d => {
+    const toks = _elTokeniza(d);
+    const m = {};
+    toks.forEach(t => { m[t] = (m[t] || 0) + 1; });
+    const total = toks.length || 1;
+    Object.keys(m).forEach(k => m[k] /= total);
+    return m;
+  });
+  const df = {};
+  tf.forEach(m => Object.keys(m).forEach(t => { df[t] = (df[t] || 0) + 1; }));
+  const score = {};
+  tf.forEach(m => Object.entries(m).forEach(([t, v]) => {
+    score[t] = (score[t] || 0) + v * (Math.log((N + 1) / (df[t] + 1)) + 1);
+  }));
+  return Object.entries(score).sort((a, b) => b[1] - a[1]).slice(0, maxN).map(([t, s]) => ({ t, s }));
+}
+function _elTermosCandidato(nome, maxTermos) {
+  const aliases = _elAliasesCandidato(nome);
+  if (!aliases.length) return [];
+  const textos = [...basesRedes, ...basesImprensa]
+    .map(r => _elRowTxt(r))
+    .filter(txt => { const t = _elNormTxt(txt); return aliases.some(a => t.includes(a)); });
+  if (!textos.length) return [];
+  return _elTfidfTop(textos, maxTermos || 24);
+}
+/* ── Grafo de narrativas — port 1:1 do ekklesia.html (coEdges/springPos/antiCol/
+   calcGrafo/_renderPlotly): fonte de docs = basesRedes+basesImprensa, texto por
+   _elRowTxt, data por _dataRel/data_rel, TF-IDF via _elTfidfTop já existente. ── */
+const _elGrafPal = ['#FF6B1A', '#FF9F5C', '#C45C08', '#FF9F45', '#F5C842', '#E87D2B', '#FF6B35', '#FFAA33', '#CC6600', '#FFA500'];
+let _elGrafoFrames = null;
+const _elPartidosConhecidos = {
+  'lula': 'PT',
+  'luiz inacio lula da silva': 'PT',
+  'fernando haddad': 'PT',
+  'flavio bolsonaro': 'PL',
+  'jair bolsonaro': 'PL',
+  'michelle bolsonaro': 'PL',
+  'tarcisio de freitas': 'Republicanos',
+  'ronaldo caiado': 'União Brasil',
+  'ratinho junior': 'PSD',
+  'romeu zema': 'Novo',
+  'ciro gomes': 'PDT',
+  'joao campos': 'PSB',
+  'simone tebet': 'MDB',
+  'eduardo leite': 'PSD',
+};
+function _elPartidoCandidato(c) {
+  const direto = String(c?.partido || c?.sigla || '').trim();
+  if (direto) return direto;
+  const nome = String(c?.nome || c?.candidato || '').trim();
+  const paren = nome.match(/\(([A-Z][A-Z0-9 .-]{1,18})\)\s*$/);
+  if (paren) return paren[1].trim();
+  return _elPartidosConhecidos[_elNormTxt(nome)] || '';
+}
+function _elCoEdges(docs, terms) {
+  const mat = {};
+  const sample = docs.length > 1000 ? docs.filter((_, i) => i % Math.ceil(docs.length / 1000) === 0) : docs;
+  sample.forEach(d => {
+    const toks = new Set(_elTokeniza(d));
+    terms.forEach(a => terms.forEach(b => {
+      if (a.t < b.t && toks.has(a.t) && toks.has(b.t)) {
+        const k = a.t + '|' + b.t;
+        mat[k] = (mat[k] || 0) + 1;
+      }
+    }));
+  });
+  return Object.entries(mat).filter(([, v]) => v > 0).map(([k, w]) => { const [a, b] = k.split('|'); return { a, b, w }; });
+}
+function _elSpringPos(terms, edges, iter = 80) {
+  const nodes = terms.map(x => x.t);
+  const pos = {};
+  nodes.forEach((n, i) => {
+    const a = (i / nodes.length) * 2 * Math.PI;
+    pos[n] = [Math.cos(a) * 0.6 + (Math.random() - .5) * .05, Math.sin(a) * 0.6 + (Math.random() - .5) * .05];
+  });
+  const k = Math.sqrt(1.0 / (nodes.length || 1));
+  for (let it = 0; it < iter; it++) {
+    const disp = {}; nodes.forEach(n => disp[n] = [0, 0]);
+    for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+      const a = nodes[i], b = nodes[j];
+      const dx = pos[a][0] - pos[b][0], dy = pos[a][1] - pos[b][1];
+      const d = Math.max(Math.sqrt(dx * dx + dy * dy), .01);
+      const f = k * k / d;
+      disp[a][0] += (dx / d) * f; disp[a][1] += (dy / d) * f;
+      disp[b][0] -= (dx / d) * f; disp[b][1] -= (dy / d) * f;
+    }
+    edges.forEach(e => {
+      if (!pos[e.a] || !pos[e.b]) return;
+      const dx = pos[e.a][0] - pos[e.b][0], dy = pos[e.a][1] - pos[e.b][1];
+      const d = Math.max(Math.sqrt(dx * dx + dy * dy), .01);
+      const f = d * d / k;
+      disp[e.a][0] -= (dx / d) * f; disp[e.a][1] -= (dy / d) * f;
+      disp[e.b][0] += (dx / d) * f; disp[e.b][1] += (dy / d) * f;
+    });
+    const temp = .15 * (1 - it / iter);
+    nodes.forEach(n => {
+      const dm = Math.max(Math.sqrt(disp[n][0] ** 2 + disp[n][1] ** 2), .01);
+      pos[n][0] += (disp[n][0] / dm) * Math.min(Math.abs(disp[n][0]), temp);
+      pos[n][1] += (disp[n][1] / dm) * Math.min(Math.abs(disp[n][1]), temp);
+    });
+  }
+  return pos;
+}
+function _elAntiCol(pos, terms, sizes) {
+  const nodes = terms.map(x => x.t);
+  for (let it = 0; it < 60; it++) {
+    let moved = false;
+    for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+      const n1 = nodes[i], n2 = nodes[j];
+      const dx = pos[n1][0] - pos[n2][0], dy = pos[n1][1] - pos[n2][1];
+      const minD = (n1.length + n2.length) * 0.016 + (sizes[n1] + sizes[n2]) * 0.003;
+      const dist = Math.max(Math.abs(dx), Math.abs(dy));
+      if (dist < minD) {
+        const push = (minD - dist) * 0.5;
+        const sx = dx !== 0 ? Math.sign(dx) : 1, sy = dy !== 0 ? Math.sign(dy) : 1;
+        pos[n1][0] += push * sx; pos[n2][0] -= push * sx;
+        pos[n1][1] += push * sy; pos[n2][1] -= push * sy;
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+  return pos;
+}
+function _elCalcGrafo() {
+  const btn = document.getElementById('elGrafBtn');
+  const status = document.getElementById('elGrafStatus');
+  const progress = document.getElementById('elGrafProgress');
+  const progressBar = document.getElementById('elGrafProgressBar');
+  const progressLabel = document.getElementById('elGrafProgressLabel');
+  const DB = [...basesRedes, ...basesImprensa];
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Calculando…';
+  status.textContent = '';
+  if (progress) progress.style.display = 'block';
+  let minDate = null;
+  DB.forEach(r => { try { const d = new Date(r._dataRel || r.data_rel); if (!isNaN(d) && (minDate === null || d < minDate)) minDate = d; } catch (e) {} });
+  if (!minDate) minDate = new Date();
+  const refMs = minDate.getTime();
+  const dias = parseInt(document.getElementById('elGrafAgrup').value) || 7;
+  const maxT = parseInt(document.getElementById('elGrafTerms').value) || 16;
+  const grupos = {};
+  DB.forEach(r => {
+    const dataRel = r._dataRel || r.data_rel;
+    if (!dataRel) return;
+    try {
+      const d = new Date(dataRel); if (isNaN(d)) return;
+      const diff = Math.floor((d.getTime() - refMs) / 86400000);
+      const bloco = Math.floor(diff / dias);
+      const inicioBloco = new Date(refMs + bloco * dias * 86400000);
+      let label;
+      if (dias <= 7) label = inicioBloco.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+      else if (dias <= 31) label = inicioBloco.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
+      else label = 'T' + Math.ceil((inicioBloco.getMonth() + 1) / 3) + '/' + inicioBloco.getFullYear();
+      const key = String(bloco + 5000).padStart(6, '0');
+      // iso vai junto do frame pra página pública casar o dia do slider da
+      // timeline com o período certo do grafo, sem depender do label formatado.
+      if (!grupos[key]) grupos[key] = { label, iso: inicioBloco.toISOString().slice(0, 10), docs: [] };
+      const txt = _elRowTxt(r).trim();
+      if (txt.length > 10) grupos[key].docs.push(txt);
+    } catch (e) {}
+  });
+  const periodos = Object.entries(grupos).sort((a, b) => a[0].localeCompare(b[0])).map(([, v]) => v).filter(p => p.docs.length >= 3);
+  if (!periodos.length) {
+    status.textContent = '⚠️ Dados insuficientes.';
+    btn.disabled = false; btn.textContent = '🔄 Gerar grafo de narrativas';
+    if (progress) progress.style.display = 'none';
+    return;
+  }
+  const frames = [], steps = [];
+  let i = 0;
+  function processChunk() {
+    const CHUNK = 3;
+    const end = Math.min(i + CHUNK, periodos.length);
+    for (; i < end; i++) {
+      const { label, docs, iso } = periodos[i];
+      const pct = Math.round((i / periodos.length) * 100);
+      if (progressBar) progressBar.style.width = pct + '%';
+      if (progressLabel) progressLabel.textContent = `Processando período ${i + 1} de ${periodos.length}: ${label}`;
+      try {
+        const terms = _elTfidfTop(docs, maxT);
+        if (terms.length < 2) continue;
+        const maxS = terms[0].s || 1;
+        const sizes = {}; terms.forEach(x => { sizes[x.t] = 14 + Math.pow(x.s / maxS, 1.8) * 44; });
+        const edges = _elCoEdges(docs, terms);
+        let pos = _elSpringPos(terms, edges, 80);
+        pos = _elAntiCol(pos, terms, sizes);
+        const xs = terms.map(x => pos[x.t][0]), ys = terms.map(x => pos[x.t][1]);
+        const minX = Math.min(...xs), maxX = Math.max(...xs);
+        const minY = Math.min(...ys), maxY = Math.max(...ys);
+        const padX = (maxX - minX) * 0.3 || 0.5, padY = (maxY - minY) * 0.3 || 0.5;
+        const colMap = {}, assigned = new Set(); let ci = 0;
+        edges.sort((a, b) => b.w - a.w).forEach(e => {
+          if (!assigned.has(e.a)) { colMap[e.a] = _elGrafPal[ci % _elGrafPal.length]; assigned.add(e.a); }
+          if (!assigned.has(e.b)) { colMap[e.b] = colMap[e.a]; assigned.add(e.b); }
+          ci++;
+        });
+        terms.forEach(x => { if (!colMap[x.t]) colMap[x.t] = _elGrafPal[ci++ % _elGrafPal.length]; });
+        const top3 = terms.slice(0, 3).map(x => x.t);
+        const top5 = terms.slice(0, 5).map(x => x.t);
+        const analisePeriodo = top5.length
+          ? `Neste período, a narrativa se concentra em ${top5[0]}${top5.length > 1 ? `, com associação recorrente a ${top5.slice(1, 4).join(', ')}` : ''}.`
+          : 'Sem termos suficientes para análise neste período.';
+        const labels = terms.map(x => top3.includes(x.t) ? `<b>${x.t.charAt(0).toUpperCase() + x.t.slice(1)}</b>` : x.t.charAt(0).toUpperCase() + x.t.slice(1));
+        const ex = [], ey = [];
+        edges.forEach(e => { if (pos[e.a] && pos[e.b]) { ex.push(pos[e.a][0], pos[e.b][0], null); ey.push(pos[e.a][1], pos[e.b][1], null); } });
+        frames.push({
+          name: label,
+          iso,
+          analise: analisePeriodo,
+          data: [
+            { type: 'scatter', x: ex, y: ey, mode: 'lines', line: { width: 0.8, color: 'rgba(255,107,26,0.20)' }, hoverinfo: 'none' },
+            { type: 'scatter', x: terms.map(x => pos[x.t][0]), y: terms.map(x => pos[x.t][1]), mode: 'text', text: labels, textfont: { size: terms.map(x => sizes[x.t]), color: terms.map(x => colMap[x.t] || _elGrafPal[0]), family: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' }, hovertext: terms.map(x => `${x.t} — score ${((x.s / maxS) * 100).toFixed(0)}%`), hoverinfo: 'text' }
+          ],
+          layout: { xaxis: { range: [minX - padX, maxX + padX] }, yaxis: { range: [minY - padY, maxY + padY] } }
+        });
+        steps.push({ label, method: 'animate', args: [[label], { frame: { duration: 800, redraw: true }, mode: 'immediate' }] });
+      } catch (e) { console.warn('Período falhou:', label, e); }
+    }
+    if (i < periodos.length) { setTimeout(processChunk, 0); }
+    else {
+      if (progressBar) progressBar.style.width = '100%';
+      setTimeout(() => { if (progress) progress.style.display = 'none'; }, 600);
+      if (!frames.length) {
+        status.textContent = '⚠️ Nenhum frame gerado.';
+        btn.disabled = false; btn.textContent = '🔄 Gerar grafo de narrativas';
+        return;
+      }
+      _elGrafoFrames = { frames, steps };
+      status.textContent = `✅ ${frames.length} período(s) — publique o dashboard pra refletir no link público`;
+      _elRenderPlotly(_elGrafoFrames);
+      btn.disabled = false; btn.textContent = '↺ Recalcular';
+    }
+  }
+  setTimeout(processChunk, 50);
+}
+function _elRenderPlotly({ frames, steps }) {
+  const empty = document.getElementById('elGrafEmpty');
+  const div = document.getElementById('elGrafDiv');
+  if (empty) empty.style.display = 'none';
+  if (div) div.style.display = 'block';
+  const dark = !document.body.classList.contains('light');
+  const bg = dark ? '#111111' : '#fff8f3';
+  const layout = {
+    plot_bgcolor: bg, paper_bgcolor: 'rgba(0,0,0,0)',
+    xaxis: { visible: false, autorange: false, range: frames[0].layout?.xaxis?.range || [-1, 1] },
+    yaxis: { visible: false, autorange: false, range: frames[0].layout?.yaxis?.range || [-1, 1] },
+    margin: { l: 16, r: 16, t: 40, b: 120 }, height: 520,
+    font: { color: dark ? '#ffe0c0' : '#3a1200', family: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' },
+    updatemenus: [{ type: 'buttons', x: 0.005, y: -0.055, xanchor: 'left', yanchor: 'top', pad: { l: 0, r: 0, t: 0, b: 0 }, bgcolor: dark ? '#1a0a02' : '#fff5ee', bordercolor: 'rgba(255,107,26,0.35)', font: { color: '#FF6B1A', size: 10, family: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' }, buttons: [{ label: '▶', method: 'animate', args: [null, { frame: { duration: 1500, redraw: true }, transition: { duration: 600 }, fromcurrent: true }] }, { label: 'Ⅱ', method: 'animate', args: [[null], { frame: { duration: 0 }, mode: 'immediate' }] }] }],
+    sliders: [{ active: 0, x: 0.09, y: -0.055, len: 0.89, bgcolor: dark ? 'rgba(255,107,26,0.12)' : 'rgba(255,107,26,0.08)', bordercolor: 'rgba(255,107,26,0.30)', tickcolor: 'rgba(255,107,26,0.40)', font: { color: dark ? '#FF9F5C' : '#CC4E0A', size: 11, family: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' }, currentvalue: { prefix: 'Período: ', font: { size: 12, color: '#FF6B1A', family: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' }, xanchor: 'center' }, steps }]
+  };
+  if (typeof Plotly === 'undefined') {
+    div.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:12px;">⚠️ Plotly não carregou.</div>';
+    return;
+  }
+  Plotly.newPlot('elGrafDiv', frames[0].data, layout, { responsive: true, displayModeBar: false })
+    .then(() => Plotly.addFrames('elGrafDiv', frames));
+}
+
+/* rowsRedes/rowsImprensa opcionais pra permitir o recorte por estado (porEstado);
+   sem eles mantém o comportamento original sobre as bases globais. */
+function _elMontaCandidatos(turno1, perfis, rowsRedes, rowsImprensa) {
+  const recorteEstadual = !!(rowsRedes || rowsImprensa);
+  const rRedes = rowsRedes || basesRedes;
+  const rImprensa = rowsImprensa || basesImprensa;
+  const lista = (turno1 || []).slice().sort((a, b) => (b.pct || 0) - (a.pct || 0)).slice(0, 8);
+  const mapaPerfis = perfis || {};
+  const contados = lista.map(c => {
+    const nome = c.nome || c.candidato || '';
+    const chavePerfil = Object.keys(mapaPerfis).find(k => _elNormTxt(k).trim() === _elNormTxt(nome).trim());
+    const perfilOficial = chavePerfil ? mapaPerfis[chavePerfil] : '';
+    const postsPerfil = perfilOficial ? _elContaPostsPerfil(rRedes, perfilOficial) : null;
+    return {
+      nome,
+      partido: _elPartidoCandidato(c),
+      pesquisaPct: c.pct ?? null,
+      perfilOficial: perfilOficial || null,
+      redesEstimado: postsPerfil == null,
+      mencoesRedes: postsPerfil != null ? postsPerfil : _elContaCandidato(rRedes, nome),
+      materiasImprensa: _elContaCandidato(rImprensa, nome),
+      // Nuvem de termos só na visão nacional — por estado inflaria o snapshot (27 UFs × 8 candidatos × 24 termos) sem uso na UI.
+      termos: recorteEstadual ? [] : _elTermosCandidato(nome, 24),
+    };
+  });
+  const maxPesquisa = Math.max(...contados.map(c => Number(c.pesquisaPct) || 0), 1);
+  const maxRedes = Math.max(...contados.map(c => c.mencoesRedes || 0), 1);
+  const maxImprensa = Math.max(...contados.map(c => c.materiasImprensa || 0), 1);
+  return contados.map(c => ({
+    ...c,
+    ir2: _elCalculaIr2({ pesquisaPct: c.pesquisaPct, mencoesRedes: c.mencoesRedes, materiasImprensa: c.materiasImprensa, maxPesquisa, maxRedes, maxImprensa }),
+  }));
+}
+/* Sem pesquisa (cargos não presidenciais) redistribui os 45% da pesquisa
+   mantendo a proporção 35:20 original → 63% redes + 37% imprensa. */
+function _elCalculaIr2({ pesquisaPct, mencoesRedes, materiasImprensa, maxPesquisa, maxRedes, maxImprensa }) {
+  const redes = (mencoesRedes || 0) / (maxRedes || 1);
+  const imprensa = (materiasImprensa || 0) / (maxImprensa || 1);
+  if (pesquisaPct == null) return Math.round(redes * 63 + imprensa * 37);
+  return Math.round(((Number(pesquisaPct) || 0) / (maxPesquisa || 1)) * 45 + redes * 35 + imprensa * 20);
+}
+/* Irmã de _elMontaCandidatos pro cadastro manual (governador/senador/deputado):
+   lista {nome, partido} sem pct, mesma contagem de menções, IR² sem pesquisa. */
+function _elMontaCandidatosSemPesquisa(lista, rowsRedes, rowsImprensa) {
+  const rRedes = rowsRedes || basesRedes;
+  const rImprensa = rowsImprensa || basesImprensa;
+  const contados = (lista || []).map(c => {
+    const nome = c.nome || c.candidato || '';
+    return {
+      nome,
+      partido: _elPartidoCandidato(c),
+      pesquisaPct: null,
+      perfilOficial: null,
+      mencoesRedes: _elContaCandidato(rRedes, nome),
+      materiasImprensa: _elContaCandidato(rImprensa, nome),
+      termos: [],
+    };
+  });
+  const maxRedes = Math.max(...contados.map(c => c.mencoesRedes || 0), 1);
+  const maxImprensa = Math.max(...contados.map(c => c.materiasImprensa || 0), 1);
+  return contados.map(c => ({
+    ...c,
+    ir2: _elCalculaIr2({ pesquisaPct: null, mencoesRedes: c.mencoesRedes, materiasImprensa: c.materiasImprensa, maxRedes, maxImprensa }),
+  })).sort((a, b) => b.ir2 - a.ir2);
+}
+function _elMontaTimeline(candidatos, rowsRedes, rowsImprensa) {
+  const rRedes = rowsRedes || basesRedes;
+  const rImprensa = rowsImprensa || basesImprensa;
+  const datas = [...new Set([...rRedes, ...rImprensa].map(r => r._dataRel).filter(Boolean))].sort().slice(-14);
+  return datas.map(data => {
+    const redesDia = rRedes.filter(r => r._dataRel === data);
+    const imprensaDia = rImprensa.filter(r => r._dataRel === data);
+    const cands = (candidatos || []).slice(0, 5).map(c => ({
+      nome: c.nome,
+      redes: _elContaCandidato(redesDia, c.nome),
+      imprensa: _elContaCandidato(imprensaDia, c.nome),
+      pesquisaPct: c.pesquisaPct,
+    })).sort((a, b) => (b.redes + b.imprensa) - (a.redes + a.imprensa));
+    const lider = cands[0];
+    return {
+      data,
+      redes: redesDia.length,
+      imprensa: imprensaDia.length,
+      tema: lider ? `Maior volume: ${lider.nome}` : 'Sem candidato dominante',
+      candidatos: cands,
+    };
+  });
+}
+
+// Volume real de termos (contagem de documentos que citam cada termo) —
+// substitui a estimativa que vinha chutada no texto colado do NotebookLM
+// (números redondos suspeitos, sem relação com a base de verdade). Reusa
+// _elTokeniza (mesma tokenização/stopwords da nuvem de termos por candidato).
+function _elVolumeTermos(rows, maxN, opts) {
+  const bloqueados = new Set([...(opts?.bloqueados || []), ..._elTemaRuido]);
+  const docFreq = {};
+  rows.forEach(doc => {
+    new Set(_elTokeniza(_elDocTxt(doc))).forEach(t => { docFreq[t] = (docFreq[t] || 0) + 1; });
+  });
+  const minFreq = rows.length >= 200 ? 4 : rows.length >= 80 ? 3 : rows.length >= 30 ? 2 : 1;
+  return Object.entries(docFreq)
+    .filter(([tema, total]) => tema.length >= 4 && !bloqueados.has(tema) && total >= minFreq)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, maxN || 10)
+    .map(([tema, total]) => ({ tema, total }));
+}
+
+const _elCargoTermos = {
+  Presidencial: ['presidencia', 'presidencial', 'presidente', 'planalto'],
+  Governador: ['governador', 'governadora', 'governo estadual'],
+  Senador: ['senador', 'senadora', 'senado'],
+  Deputado: ['deputado', 'deputada', 'assembleia legislativa', 'camara dos deputados'],
+};
+const _elTemaContextoRuidoExtra = new Set([
+  'estado', 'estadual', 'municipio', 'municipal', 'capital', 'interior',
+  'tambem', 'ainda', 'hoje', 'ontem', 'amanha', 'agora', 'durante',
+  'prefeito', 'prefeita', 'vice', 'vicegovernador', 'vicegovernadora',
+]);
+function _elTokensUfBloqueados(uf) {
+  const out = new Set();
+  const u = String(uf || '').toUpperCase();
+  if (!u) return out;
+  out.add(u.toLowerCase());
+  const nomeEstado = (_elEstadosUf.find(([sigla]) => sigla === u) || [])[1] || '';
+  _elNormTxt(nomeEstado).split(/\s+/).forEach(t => { if (t.length >= 4) out.add(t); });
+  // Cidades principais da UF também costumam virar ruído no ranking temático.
+  _elCidadeUf.filter(([sigla]) => sigla === u).slice(0, 12).forEach(([, cidade]) => {
+    _elNormTxt(cidade).split(/\s+/).forEach(t => { if (t.length >= 4) out.add(t); });
+  });
+  return out;
+}
+function _elTokensCargoBloqueados(cargo) {
+  const out = new Set();
+  (_elCargoTermos[cargo] || []).forEach(expr => {
+    _elNormTxt(expr).split(/\s+/).forEach(t => { if (t.length >= 4) out.add(t); });
+  });
+  if (cargo === 'Governador') ['governador', 'governadora', 'governo'].forEach(t => out.add(t));
+  if (cargo === 'Senador') ['senador', 'senadora', 'senado'].forEach(t => out.add(t));
+  if (cargo === 'Deputado') ['deputado', 'deputada', 'assembleia', 'camara'].forEach(t => out.add(t));
+  if (cargo === 'Presidencial') ['presidencial', 'presidente', 'planalto'].forEach(t => out.add(t));
+  return out;
+}
+function _elTokensNomesBloqueados(turno1, candidatosOutrosCargos) {
+  const nomes = [
+    ...(Array.isArray(turno1) ? turno1 : []).map(c => c.nome || c.candidato || ''),
+    ...(Array.isArray(candidatosOutrosCargos) ? candidatosOutrosCargos : []).map(c => c.nome || c.candidato || ''),
+  ];
+  const comuns = new Set(['silva', 'santos', 'souza', 'oliveira', 'costa', 'junior', 'filho', 'neto']);
+  const bloqueados = new Set();
+  nomes.forEach(nome => {
+    _elNormTxt(nome).split(/\s+/).forEach(p => {
+      if (p.length >= 4 && !comuns.has(p)) bloqueados.add(p);
+    });
+  });
+  return bloqueados;
+}
+function _elContextosPorCargo(rows, nomesBloqueados, maxTemas, uf) {
+  const docs = (rows || []).map(r => _elRowTxt(r)).filter(Boolean);
+  const bloqueadosUf = _elTokensUfBloqueados(uf);
+  const bloqueadosBase = new Set([..._elTemaRuido, ..._elTemaContextoRuidoExtra, ...(nomesBloqueados || []), ...bloqueadosUf]);
+  const saida = {};
+  Object.entries(_elCargoTermos).forEach(([cargo, termos]) => {
+    const docsCargo = docs.filter(txt => {
+      const n = _elNormTxt(txt);
+      return termos.some(t => n.includes(t));
+    });
+    const bloqueadosCargo = new Set([...bloqueadosBase, ..._elTokensCargoBloqueados(cargo)]);
+    const freq = {};
+    docsCargo.forEach(txt => {
+      new Set(_elTokeniza(txt)).forEach(t => {
+        if (t.length < 4 || bloqueadosCargo.has(t)) return;
+        freq[t] = (freq[t] || 0) + 1;
+      });
+    });
+    const minFreq = docsCargo.length >= 300 ? 6 : docsCargo.length >= 120 ? 4 : docsCargo.length >= 40 ? 3 : 2;
+    const maxDominancia = docsCargo.length > 0 ? Math.ceil(docsCargo.length * 0.6) : Infinity;
+    const temas = Object.entries(freq)
+      .filter(([, total]) => total >= minFreq && total <= maxDominancia)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, maxTemas || 4)
+      .map(([tema, total]) => ({
+        tema,
+        total,
+        resumo: docsCargo.length
+          ? `${total.toLocaleString('pt-BR')} menções (${((total / docsCargo.length) * 100).toFixed(1).replace('.', ',')}%) associam ${cargo.toLowerCase()} a ${tema}.`
+          : `${total.toLocaleString('pt-BR')} menções associam ${cargo.toLowerCase()} a ${tema}.`,
+      }));
+    saida[cargo] = { totalDocs: docsCargo.length, temas };
+  });
+  return saida;
+}
+function _elRankingPublicadores(rows, campo) {
+  const cont = {};
+  (rows || []).forEach(r => {
+    const nome = String(r[campo] || '').trim();
+    if (!nome) return;
+    cont[nome] = (cont[nome] || 0) + 1;
+  });
+  return Object.entries(cont)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([nome, total]) => ({ nome, total }));
+}
+
+// Soma menções (redes+imprensa) de todos os candidatos de um mesmo partido —
+// atravessa presidencial + governador/senador/deputado (candidatosPorCargo),
+// já que o pedido do Thiago é o partido como um todo, não só a disputa presidencial.
+function _elRankingPartidos(...listasDeCandidatos) {
+  const cont = {};
+  listasDeCandidatos.flat().forEach(c => {
+    const partido = _elPartidoCandidato(c);
+    if (!partido) return;
+    cont[partido] = (cont[partido] || 0) + (c.mencoesRedes || 0) + (c.materiasImprensa || 0);
+  });
+  return Object.entries(cont)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([partido, total]) => ({ partido, total }));
+}
+
+async function publicarDashboard() {
+  const config = await fetch(API + '/eleicoes-config').then(r => r.json()).catch(() => ({}));
+  const c = { ...(config?.config || {}), ..._elLerAnaliseDaTela() };
+  const pesquisas = await fetch(API + '/eleicoes-pesquisa').then(r => r.json()).catch(() => null);
+  const turno1 = pesquisas?.rodadas?.[0]?.dados?.turno1 || [];
+
+  const candidatos = _elMontaCandidatos(turno1, c.perfisOficiais || {});
+  const timeline = _elMontaTimeline(candidatos);
+  const mapaBrasil = {
+    nota: 'Mapa por mencoes a estados nos textos monitorados; nao representa geolocalizacao real dos autores.',
+    estados: _elAgrupaEstados([...basesRedes, ...basesImprensa]),
+  };
+
+  // Particiona as bases por UF UMA vez (O(n)) em vez de rows.filter(...) por
+  // estado dentro dos loops abaixo (O(estados×n)) — com bases de 30-50k linhas
+  // isso travava o navegador inteiro ao publicar.
+  const redesPorUf = _elPartitionarPorUf(basesRedes);
+  const imprensaPorUf = _elPartitionarPorUf(basesImprensa);
+  const ufsComDados = [...new Set([...Object.keys(redesPorUf), ...Object.keys(imprensaPorUf)])];
+  const nomesBloqueadosContexto = _elTokensNomesBloqueados(turno1, c.candidatosOutrosCargos);
+
+  // Volume real calculado a partir da base carregada (contagem de documentos
+  // por termo), bloqueando termos de nomes e ruído lexical recorrente.
+  const rankingTemas = _elVolumeTermos(
+    [...basesRedes, ...basesImprensa],
+    10,
+    { bloqueados: nomesBloqueadosContexto }
+  );
+  const rankingTemasClassificados = _elClassificarTemas(
+    [...basesRedes, ...basesImprensa],
+    10,
+    { bloqueados: nomesBloqueadosContexto }
+  );
+  const marcarTemaDestaque = item => ({ ...item, tema: _elTemaPrincipalDoc(item, { bloqueados: nomesBloqueadosContexto }) });
+  const destaquesRedes = [...basesRedes].sort((a,b) => (b.interacoes||0)-(a.interacoes||0)).slice(0, 8).map(marcarTemaDestaque);
+  const destaquesImprensa = [...basesImprensa].sort((a,b) => (b.valoracao||0)-(a.valoracao||0)).slice(0, 8).map(marcarTemaDestaque);
+
+  const porEstado = {};
+  const timelinePorEstado = {};
+  const rankingTemasPorEstado = {};
+  const contextosPorCargoEstado = {};
+  ufsComDados.forEach(uf => {
+    const redesUf = redesPorUf[uf] || [];
+    const imprensaUf = imprensaPorUf[uf] || [];
+    const rowsUf = [...redesUf, ...imprensaUf];
+    porEstado[uf] = {
+      candidatos: _elMontaCandidatos(turno1, c.perfisOficiais || {}, redesUf, imprensaUf),
+      totalRedes: redesUf.length,
+      totalImprensa: imprensaUf.length,
+      analise: (c.analisesPorEstado || {})[uf] || '',
+    };
+    timelinePorEstado[uf] = _elMontaTimeline(porEstado[uf].candidatos, redesUf, imprensaUf);
+    rankingTemasPorEstado[uf] = _elClassificarTemas(rowsUf, 10, { bloqueados: nomesBloqueadosContexto });
+    contextosPorCargoEstado[uf] = _elContextosPorCargo(rowsUf, nomesBloqueadosContexto, 10, uf);
+  });
+
+  // Cadastro manual (sem pesquisa Nexus) agrupado por cargo e UF — governador/
+  // senador/deputado são disputas estaduais, então o recorte de menções é por UF.
+  const candidatosPorCargo = {};
+  (Array.isArray(c.candidatosOutrosCargos) ? c.candidatosOutrosCargos : []).forEach(cand => {
+    const cargo = String(cand.cargo || '').trim();
+    const uf = String(cand.uf || '').toUpperCase().trim();
+    if (!cargo || !uf || !String(cand.nome || '').trim()) return;
+    candidatosPorCargo[cargo] = candidatosPorCargo[cargo] || {};
+    (candidatosPorCargo[cargo][uf] = candidatosPorCargo[cargo][uf] || []).push(cand);
+  });
+  Object.keys(candidatosPorCargo).forEach(cargo => {
+    Object.keys(candidatosPorCargo[cargo]).forEach(uf => {
+      const redesUf = redesPorUf[uf] || [];
+      const imprensaUf = imprensaPorUf[uf] || [];
+      candidatosPorCargo[cargo][uf] = _elMontaCandidatosSemPesquisa(candidatosPorCargo[cargo][uf], redesUf, imprensaUf);
+    });
+  });
+
+  const snapshot = {
+    headline: c.headline || '',
+    temaSemana: c.temaSemana || '',
+    analiseRedesImprensa: c.analiseRedesImprensa || '',
+    analiseIaPesquisa: c.analiseIaPesquisa || '',
+    analiseTemas: c.analiseTemas || '',
+    analisePesquisaRodada: c.analisePesquisaRodada || '',
+    analisesPorCargo: c.analisesPorCargo || {},
+    heroImagens: Array.isArray(c.heroImagens) ? c.heroImagens : [],
+    kpis: {
+      totalRedes: baseTotals.redes || basesRedes.length,
+      totalImprensa: baseTotals.imprensa || basesImprensa.length,
+      totalGeral: (baseTotals.redes || basesRedes.length) + (baseTotals.imprensa || basesImprensa.length),
+    },
+    destaquesRedes, destaquesImprensa,
+    candidatos,
+    // rankingPoliticos é derivado de `candidatos` na página pública (funciona até em snapshots antigos).
+    rankingPublicadores: {
+      redes: _elRankingPublicadores(basesRedes, 'autor'),
+      imprensa: _elRankingPublicadores(basesImprensa, 'veiculo'),
+    },
+    rankingPartidos: _elRankingPartidos(candidatos, Object.values(candidatosPorCargo).flatMap(porUf => Object.values(porUf))),
+    rankingTemas: rankingTemasClassificados.length ? rankingTemasClassificados : rankingTemas,
+    timeline,
+    timelinePorEstado,
+    mapaBrasil,
+    porEstado,
+    rankingTemasPorEstado,
+    candidatosPorCargo,
+    contextosPorCargoEstado,
+    // Frames do grafo de narrativas — null se o usuário nunca clicou em "Gerar grafo";
+    // a página pública mostra fallback nesse caso, não bloqueia a publicação.
+    narrativas: _elGrafoFrames,
+    atualizadoEm: new Date().toISOString(),
+  };
+
+  const res = await fetch(API + '/eleicoes-share', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(snapshot),
+  }).then(r => r.json()).catch(() => null);
+
+  toast(res?.ok ? 'Dashboard público atualizado ✓' : 'Erro ao publicar');
+}
+
+/* ── Apaga tudo do módulo (base, config, pesquisa, snapshot público) —
+   ação destrutiva e irreversível, exige digitar "LIMPAR" pra confirmar. ── */
+async function limparTudo() {
+  const status = document.getElementById('limparTudoStatus');
+  const confirmacao = prompt('Isso apaga TUDO (redes, imprensa, pesquisa, análises, candidatos e o link público) permanentemente. Digite LIMPAR para confirmar:');
+  if (confirmacao !== 'LIMPAR') { status.textContent = 'Cancelado.'; return; }
+  status.textContent = '⏳ Apagando...';
+  try {
+    await Promise.all([
+      fetch(API + '/eleicoes-base?all=1', { method: 'DELETE' }),
+      fetch(API + '/eleicoes-config', { method: 'DELETE' }),
+      fetch(API + '/eleicoes-pesquisa?all=1', { method: 'DELETE' }),
+      fetch(API + '/eleicoes-share', { method: 'DELETE' }),
+    ]);
+    status.textContent = '✅ Tudo apagado — recarregando...';
+    setTimeout(() => location.reload(), 800);
+  } catch (e) {
+    status.textContent = '❌ Erro ao apagar: ' + e.message;
+  }
+}
+
+carregarBases();
+carregarConfig();
+carregarPerfisOficiais();
+document.getElementById('elPromptBox').textContent = promptNotebookLM();
+
+/* ═══════════════════════════════════════════════════════
+   PESQUISA NEXUS — upload direto do PDF
+   Extração de texto no navegador via pdf.js (Cloudflare Functions
+   não roda binário tipo pdftotext), reconstruindo layout por linha/coluna
+   pra imitar o "pdftotext -layout" que validamos contra o PDF real da
+   Rodada 5. Regex por baixo é a mesma já testada.
+   ═══════════════════════════════════════════════════════ */
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+async function extrairTextoPDF(arrayBuffer) {
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let fullText = '';
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const items = content.items.map(it => ({
+      str: it.str, x: it.transform[4], y: it.transform[5],
+      w: it.width, h: Math.abs(it.transform[3]) || 10,
+    })).filter(it => it.str.trim());
+
+    items.sort((a, b) => (b.y - a.y) || (a.x - b.x)); // topo→baixo, esquerda→direita
+    const linhas = [];
+    let atual = null;
+    const TOL = 3;
+    items.forEach(it => {
+      if (!atual || Math.abs(it.y - atual.y) > TOL) { atual = { y: it.y, itens: [] }; linhas.push(atual); }
+      atual.itens.push(it);
+    });
+    linhas.forEach(l => l.itens.sort((a, b) => a.x - b.x));
+
+    const textoPagina = linhas.map(l => {
+      let linha = '', prevEnd = null;
+      l.itens.forEach(it => {
+        if (prevEnd !== null) {
+          const gap = it.x - prevEnd;
+          const charW = (it.h || 10) * 0.5;
+          const nSpaces = Math.max(1, Math.round(gap / charW));
+          linha += ' '.repeat(Math.min(nSpaces, 20));
+        }
+        linha += it.str;
+        prevEnd = it.x + it.w;
+      });
+      return linha;
+    }).join('\n');
+    fullText += textoPagina + '\n\f\n';
+  }
+  return fullText;
+}
+
+async function handlePesquisaPDF(file) {
+  if (!file) return;
+  const status = document.getElementById('pesqExtractStatus');
+  status.textContent = 'Lendo PDF...';
+  try {
+    const buffer = await file.arrayBuffer();
+    const raw = await extrairTextoPDF(buffer);
+    extrairPesquisa(raw);
+  } catch (err) {
+    status.textContent = '❌ Erro ao ler o PDF: ' + err.message;
+  }
+}
+
+['dragover'].forEach(evt => {
+  const el = document.getElementById('dropPesquisa');
+  el.addEventListener(evt, e => { e.preventDefault(); el.classList.add('drag'); });
+});
+document.getElementById('dropPesquisa').addEventListener('dragleave', e => e.currentTarget.classList.remove('drag'));
+document.getElementById('dropPesquisa').addEventListener('drop', e => {
+  e.preventDefault(); e.currentTarget.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) handlePesquisaPDF(f);
+});
+
+function parseDataPesquisaBR(s) {
+  const m = String(s||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (!m) return '';
+  return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+}
+
+function extrairPesquisa(raw) {
+  if (!raw || !raw.trim()) { document.getElementById('pesqExtractStatus').textContent = '⚠️ Não consegui ler texto do PDF.'; return; }
+
+  // Rodada: "5ª Rodada" / "5a Rodada"
+  const rodadaM = raw.match(/(\d+)\s*ª?\s*Rodada/i);
+  const rodada = rodadaM ? rodadaM[1] : '';
+
+  // Campo: "Campo: 26 a 28/06/2026"
+  const campoM = raw.match(/Campo:\s*([^\n]+)/i);
+  const campo = campoM ? campoM[1].trim() : '';
+
+  // Divulgação: "Divulgação: 29/06/2026"
+  const divM = raw.match(/Divulga[çc][ãa]o:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
+  const divulgacao = divM ? parseDataPesquisaBR(divM[1]) : '';
+
+  // Ficha técnica — obrigatória pra publicar pesquisa eleitoral
+  const registroM = raw.match(/Registro (?:no|da pesquisa no) TSE:?\s*([A-Z]{2}\s*-?\s*\d+\s*\/\s*\d{4})/i);
+  const registro = registroM ? registroM[1].replace(/\s+/g, '') : '';
+
+  const entrevM = raw.match(/[Ff]oram\s*[\r\n]*\s*entrevistados\s+([\d.\s]{3,12}?)\s+eleitores/i);
+  const entrevistados = entrevM ? entrevM[1].replace(/\s+/g, '') : '';
+
+  const margemM = raw.match(/margem\s*[\r\n]*\s*de erro é de\s+(\d+)\s+pontos percentuais/i);
+  const margemErro = margemM ? margemM[1] : '';
+
+  const confM = raw.match(/intervalo de confiança de\s+(\d+)%/i);
+  const confianca = confM ? confM[1] : '';
+
+  // 1º Turno — Cenário 1. O "º"/"°" às vezes vem com espaço antes (extração via
+  // pdf.js separa em itens de texto diferentes do número), por isso \s* entre eles.
+  let turno1Linhas = [];
+  const t1M = raw.match(/Intenção de voto estimulado\s*[-–]\s*1\s*[ºo°]\s*Turno[\s\S]{0,40}?Cenário\s*1[\s\S]*?(?=Pergunta:|Intenção de voto|Cruzamento:|$)/i);
+  if (t1M) {
+    const bloco = t1M[0];
+    const linhaRe = /^\s*([A-Za-zÀ-ú\/\.çÇãõÃÕáéíóúÁÉÍÓÚâêîôûÂÊÎÔÛ ]+?)\s{2,}(\d{1,3})%\s*$/gm;
+    let m;
+    while ((m = linhaRe.exec(bloco)) !== null) {
+      const nome = m[1].trim();
+      if (nome && !/^(Cenário|Intenção|amostra)/i.test(nome)) turno1Linhas.push(`${nome} | ${m[2]}`);
+    }
+  }
+
+  // 2º Turno: acha a linha de cabeçalho ("X vs. Y   X vs. Z  ...") e pareia
+  // por coluna — o texto despeja o layout em colunas linha a linha
+  // (todas as % do 1º candidato, depois todas as % do 2º), não em pares.
+  let turno2Linhas = [];
+  const t2M = raw.match(/Intenção de voto estimulado\s*[-–]\s*2\s*[ºo°]\s*Turno[\s\S]*?(?=Pergunta:|Cruzamento:|$)/i);
+  if (t2M) {
+    const bloco = t2M[0];
+    const linhaHeader = bloco.split('\n').find(l => /vs\.?/i.test(l));
+    if (linhaHeader) {
+      const confrontos = linhaHeader.split(/\s{2,}/).map(s => s.trim()).filter(Boolean)
+        .map(seg => { const m = seg.match(/^(.+?)\s+vs\.?\s+(.+)$/i); return m ? [m[1].trim(), m[2].trim()] : null; })
+        .filter(Boolean);
+      const pcts = [...bloco.matchAll(/(\d{1,3})%/g)].map(m => m[1]);
+      const n = confrontos.length;
+      confrontos.forEach((c, i) => {
+        turno2Linhas.push(`${c[0]} ${pcts[i] || '?'} x ${pcts[n + i] || '?'} ${c[1]}`);
+      });
+    }
+  }
+
+  document.getElementById('pesqRodada').value = rodada;
+  document.getElementById('pesqCampo').value = campo;
+  document.getElementById('pesqDivulgacao').value = divulgacao;
+  document.getElementById('pesqRegistro').value = registro;
+  document.getElementById('pesqEntrevistados').value = entrevistados;
+  document.getElementById('pesqMargemErro').value = margemErro;
+  document.getElementById('pesqConfianca').value = confianca;
+  document.getElementById('pesqTurno1').value = turno1Linhas.join('\n');
+  document.getElementById('pesqTurno2').value = turno2Linhas.join('\n');
+  document.getElementById('pesqPreview').style.display = 'block';
+  document.getElementById('pesqExtractStatus').textContent =
+    `Extraído: ${turno1Linhas.length} candidatos (1º turno), ${turno2Linhas.length} confrontos (2º turno)${registro ? ', registro ' + registro : ' — registro TSE não encontrado, preencha manualmente'}. Revise antes de salvar.`;
+}
+
+function salvarPesquisa() {
+  const rodada = document.getElementById('pesqRodada').value.trim();
+  if (!rodada) { toast('Informe o número da rodada'); return; }
+  const registro = document.getElementById('pesqRegistro').value.trim();
+  if (!registro) { toast('⚠️ Registro no TSE é obrigatório para publicar a pesquisa (exigência do Marcelo)'); return; }
+
+  const turno1 = document.getElementById('pesqTurno1').value.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+    const partes = l.split('|').map(x => x && x.trim()).filter(Boolean);
+    let nome = partes[0] || '';
+    let partido = '';
+    let pct = partes[1] || '';
+    if (partes.length >= 3) {
+      partido = partes[1] || '';
+      pct = partes[2] || '';
+    }
+    const partidoNoNome = nome.match(/\(([A-Z][A-Z0-9 .-]{1,18})\)\s*$/);
+    if (partidoNoNome) {
+      partido = partido || partidoNoNome[1].trim();
+      nome = nome.replace(/\s*\([A-Z][A-Z0-9 .-]{1,18}\)\s*$/, '').trim();
+    }
+    return { nome, partido, sigla: partido, pct: Number(pct) || 0 };
+  });
+  const turno2 = document.getElementById('pesqTurno2').value.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+    const m = l.match(/^(.+?)\s+(\d{1,3})\s*x\s*(\d{1,3})\s+(.+)$/i);
+    return m ? { candidatoA: m[1].trim(), pctA: Number(m[2]), pctB: Number(m[3]), candidatoB: m[4].trim() } : { raw: l };
+  });
+
+  const body = {
+    rodada,
+    dataCampo: document.getElementById('pesqCampo').value.trim(),
+    dataDivulgacao: document.getElementById('pesqDivulgacao').value.trim(),
+    registroTse: registro,
+    entrevistados: document.getElementById('pesqEntrevistados').value.trim(),
+    margemErro: document.getElementById('pesqMargemErro').value.trim(),
+    nivelConfianca: document.getElementById('pesqConfianca').value.trim(),
+    turno1, turno2,
+  };
+
+  fetch(API + '/eleicoes-pesquisa', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  }).then(r => r.json()).then(res => {
+    document.getElementById('pesqSaveStatus').textContent = res?.ok ? 'Rodada salva ✓ — lembre de publicar o dashboard' : 'Erro ao salvar';
+    if (res?.ok) { carregarPesquisas(); carregarPerfisOficiais(); }
+  });
+}
+
+async function carregarPesquisas() {
+  const res = await fetch(API + '/eleicoes-pesquisa').then(r => r.json()).catch(() => null);
+  const rodadas = res?.rodadas || [];
+  document.getElementById('listPesquisas').innerHTML = rodadas.map(r => `
+    <div class="baselist-row">
+      <span>Rodada ${r.rodada} — ${r.data_divulgacao || '?'} — <span style="opacity:.7;">${r.dados?.registroTse || '⚠️ sem registro TSE'}</span></span>
+      <span>${(r.dados?.turno1||[]).length} candidatos <span class="del" onclick="apagarPesquisa('${r.rodada}')">✕</span></span>
+    </div>`).join('') || '<div style="color:var(--text-muted);padding:8px;">Nenhuma rodada salva ainda</div>';
+}
+async function apagarPesquisa(rodada) {
+  if (!confirm(`Apagar a rodada ${rodada}?`)) return;
+  await fetch(`${API}/eleicoes-pesquisa?rodada=${encodeURIComponent(rodada)}`, { method: 'DELETE' });
+  carregarPesquisas();
+}
+carregarPesquisas();
+</script>
+</body>
+</html>

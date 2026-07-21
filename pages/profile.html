@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HUB.nexus — Meu Perfil</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/global.css"/>
+  <style>
+    body { display:flex; flex-direction:column; height:100vh; overflow:hidden; background:var(--bg); }
+    .profile-scroll { flex:1; overflow-y:auto; padding:32px 24px 48px; }
+    .profile-inner { max-width:600px; margin:0 auto; display:flex; flex-direction:column; gap:20px; }
+
+    /* Avatar grande */
+    .profile-avatar-wrap {
+      display:flex; flex-direction:column; align-items:center; gap:14px;
+      padding:32px 24px;
+      background:var(--surface); border-radius:var(--r-2xl);
+      box-shadow:var(--clay-shadow); border:1.5px solid rgba(255,255,255,0.65);
+      text-align:center;
+    }
+    body.dark .profile-avatar-wrap { border-color:rgba(255,255,255,0.06); }
+    .profile-avatar-big {
+      width:80px; height:80px; border-radius:50%;
+      background:linear-gradient(135deg, var(--accent-light), var(--accent-dark));
+      display:flex; align-items:center; justify-content:center;
+      font-family:var(--font-ui); font-size:28px; font-weight:800; color:#fff;
+      box-shadow:var(--clay-shadow-accent);
+      border:3px solid rgba(255,255,255,0.70);
+    }
+    .profile-name {
+      font-family:var(--font-ui); font-size:22px; font-weight:800;
+      color:var(--text-primary); letter-spacing:-0.5px;
+    }
+    .profile-email {
+      font-size:13px; color:var(--text-muted);
+    }
+
+    /* Seções */
+    .profile-section {
+      background:var(--surface); border-radius:var(--r-xl);
+      box-shadow:var(--clay-shadow); border:1.5px solid rgba(255,255,255,0.65);
+      overflow:hidden;
+    }
+    body.dark .profile-section { border-color:rgba(255,255,255,0.06); }
+    .ps-header {
+      padding:16px 20px 12px;
+      border-bottom:1px solid var(--bg-2);
+      font-family:var(--font-ui); font-size:11px; font-weight:800;
+      color:var(--text-muted); letter-spacing:.8px; text-transform:uppercase;
+    }
+    .ps-body { padding:16px 20px; display:flex; flex-direction:column; gap:14px; }
+
+    /* Campos */
+    .field-row { display:flex; flex-direction:column; gap:6px; }
+    .field-lbl {
+      font-family:var(--font-ui); font-size:10px; font-weight:800;
+      color:var(--text-muted); letter-spacing:.6px; text-transform:uppercase;
+    }
+    .field-in {
+      padding:11px 14px;
+      background:var(--bg); border:1.5px solid rgba(255,255,255,0.55);
+      border-radius:var(--r-lg); font-family:var(--font-body);
+      font-size:13px; color:var(--text-primary); outline:none;
+      box-shadow:var(--clay-shadow-pressed); transition:border-color var(--t-normal);
+    }
+    body.dark .field-in { border-color:rgba(255,255,255,0.06); background:var(--bg-2); }
+    .field-in:focus { border-color:var(--accent); }
+
+    /* Toggle switch */
+    .toggle-row {
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+    }
+    .toggle-label { font-family:var(--font-ui); font-size:13px; font-weight:600; color:var(--text-primary); }
+    .toggle-desc  { font-size:11px; color:var(--text-muted); margin-top:2px; }
+    .toggle-switch {
+      width:44px; height:24px; border-radius:12px; flex-shrink:0;
+      background:var(--bg-2); border:1.5px solid rgba(255,255,255,0.55);
+      box-shadow:var(--clay-shadow-pressed); position:relative; cursor:pointer;
+      transition:background var(--t-normal);
+    }
+    body.dark .toggle-switch { border-color:rgba(255,255,255,0.06); }
+    .toggle-switch.on { background:var(--accent); box-shadow:var(--clay-shadow-accent); }
+    .toggle-thumb {
+      position:absolute; top:3px; left:3px;
+      width:16px; height:16px; border-radius:50%; background:#fff;
+      box-shadow:0 1px 4px rgba(0,0,0,0.20);
+      transition:transform var(--t-normal);
+    }
+    .toggle-switch.on .toggle-thumb { transform:translateX(20px); }
+
+    /* Save button */
+    .save-btn {
+      width:100%; padding:13px;
+      background:var(--accent); border:none; border-radius:var(--r-pill);
+      font-family:var(--font-ui); font-size:14px; font-weight:800;
+      color:#fff; cursor:pointer; box-shadow:var(--clay-shadow-accent);
+      transition:all var(--t-slow);
+    }
+    .save-btn:hover { transform:translateY(-2px); background:var(--accent-light); }
+    .save-btn:active { transform:scale(0.98); box-shadow:var(--clay-shadow-pressed); }
+
+    /* Logout btn */
+    .logout-btn {
+      width:100%; padding:11px;
+      background:var(--bg); border:1.5px solid rgba(239,68,68,0.30);
+      border-radius:var(--r-pill); font-family:var(--font-ui);
+      font-size:13px; font-weight:700; color:var(--red);
+      cursor:pointer; box-shadow:var(--clay-shadow-sm);
+      transition:all var(--t-normal);
+    }
+    .logout-btn:hover { background:rgba(239,68,68,0.08); transform:translateY(-1px); }
+
+    /* Notif permission banner */
+    .notif-banner {
+      display:none; padding:14px 16px; border-radius:var(--r-lg);
+      background:var(--accent-soft); border:1.5px solid var(--accent);
+      box-shadow:var(--clay-shadow-sm);
+      font-family:var(--font-ui); font-size:12px; font-weight:600;
+      color:var(--accent-dark); align-items:center; gap:10px;
+    }
+    body.dark .notif-banner { color:var(--accent-light); }
+    .notif-banner.show { display:flex; }
+    .notif-banner-btn {
+      margin-left:auto; padding:7px 14px; background:var(--accent);
+      border:none; border-radius:var(--r-pill); color:#fff;
+      font-family:var(--font-ui); font-size:11px; font-weight:800;
+      cursor:pointer; flex-shrink:0; box-shadow:var(--clay-shadow-sm);
+      transition:all var(--t-normal);
+    }
+    .notif-banner-btn:hover { transform:scale(1.05); }
+  </style>
+</head>
+<body>
+
+<div id="navbar-container"></div>
+
+<div class="profile-scroll">
+  <div class="profile-inner">
+
+    <!-- Avatar + info -->
+    <div class="profile-avatar-wrap">
+      <div class="profile-avatar-big" id="profileAvatarBig">?</div>
+      <div class="profile-name" id="profileName">Carregando...</div>
+      <div class="profile-email" id="profileEmail"></div>
+      <div class="chip" style="margin-top:4px;">✦ Equipe Nexus</div>
+    </div>
+
+    <!-- Banner notificações -->
+    <div class="notif-banner" id="notifBanner">
+      🔔 Ative as notificações para receber alertas de prazos e atualizações do HUB.
+      <button class="notif-banner-btn" onclick="ativarNotificacoes()">Ativar agora</button>
+    </div>
+
+    <!-- Dados do perfil -->
+    <div class="profile-section">
+      <div class="ps-header">Meus dados</div>
+      <div class="ps-body">
+        <div class="field-row">
+          <label class="field-lbl">Nome de exibição</label>
+          <input class="field-in" type="text" id="inputNome" placeholder="Seu nome"/>
+        </div>
+        <div class="field-row">
+          <label class="field-lbl">E-mail</label>
+          <input class="field-in" type="email" id="inputEmail" placeholder="seu@nexus.com" readonly
+                 style="opacity:0.6;cursor:not-allowed;"/>
+        </div>
+        <button class="save-btn" onclick="salvarPerfil()">Salvar alterações</button>
+      </div>
+    </div>
+
+    <!-- Notificações -->
+    <div class="profile-section">
+      <div class="ps-header">Notificações</div>
+      <div class="ps-body">
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Alertas de prazos</div>
+            <div class="toggle-desc">Avisa quando uma demanda vence hoje ou amanhã</div>
+          </div>
+          <div class="toggle-switch on" id="tog-prazos" onclick="toggleSwitch(this)">
+            <div class="toggle-thumb"></div>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Demandas atrasadas</div>
+            <div class="toggle-desc">Alerta imediato para itens com prazo vencido</div>
+          </div>
+          <div class="toggle-switch on" id="tog-atrasadas" onclick="toggleSwitch(this)">
+            <div class="toggle-thumb"></div>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Novidades do HUB</div>
+            <div class="toggle-desc">Comunicados e atualizações da plataforma</div>
+          </div>
+          <div class="toggle-switch" id="tog-novidades" onclick="toggleSwitch(this)">
+            <div class="toggle-thumb"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tema -->
+    <div class="profile-section">
+      <div class="ps-header">Aparência</div>
+      <div class="ps-body">
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Modo escuro</div>
+            <div class="toggle-desc">Alterna entre tema claro e escuro</div>
+          </div>
+          <div class="toggle-switch" id="tog-darkmode" onclick="toggleDarkMode(this)">
+            <div class="toggle-thumb"></div>
+          </div>
+        </div>
+        <div class="field-row">
+          <label class="field-lbl">Cor do HUB</label>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <div id="profileColorPreview" style="
+              width:40px;height:40px;border-radius:var(--r-md);
+              background:var(--accent);box-shadow:var(--clay-shadow-sm);
+              border:2px solid rgba(255,255,255,0.65);cursor:pointer;
+              position:relative;overflow:hidden;
+            " onclick="this.querySelector('input').click()">
+              <input type="color" id="profileColorPicker"
+                     style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;"
+                     oninput="applyThemeColor(this.value);document.getElementById('profileColorPreview').style.background=this.value"/>
+            </div>
+            <span style="font-family:var(--font-ui);font-size:12px;color:var(--text-muted);">
+              Clique para escolher a cor do seu HUB
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sair -->
+    <button class="logout-btn" onclick="handleLogout()">Sair da conta</button>
+
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="../js/utils.js"></script>
+<script src="../js/theme.js"></script>
+<script>
+  checkAuth();
+  initMode();
+  initTheme();
+  updateModeButtons();
+  document.getElementById('navbar-container').innerHTML = renderNavbar('profile');
+  if (typeof renderSwatches === 'function') renderSwatches();
+  if (typeof initTheme === 'function') { initTheme(); updateModeButtons(); }
+
+  // ── Carregar dados do perfil ──
+  (function() {
+    try {
+      var auth  = JSON.parse(localStorage.getItem('hubnexus-auth') || '{}');
+      var nome  = auth.nome || (auth.email
+        ? auth.email.split('@')[0].replace(/[._-]/g,' ').replace(/\b\w/g,function(l){return l.toUpperCase();})
+        : 'Usuário');
+      var email = auth.email || '';
+      var parts = nome.trim().split(/\s+/).filter(Boolean);
+      var initials = parts.length >= 2
+        ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase()
+        : (parts[0]?.slice(0,2).toUpperCase() || '?');
+
+      document.getElementById('profileAvatarBig').textContent = initials;
+      document.getElementById('profileName').textContent = nome;
+      document.getElementById('profileEmail').textContent = email;
+      document.getElementById('inputNome').value  = nome;
+      document.getElementById('inputEmail').value = email;
+    } catch(e) {}
+  })();
+
+  // ── Sync dark mode toggle ──
+  (function() {
+    var isDark = document.body.classList.contains('dark');
+    var tog = document.getElementById('tog-darkmode');
+    if (isDark && tog) tog.classList.add('on');
+  })();
+
+  // ── Sync theme color picker ──
+  (function() {
+    var saved = localStorage.getItem('hubnexus-theme-color') || '#FF6500';
+    var picker = document.getElementById('profileColorPicker');
+    var preview = document.getElementById('profileColorPreview');
+    if (picker) picker.value = saved;
+    if (preview) preview.style.background = saved;
+  })();
+
+  // ── Check notification permission ──
+  (function() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      document.getElementById('notifBanner').classList.add('show');
+    }
+  })();
+
+  // ── Toggle switch ──
+  function toggleSwitch(el) {
+    el.classList.toggle('on');
+    var key = 'hubnexus-notif-' + el.id;
+    localStorage.setItem(key, el.classList.contains('on') ? '1' : '0');
+  }
+
+  // ── Dark mode toggle ──
+  function toggleDarkMode(el) {
+    el.classList.toggle('on');
+    applyMode(el.classList.contains('on') ? 'dark' : 'light');
+  }
+
+  // ── Salvar perfil ──
+  function salvarPerfil() {
+    try {
+      var nome = document.getElementById('inputNome').value.trim();
+      if (!nome) { showToast('⚠️ Digite seu nome.'); return; }
+      var auth = JSON.parse(localStorage.getItem('hubnexus-auth') || '{}');
+      auth.nome = nome;
+      localStorage.setItem('hubnexus-auth', JSON.stringify(auth));
+      localStorage.setItem('hubnexus-name', nome);
+
+      // Update avatar
+      var parts = nome.split(/\s+/).filter(Boolean);
+      var initials = parts.length >= 2
+        ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase()
+        : parts[0]?.slice(0,2).toUpperCase() || '?';
+      document.getElementById('profileAvatarBig').textContent = initials;
+      document.getElementById('profileName').textContent = nome;
+
+      // Persist via API
+      fetch('/api/usuarios', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({nome:nome, email:auth.email||''})
+      }).catch(function(){});
+
+      showToast('✓ Perfil atualizado!');
+    } catch(e) { showToast('Erro ao salvar.'); }
+  }
+
+  // ── Ativar notificações ──
+  function ativarNotificacoes() {
+    if (!('Notification' in window)) { showToast('Seu navegador não suporta notificações.'); return; }
+    Notification.requestPermission().then(function(result) {
+      if (result === 'granted') {
+        document.getElementById('notifBanner').classList.remove('show');
+        showToast('🔔 Notificações ativadas!');
+      } else {
+        showToast('Permissão negada. Verifique as configurações do navegador.');
+      }
+    });
+  }
+</script>
+</body>
+</html>

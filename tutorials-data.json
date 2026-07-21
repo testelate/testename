@@ -1,0 +1,872 @@
+{
+  "categorias": [
+    {
+      "id": "voxia",
+      "titulo": "VOX.ia",
+      "emoji": "🧠",
+      "videos": [
+        {
+          "id": "vx-01",
+          "titulo": "Tutorial de como fazer um VOX.ia",
+          "driveId": "1qCsH3a91oMTNERhEF5oE2GbL2Zd69h2M",
+          "duracao": "",
+          "descricao": "Guia completo de uso da ferramenta VOX.ia para geração de relatórios automatizados via IA."
+        },
+        {
+          "id": "vx-02",
+          "titulo": "Como realizar o setup inicial no VOX.ia",
+          "driveId": "1pAqugZ4dX88rTCU6tCChEFvEXjeG8tliXj4AumjeMjY",
+          "duracao": "",
+          "descricao": "Guia completo para novos usuários configurarem suas contas e primeiros projetos do zero."
+        },
+        {
+          "id": "vx-03",
+          "titulo": "Como montar gráficos de Matriz no VOX.ia",
+          "driveId": "14DNA-y1lcs6oA2kfp-iBkxIiyZvl-deuEqjp0fN85WI",
+          "duracao": "",
+          "descricao": "Tutorial passo a passo sobre a criação e configuração de gráficos do tipo matriz no VOX.ia."
+        },
+        {
+          "id": "vx-04",
+          "titulo": "Como criar dashboards no VOX.ia",
+          "driveId": "1f3cBS7IGrRu7Yt8FFCuoMDeI06j3vJlm4vMiiPxUUIU",
+          "duracao": "",
+          "descricao": "Instruções sobre como organizar dados e visualizações para montar dashboards personalizados no VOX.ia."
+        },
+        {
+          "id": "vx-05",
+          "titulo": "Como exportar relatórios no VOX.ia",
+          "driveId": "1ZKtU8Ef3mUGjCpA_-FUFW1QaQavHS39OCWoyAihJ7hc",
+          "duracao": "",
+          "descricao": "Guia demonstrando o processo de exportação de dados e relatórios gerados pela ferramenta."
+        },
+        {
+          "id": "vx-06",
+          "titulo": "Como configurar alertas no VOX.ia",
+          "driveId": "1PfUnN-QW3DmE3lCb_1Gm0zh9rXeNqWeznLn7jAHWl6c",
+          "duracao": "",
+          "descricao": "Explicação de como definir parâmetros e gatilhos para receber notificações automáticas sobre novos dados ou termos monitorados."
+        },
+        {
+          "id": "vx-07",
+          "titulo": "Como criar filtros no VOX.ia",
+          "driveId": "1fBiwSC8jzMzjhRaKAGd4zqB21cHfhhxaMsyMFzrQ_f8",
+          "duracao": "",
+          "descricao": "Tutorial focado na aplicação de filtros avançados para refinar a busca e a análise de dados dentro da plataforma."
+        },
+        {
+          "id": "vx-08",
+          "titulo": "Como adicionar novas fontes no VOX.ia",
+          "driveId": "1nQQspLBP_tDHZpTyYtnOLPd3yPfaCLVJ1JhHahpoQLA",
+          "duracao": "",
+          "descricao": "Demonstração de como integrar novos canais ou fontes de dados ao monitoramento do VOX.ia."
+        },
+        {
+          "id": "vx-09",
+          "titulo": "Como gerenciar usuários no VOX.ia",
+          "driveId": "1mimovGuoQ7bHnS4EwClD1kjVVcEf7G21h6kX6NLVSzw",
+          "duracao": "",
+          "descricao": "Guia para administradores sobre como convidar, editar permissões e gerenciar os acessos da equipe no sistema."
+        },
+        {
+          "id": "vx-10",
+          "titulo": "Como utilizar a busca avançada no VOX.ia",
+          "driveId": "1t-l2mbSy1cYS4TJDBZ7WacSx_RgWN1tMK0ovC9hW_RA",
+          "duracao": "",
+          "descricao": "Dicas e comandos para otimizar a pesquisa de informações usando operadores e filtros específicos."
+        },
+        {
+          "id": "vx-11",
+          "titulo": "Como criar temas no VOX.ia",
+          "driveId": "1l6UANf868RvFFAIyJuSH6XkUpakfb-Ijp2uDhth8b6A",
+          "duracao": "",
+          "descricao": "Instruções sobre como organizar o monitoramento por temas ou categorias específicas dentro do projeto."
+        },
+        {
+          "id": "vx-12",
+          "titulo": "Como analisar sentimentos no VOX.ia",
+          "driveId": "1HZYFN3ivysKko-Y3398j20c76u29dMZao5eoPcJHKJU",
+          "duracao": "",
+          "descricao": "Explicação de como a ferramenta classifica e como o usuário pode ajustar a análise de sentimento (positivo, negativo, neutro) das menções."
+        },
+        {
+          "id": "vx-13",
+          "titulo": "Como criar nuvem de palavras no VOX.ia",
+          "driveId": "14_huiIW45iytbu4YX_bzH5f731PfBYaAkZDMOZiH6_U",
+          "duracao": "",
+          "descricao": "Tutorial mostrando como gerar a visualização de nuvem de palavras para identificar os termos mais citados em um conjunto de dados."
+        },
+        {
+          "id": "vx-14",
+          "titulo": "Como integrar APIs no VOX.ia",
+          "driveId": "1qJQK0BmcLp_SqNVSnW8ietR1lC_T1JLYEclgbvkgCfY",
+          "duracao": "",
+          "descricao": "Instruções técnicas sobre como conectar a plataforma com outras ferramentas via API."
+        },
+        {
+          "id": "vx-15",
+          "titulo": "Como montar gráficos de Matriz no VOX.ia (2)",
+          "driveId": "1ggll4lS88Ulalfhc9j5hw1c_GcXOmGhs",
+          "duracao": "",
+          "descricao": "Instruções para criação de gráficos de matriz e SWOT no VOX.ia."
+        },
+        {
+          "id": "vx-16",
+          "titulo": "Como utilizar código de criação de nuvens para concorrentes",
+          "driveId": "1QVQZRpE2zdhuMZwgljVBRsqLvm4R74f1",
+          "duracao": "",
+          "descricao": "Script para geração de nuvens de palavras comparativas de marcas."
+        }
+      ]
+    },
+    {
+      "id": "nt",
+      "titulo": "NT — Nexus Tracker",
+      "emoji": "📊",
+      "videos": [
+        {
+          "id": "nt-00",
+          "titulo": "tutorialNT_01 — Capa / Introdução",
+          "driveId": "1cmSah361mAnX0kzFKontPmj7hB20SF7F",
+          "duracao": "",
+          "descricao": "Vídeo introdutório da série de tutoriais NT — visão geral do treinamento."
+        },
+        {
+          "id": "nt-02",
+          "titulo": "tutorialNT_02 — TikTok on the Clock (Timing)",
+          "driveId": "1WllV8UV_M_oU2O5nTu7I_2Ttt8VPfBvH",
+          "duracao": "",
+          "descricao": "Tutorial focado em estratégias e análises de timing para a plataforma TikTok."
+        },
+        {
+          "id": "nt-03",
+          "titulo": "tutorialNT_03 — Estudo BrandWatch Raio-X",
+          "driveId": "1o-XcTmdkZl7aaTeRe2tpmUdAVwh632SS",
+          "duracao": "",
+          "descricao": "Análise detalhada (Raio-X) utilizando as ferramentas de monitoramento da BrandWatch."
+        },
+        {
+          "id": "nt-04",
+          "titulo": "tutorialNT_04 — Estudo BrandWatch Outras Redes",
+          "driveId": "1cog5DZ7d0_4uQaGGHFGHjumBYD-LjjvE",
+          "duracao": "",
+          "descricao": "Guia para expandir o monitoramento da BrandWatch para outras redes sociais além das principais."
+        },
+        {
+          "id": "nt-05",
+          "titulo": "tutorialNT_05 — Google Trends",
+          "driveId": "1T2bKKLXz25C7E6S8CSfKHCRSOUcE_RKz",
+          "duracao": "",
+          "descricao": "Instruções sobre como utilizar o Google Trends para estudos de comportamento e busca."
+        },
+        {
+          "id": "nt-06",
+          "titulo": "tutorialNT_06 — Estudo Stilingue",
+          "driveId": "1qO8fW5QhZvtKa27XCZLNoiE9_78JG2Wi",
+          "duracao": "",
+          "descricao": "Tutorial focado na realização de estudos e coleta de dados através da plataforma Stilingue."
+        },
+        {
+          "id": "nt-07",
+          "titulo": "tutorialNT_07 — YouTube (TER)",
+          "driveId": "1ghsczuz6Twn2EWX3T_4HLcf3cDKsqC8a",
+          "duracao": "",
+          "descricao": "Conteúdo voltado para análise e monitoramento específico da plataforma YouTube."
+        },
+        {
+          "id": "nt-08",
+          "titulo": "tutorialNT_08 — Ranking IG / AirInfluencer",
+          "driveId": "1mJMlB_5_oTWXNoqvEt7UaJ4ZzPoQ7sgd",
+          "duracao": "",
+          "descricao": "Guia sobre a criação de rankings no Instagram utilizando a ferramenta AirInfluencer."
+        },
+        {
+          "id": "nt-09",
+          "titulo": "tutorialNT_09 — Política & Economia (Parte 1)",
+          "driveId": "1z0KS8fbdP-CYcRfK96LGcWLVi5dqptj1",
+          "duracao": "",
+          "descricao": "Primeira parte do tutorial sobre monitoramento e análise de temas de Política e Economia."
+        },
+        {
+          "id": "nt-10",
+          "titulo": "tutorialNT_10 — X da Questão: Trending Topics",
+          "driveId": "1V6Q8DkiOh9AKusF8YKkPUl9UROcbmwHH",
+          "duracao": "",
+          "descricao": "Explicação sobre a análise de Trending Topics (TTs) na plataforma X (antigo Twitter)."
+        },
+        {
+          "id": "nt-11",
+          "titulo": "tutorialNT_11 — Hey Google: Google Trends Avançado",
+          "driveId": "16PfHKoXnA6CXRvcv_VBYCKBtUyQ6Q5--",
+          "duracao": "",
+          "descricao": "Tutorial avançado ou complementar sobre o uso das ferramentas de tendência do Google."
+        },
+        {
+          "id": "nt-12",
+          "titulo": "tutorialNT_12 — Corrida Nexus: Dashboards",
+          "driveId": "1Ocu_CYM0PPJ4BC4yHCCpoGKS2jTPc8KB",
+          "duracao": "",
+          "descricao": "Instruções para configuração e visualização de dashboards dentro do projeto Corrida Nexus."
+        },
+        {
+          "id": "nt-13",
+          "titulo": "tutorialNT_13 — De Olho no Calendário & Fora da Curva",
+          "driveId": "11pcDoYBqbTetgbjnla4PFupF2wJu2bfq",
+          "duracao": "",
+          "descricao": "Planejamento de calendário e identificação de eventos atípicos (fora da curva)."
+        },
+        {
+          "id": "nt-14",
+          "titulo": "tutorialNT_14 — Revisão do NT",
+          "driveId": "1_MBoimdeD9O213ZRiIJ13CwJWynDy8Ci",
+          "duracao": "",
+          "descricao": "Vídeo de revisão geral sobre os processos e aprendizados do treinamento NT."
+        },
+        {
+          "id": "nt-15",
+          "titulo": "tutorialNT_15 — X da Questão: Novo Formato",
+          "driveId": "1d0qbAIoCQNgTyX4_qgnlN-R0agHZrM1D",
+          "duracao": "",
+          "descricao": "Atualização sobre o novo formato de análise de dados e questões na plataforma X."
+        },
+        {
+          "id": "nt-16",
+          "titulo": "tutorialNT_16 — Revisão Geral",
+          "driveId": "1jUBOQUS-t_JfdxcbBORkEWTiMm_Q4hbE",
+          "duracao": "",
+          "descricao": "Compilado para revisão dos tópicos abordados nos módulos anteriores."
+        },
+        {
+          "id": "nt-17",
+          "titulo": "tutorialNT_17 — Nova Revisão: LinkedIn, Viral TikTok, Ranking IG",
+          "driveId": "1TUA75_0HuxPRoOiU09WHXrw3QfDIQeYG",
+          "duracao": "",
+          "descricao": "Guia de revisão cobrindo LinkedIn, tendências virais do TikTok e o ranking do Instagram."
+        },
+        {
+          "id": "nt-bw",
+          "titulo": "BrandWatch — Busca, Query e Dashboards (NT)",
+          "driveId": "1ZybT-GHdBy-4QRvTk-3e2jOG8fl4TGGd",
+          "duracao": "",
+          "descricao": "Configuração de buscas, queries e dashboards no BrandWatch voltado para o NT."
+        },
+        {
+          "id": "nt-bw2",
+          "titulo": "BrandWatch — Queries focadas em Perfis",
+          "driveId": "10brZoBZuuL7aWuo3flaT-3kF-iJyXSu8",
+          "duracao": "",
+          "descricao": "Guia para criar queries focadas em perfis específicos dentro do BrandWatch."
+        },
+        {
+          "id": "nt-190",
+          "titulo": "NT 1.0 — Estudo Principal BrandWatch (2019)",
+          "driveId": "1bi-pRW5ZaE4G-AwhW2ESmyufIeqC3qJU",
+          "duracao": "",
+          "descricao": "Treinamento sobre a metodologia de estudo principal utilizando BrandWatch (Versão 1.0)."
+        },
+        {
+          "id": "nt-2026-1",
+          "titulo": "NT2026 — Estudo Principal 1: Métricas & Cards",
+          "driveId": "1eYMfvWH0Bgzq73OgAdMw009zxKctAW4C",
+          "duracao": "",
+          "descricao": "Parte 1 (2026): foco em definição de métricas e organização de cards."
+        },
+        {
+          "id": "nt-2026-2",
+          "titulo": "NT2026 — Estudo Principal 2: Texto 1",
+          "driveId": "11ogsoY8xnn1syC6n3h4WqLnKAzkafVFQ",
+          "duracao": "",
+          "descricao": "Parte 2 (2026): foco na redação e análise textual (Etapa 1)."
+        },
+        {
+          "id": "nt-2026-3",
+          "titulo": "NT2026 — Estudo Principal 3: Texto 2",
+          "driveId": "102iTZ_67MFibUDEnS6gHNlD2Fmj3_paI",
+          "duracao": "",
+          "descricao": "Parte 3 (2026): foco na redação e análise textual (Etapa 2)."
+        },
+        {
+          "id": "nt-2026-4",
+          "titulo": "NT2026 — Estudo Principal 4: Obs & Captura Meta",
+          "driveId": "1gkCUyjQFmVnGyNH0yUK4gsjlQsgxkADP",
+          "duracao": "",
+          "descricao": "Parte 4 (2026): observações e captura de dados da Meta (Facebook e Instagram)."
+        }
+      ]
+    },
+    {
+      "id": "startbi",
+      "titulo": "Start & BI",
+      "emoji": "📈",
+      "videos": [
+        {
+          "id": "bi-01",
+          "titulo": "Start & BI — Escolha de tema e extração de base",
+          "driveId": "1HZYFN3ivysKko-Y3398j20c76u29dMZao5eoPcJHKJU",
+          "duracao": "",
+          "descricao": "Oficina prática sobre escolha de temas estratégicos, buscas booleanas no Stilingue e extração/tratamento inicial no Excel."
+        },
+        {
+          "id": "bi-02",
+          "titulo": "Imersão Start & BI — Escrita com José",
+          "driveId": "1l6UANf868RvFFAIyJuSH6XkUpakfb-Ijp2uDhth8b6A",
+          "duracao": "",
+          "descricao": "Focado em redação de relatórios, diferença entre introdução e sumário executivo, e análises quanti/quali."
+        },
+        {
+          "id": "bi-03",
+          "titulo": "Imersão Start & BI — Metodologia e ferramentas com Marília",
+          "driveId": "1t-l2mbSy1cYS4TJDBZ7WacSx_RgWN1tMK0ovC9hW_RA",
+          "duracao": "",
+          "descricao": "Tutorial sobre criação de grafos de relacionamento (Twitter/X) usando linguagem R e software Gephi."
+        },
+        {
+          "id": "bi-04",
+          "titulo": "Start & BI na prática — Montando Visuais (Looker Studio)",
+          "driveId": "1PfUnN-QW3DmE3lCb_1Gm0zh9rXeNqWeznLn7jAHWl6c",
+          "duracao": "",
+          "descricao": "Aula prática de Looker Studio: conexão de bases (Sheets), layout, KPIs e gráficos de sentimento."
+        },
+        {
+          "id": "bi-05",
+          "titulo": "Imersão Start & BI — Automações, coletas e extrações especiais",
+          "driveId": "1f3cBS7IGrRu7Yt8FFCuoMDeI06j3vJlm4vMiiPxUUIU",
+          "duracao": "",
+          "descricao": "Apresentação do Dasport Nexus: solicitações via API (YouTube, LinkedIn) e formulários de requisição."
+        },
+        {
+          "id": "bi-06",
+          "titulo": "Imersão Start & BI — Banco de dados e programação com Luiza",
+          "driveId": "1fBiwSC8jzMzjhRaKAGd4zqB21cHfhhxaMsyMFzrQ_f8",
+          "duracao": "",
+          "descricao": "Introdução à lógica de programação: algoritmos, variáveis, tipos de dados e estruturas de repetição."
+        },
+        {
+          "id": "bi-07",
+          "titulo": "Start & BI na prática — Fechamento e Feedbacks",
+          "driveId": "1ZKtU8Ef3mUGjCpA_-FUFW1QaQavHS39OCWoyAihJ7hc",
+          "duracao": "",
+          "descricao": "Troubleshooting no Looker Studio: correção de eixos, cores de sentimentos e formatação de datas."
+        }
+      ]
+    },
+    {
+      "id": "brandwatch",
+      "titulo": "BrandWatch",
+      "emoji": "📡",
+      "videos": [
+        {
+          "id": "bw-01",
+          "titulo": "BrandWatch — Extração de dados e menções",
+          "driveId": "1vvLymWkczVuNf8h9zrbUNnO7cOPeg-xR",
+          "duracao": "",
+          "descricao": "Extração de dados e menções através da ferramenta BrandWatch."
+        },
+        {
+          "id": "bw-02",
+          "titulo": "BrandWatch — Cadastro de hashtags (NEXUS)",
+          "driveId": "13GtEfb8ssWtkO4lJAxYfF4E5bOtrsajD",
+          "duracao": "",
+          "descricao": "Tutorial sobre como realizar o cadastro de hashtags dentro da ferramenta BrandWatch no ecossistema NEXUS."
+        }
+      ]
+    },
+    {
+      "id": "stilingue",
+      "titulo": "Stilingue",
+      "emoji": "🔍",
+      "videos": [
+        {
+          "id": "st-01",
+          "titulo": "Stilingue — Visão geral e funcionalidades",
+          "driveId": "1qZgw7E-P7v3HMiH0Q3Y71iWk-pTiojCy",
+          "duracao": "",
+          "descricao": "Visão geral e funcionalidades principais da plataforma Stilingue."
+        },
+        {
+          "id": "st-02",
+          "titulo": "Stilingue — Sentimentalização e Ranking",
+          "driveId": "1vPKhMgblrqxS4bGSTj5jhXdKqOp4H2zy",
+          "duracao": "",
+          "descricao": "Classificação de sentimentos e criação de rankings na Stilingue."
+        },
+        {
+          "id": "st-03",
+          "titulo": "Stilingue — Colunas Condicionais (Sentimento)",
+          "driveId": "1GR452Rxx_Uj_JLarWpdVL4Dxu9urHYIS",
+          "duracao": "",
+          "descricao": "Uso de colunas condicionais para análise de sentimento avançada."
+        },
+        {
+          "id": "st-04",
+          "titulo": "Planilha Stilingue — Organização de dados exportados",
+          "driveId": "1ggkt5jMINdP71F29irhAzods3iN7ra0f",
+          "duracao": "",
+          "descricao": "Organização de dados exportados da Stilingue em planilhas."
+        },
+        {
+          "id": "st-05",
+          "titulo": "Montar planilha a partir do smart-report da Knewin",
+          "driveId": "1EsCETtRiX2Uqdvk0mWkVz4F7Uhqz2n_9",
+          "duracao": "",
+          "descricao": "Como exportar dados da Knewin e estruturá-los para ferramentas de análise da equipe."
+        },
+        {
+          "id": "st-06",
+          "titulo": "Stilingue — Tutorial 1: Como baixar dados",
+          "driveId": "1Geo3Eo__M7vW0zipuCrTP7gd-nmmj_qm",
+          "duracao": "",
+          "descricao": "Guia inicial de como realizar download de arquivos e dados do sistema."
+        }
+      ]
+    },
+    {
+      "id": "dados",
+      "titulo": "Dados e BI",
+      "emoji": "📊",
+      "videos": [
+        {
+          "id": "d-01",
+          "titulo": "Excel — Tabela Dinâmica 1",
+          "driveId": "1FRrTk0WSPaa83TODi0cAMYL3xIkhXW9H",
+          "duracao": "",
+          "descricao": "Tutorial básico de criação de tabelas dinâmicas no Excel para grandes volumes de dados de redes sociais."
+        },
+        {
+          "id": "d-02",
+          "titulo": "Excel — Tabela Dinâmica 2 (Avançado)",
+          "driveId": "1dPG3jmS44qXCmEf4T4TiRVjOvtkFa9BC",
+          "duracao": "",
+          "descricao": "Recursos avançados de tabelas dinâmicas: agrupamento de dados e cálculos para relatórios de métricas."
+        },
+        {
+          "id": "d-03",
+          "titulo": "Introdução BI — Banco de Dados",
+          "driveId": "14bFE3Bn7AMAwRG6G4EfBo3dbD0HKSYZK",
+          "duracao": "",
+          "descricao": "Fundamentos: estruturação de tabelas, tipos de dados e importância da limpeza."
+        },
+        {
+          "id": "d-04",
+          "titulo": "Power BI — Interface, conexão e DAX básico",
+          "driveId": "13O3FuP_Rszqqg4HTrDSqckyGPmbkOKXD",
+          "duracao": "",
+          "descricao": "Interface do Power BI, conexão de fontes e criação de medidas básicas (DAX)."
+        },
+        {
+          "id": "d-05",
+          "titulo": "Power BI — Visualização e Word Cloud",
+          "driveId": "1qjIUs6RBHJO_QbWYBWE5hRulpbgEpoZ8",
+          "duracao": "",
+          "descricao": "Visualização de dados, formatação de dashboards e uso de Word Cloud."
+        },
+        {
+          "id": "d-06",
+          "titulo": "Power BI — Painel consolidado com filtros",
+          "driveId": "1wGROZkmO14dLEWbOnHYZFkm0peJEHSNk",
+          "duracao": "",
+          "descricao": "Demonstração de painel consolidado com filtros de segmentação e interatividade."
+        },
+        {
+          "id": "d-07",
+          "titulo": "Power BI — Power Query: importação e padronização",
+          "driveId": "167OUrFlBR_DoSNr55zLhgCKH1Z2YpJT-",
+          "duracao": "",
+          "descricao": "Foco em Power Query: importação, tratamento e padronização de nomes/categorias."
+        },
+        {
+          "id": "d-08",
+          "titulo": "Google Colab — Scripts Python para análise",
+          "driveId": "1WuQ2TsW08AyHstI3NWxOGI7NHjdmLsCk",
+          "duracao": "",
+          "descricao": "Uso de notebooks para execução de scripts Python voltados à limpeza e análise de dados."
+        },
+        {
+          "id": "d-09",
+          "titulo": "Apresentação — Novo layout de dashboards (Fev 2026)",
+          "driveId": "1lPnDVrIXEwpI12lgnaQHz2-zU8DJlIta",
+          "duracao": "",
+          "descricao": "Demonstração da nova identidade visual para dashboards (Figma/Power BI)."
+        }
+      ]
+    },
+    {
+      "id": "gephi",
+      "titulo": "Gephi e Grafos",
+      "emoji": "🔗",
+      "videos": [
+        {
+          "id": "g-01",
+          "titulo": "Gephi — Fontes sombreadas (estética de nós)",
+          "driveId": "1OtpcueOE1xpJHAxFtvT7f-G3OAusFPFI",
+          "duracao": "",
+          "descricao": "Ajuste estético no Gephi: aplicação de sombreamento e contorno nos rótulos dos nós."
+        },
+        {
+          "id": "g-02",
+          "titulo": "Grafos — Manipulação de nós e arestas (sem áudio)",
+          "driveId": "1BGJPYTmcGkIF7HXZlsiynJKqDZTgkM5U",
+          "duracao": "",
+          "descricao": "Guia visual (sem áudio) focado na manipulação de nós e arestas para construção de grafos."
+        },
+        {
+          "id": "g-03",
+          "titulo": "Grafo de comentaristas do YouTube com Marília",
+          "driveId": "1sdwk5_WSD9sPNWpe2Voc3pApvET1BUTQ",
+          "duracao": "",
+          "descricao": "Construção de rede de conexões entre usuários que comentam em vídeos para identificar comunidades."
+        },
+        {
+          "id": "g-04",
+          "titulo": "Grafo YouTube — Tratamento de base no Gephi",
+          "driveId": "1wpgFLViD1tDXSKw-K7T61IMicRgvOGRN",
+          "duracao": "",
+          "descricao": "Metodologia específica para o YouTube: tratamento da base e visualização no Gephi."
+        },
+        {
+          "id": "g-05",
+          "titulo": "Grafo Facebook — Engajamento e comunidades",
+          "driveId": "1pVlr8fr4Nm2WfR1y9mGRlAMcZZ3nmoyv",
+          "duracao": "",
+          "descricao": "Extração de métricas de engajamento e visualização de comunidades no Facebook."
+        },
+        {
+          "id": "g-06",
+          "titulo": "Grafo Hashtags Instagram",
+          "driveId": "1AYKHmtCDwJdquUmCZoqum30coG7pLcCY",
+          "duracao": "",
+          "descricao": "Mapeamento de redes de hashtags para identificar tendências e clusters de interesse."
+        }
+      ]
+    },
+    {
+      "id": "iramuteq",
+      "titulo": "Iramuteq",
+      "emoji": "🧩",
+      "videos": [
+        {
+          "id": "ir-01",
+          "titulo": "Iramuteq — Treinamento completo",
+          "driveId": "1jqgbvCJ7lyOC-gDOTB8UleVCZGArexcF",
+          "duracao": "",
+          "descricao": "Aula completa: preparação de corpus textual e execução de análise de similitude no Iramuteq."
+        },
+        {
+          "id": "ir-02",
+          "titulo": "Limpeza de planilhas para Iramuteq",
+          "driveId": "1RHAyOXTgHDEM_i4vMooF_kGlmOIwxhbG",
+          "duracao": "",
+          "descricao": "Limpeza manual e automatizada (R/Python) para processamento no Iramuteq."
+        },
+        {
+          "id": "ir-03",
+          "titulo": "Código de limpeza Python para Iramuteq",
+          "driveId": "1p3yypQbhlfD7MhiFxwcyDj1VTjITaHG_",
+          "duracao": "",
+          "descricao": "Execução de código Python para limpeza de caracteres especiais no corpus textual."
+        }
+      ]
+    },
+    {
+      "id": "influenciadores",
+      "titulo": "Influenciadores e Rankings",
+      "emoji": "🏆",
+      "videos": [
+        {
+          "id": "inf-01",
+          "titulo": "IR² — Performance Energisa",
+          "driveId": "1CE3sq0htlTmxhDr-_oD-avPcmpgJLAWs",
+          "duracao": "",
+          "descricao": "Tutorial específico sobre o cálculo do índice IR² para o cliente Energisa."
+        },
+        {
+          "id": "inf-02",
+          "titulo": "IR² — Automatizado",
+          "driveId": "14GfvZKpDJuczxf2GkenD98882aBWCQ9b",
+          "duracao": "",
+          "descricao": "Demonstração da configuração do sistema de IR² automatizado."
+        },
+        {
+          "id": "inf-03",
+          "titulo": "IR² — Ranking de Influenciadores",
+          "driveId": "163mFH5-uYJATEL1NDTDjFCXg7sxsfBLY",
+          "duracao": "",
+          "descricao": "Tutorial para gerar rankings de influenciadores com a metodologia IR²."
+        },
+        {
+          "id": "inf-04",
+          "titulo": "Criação do Ranking de Influenciadores",
+          "driveId": "1Z9__zGSsBYKfijkL0TvZ-4K1Z_HIea3h",
+          "duracao": "",
+          "descricao": "Guia para elaborar ranking de influenciadores baseado em desempenho."
+        },
+        {
+          "id": "inf-05",
+          "titulo": "Versão 2021 — Tutorial Ranking",
+          "driveId": "1PZ1W61CehKtlRpU0c4ac7z7aybUmJ63l",
+          "duracao": "",
+          "descricao": "Versão atualizada do tutorial de criação de rankings na plataforma."
+        },
+        {
+          "id": "inf-06",
+          "titulo": "Alimentar Bases NN Médicos Influenciadores",
+          "driveId": "1TU_ecJevF5cfXwRV_n5lz3lbmPdVYOT1",
+          "duracao": "",
+          "descricao": "Manutenção de bases de influenciadores médicos para o projeto Novo Nordisk."
+        },
+        {
+          "id": "inf-07",
+          "titulo": "AirInfluencers — Visão geral",
+          "driveId": "1V0H_0l4FpE0HeP1ogJst4nTCRj8CaWRB",
+          "duracao": "",
+          "descricao": "Guia sobre o uso da ferramenta Airfluencers para análise de influenciadores."
+        },
+        {
+          "id": "inf-08",
+          "titulo": "Tagger — Histórico de seguidores por rede",
+          "driveId": "1VkXlfCLlDZ85IF3F0_9oiinYb9TJmBMy",
+          "duracao": "",
+          "descricao": "Instruções para consultar o histórico de seguidores por rede social no Tagger."
+        },
+        {
+          "id": "inf-09",
+          "titulo": "Tagger — Gestão de influenciadores (geral)",
+          "driveId": "1NSzcAA2vqpozaaZ8E0kLUE6ZRQ_v2CD8",
+          "duracao": "",
+          "descricao": "Guia geral sobre o uso da plataforma Tagger para gestão de influenciadores."
+        },
+        {
+          "id": "inf-10",
+          "titulo": "Social Blade — Métricas sociais",
+          "driveId": "1LquTA_0arFE59J4GwHX3smMBx17LRTQP",
+          "duracao": "",
+          "descricao": "Demonstração de como utilizar o Social Blade para análise de métricas sociais."
+        }
+      ]
+    },
+    {
+      "id": "redes",
+      "titulo": "Redes Sociais",
+      "emoji": "📱",
+      "videos": [
+        {
+          "id": "rs-01",
+          "titulo": "TikTok — Extração de posts via Apify",
+          "driveId": "1-ku2TuPQ4WpHomsCmhT3EIXQdgAemz--",
+          "duracao": "",
+          "descricao": "Tutorial de como extrair posts de perfis do TikTok utilizando o Apify."
+        },
+        {
+          "id": "rs-02",
+          "titulo": "TikTok — Ferramenta de Extração",
+          "driveId": "1VX4aJuOM2SoAH0fNlQIOCm_dDQ2agMNA",
+          "duracao": "",
+          "descricao": "Coleta de dados do TikTok: vídeos, curtidas e comentários."
+        },
+        {
+          "id": "rs-03",
+          "titulo": "Facebook e Instagram — Downloads no Creator Studio",
+          "driveId": "1VBVcKZ47EbaY9zedQuaSDX3Ev1-nfUW2",
+          "duracao": "",
+          "descricao": "Passo a passo para extrair bases brutas de desempenho do Facebook e Instagram via Creator Studio."
+        },
+        {
+          "id": "rs-04",
+          "titulo": "SuperMetrics — Extração de dados",
+          "driveId": "13kiUnlYyH0mhZKDcGFabFJPcHTgClM4H",
+          "duracao": "",
+          "descricao": "Instruções de extração de dados utilizando a ferramenta Supermetrics."
+        },
+        {
+          "id": "rs-05",
+          "titulo": "AllEars — Uso da plataforma",
+          "driveId": "1W6WMLXtaZ6VZFRAsv7VU32D4wgGPymSh",
+          "duracao": "",
+          "descricao": "Funcionalidades principais para operação da plataforma AllEars."
+        },
+        {
+          "id": "rs-06",
+          "titulo": "snu-aded-tsk — Sessão técnica BI (Out 2025)",
+          "driveId": "1_9SLWuo71xM9y3ctNjWb1XgIYYCobrG9",
+          "duracao": "",
+          "descricao": "Sessão técnica (troubleshooting) sobre tarefas específicas de BI."
+        }
+      ]
+    },
+    {
+      "id": "ia",
+      "titulo": "IA e Scripts",
+      "emoji": "🤖",
+      "videos": [
+        {
+          "id": "ia-02",
+          "titulo": "Transformar Excel em NotebookLM",
+          "driveId": "1EKDv2XSQbqjN2RJ_G_y5ZIJtd0gGo6NA",
+          "duracao": "",
+          "descricao": "Conversão de Excel para PDF e carregamento no NotebookLM para análise via IA."
+        },
+        {
+          "id": "ia-05",
+          "titulo": "Apresentação — Projeto Report IA (Novos Negócios)",
+          "driveId": "1jbQz0GRvjJZQkkdlr9fbrF8YsbrbYVbN",
+          "duracao": "",
+          "descricao": "Apresentação estratégica sobre o projeto de Report com IA para Novos Negócios."
+        }
+      ]
+    },
+    {
+      "id": "athena",
+      "titulo": "Athena e Plataformas",
+      "emoji": "⚙️",
+      "videos": [
+        {
+          "id": "at-01",
+          "titulo": "Athena — Como adicionar novo cliente",
+          "driveId": "17QyG2mRadn3z6PFplSf199q2OpcCoQz7",
+          "duracao": "",
+          "descricao": "Etapas de configuração inicial para novas contas de clientes na plataforma Athena."
+        },
+        {
+          "id": "at-02",
+          "titulo": "NEXUS Site — Treinamento de navegação (Out 2024)",
+          "driveId": "1nevmYLWXJV5Hqs_FQ9Mu0NKu0T3C7zIx",
+          "duracao": "",
+          "descricao": "Treinamento sobre navegação, gestão de conteúdo e funções do site NEXUS."
+        },
+        {
+          "id": "at-03",
+          "titulo": "Ekklesia — Tutorial completo",
+          "driveId": "1axvzdEKGUQg-PoRNarPRHpUQb22_9_sY",
+          "duracao": "",
+          "descricao": "Conteúdo audiovisual relacionado à plataforma/projeto Ekklesia."
+        }
+      ]
+    },
+    {
+      "id": "imax",
+      "titulo": "IMAX e HubSpot",
+      "emoji": "📧",
+      "videos": [
+        {
+          "id": "imax-01",
+          "titulo": "IMAX — Disparos (Parte 1)",
+          "driveId": "1GSFzoFhovT0zFIjqczwQq0rGH6lYGaxq",
+          "duracao": "",
+          "descricao": "Parte 1: guia instrutivo sobre o sistema de disparos da ferramenta IMAX."
+        },
+        {
+          "id": "imax-02",
+          "titulo": "IMAX — Disparos (Parte 2)",
+          "driveId": "1Lyz2G1sC9C-cCMBjst5vGR4xU2AjMZ9z",
+          "duracao": "",
+          "descricao": "Parte 2: configuração e execução de disparos de mensagens via IMAX."
+        },
+        {
+          "id": "imax-03",
+          "titulo": "HubSpot — Disparos e Campanhas",
+          "driveId": "1gflC8id8Kq1-Fbn76EN5YxT39TA665P8",
+          "duracao": "",
+          "descricao": "Guia passo a passo para disparos e campanhas utilizando o HubSpot."
+        },
+        {
+          "id": "imax-04",
+          "titulo": "Dúvidas HubSpot + IMAX (Jan 2026)",
+          "driveId": "1rD4wJMS8LkVfpbPiXzmvQIlVlrHW8r6V",
+          "duracao": "",
+          "descricao": "Sessão de dúvidas sobre a integração e uso do HubSpot com o IMAX."
+        }
+      ]
+    },
+    {
+      "id": "circulos",
+      "titulo": "Círculos Nexus",
+      "emoji": "🔵",
+      "videos": [
+        {
+          "id": "cn-01",
+          "titulo": "Círculo Nexus: Práticas com Dados — 2025/06/11",
+          "driveId": "1D2grP5xurqpyty6hJCUR-opz0v1wdSpb",
+          "duracao": "",
+          "descricao": "Sessão do Círculo Nexus com foco em práticas com dados (11 de junho de 2025)."
+        },
+        {
+          "id": "cn-02",
+          "titulo": "Círculo Nexus | Vox.IA — 2026/02/26",
+          "driveId": "1QmIMgX_t3L_hwryMwj9KobAhCqVU7avI",
+          "duracao": "",
+          "descricao": "Sessão do Círculo Nexus dedicada à ferramenta Vox.IA (26 de fevereiro de 2026)."
+        },
+        {
+          "id": "cn-03",
+          "titulo": "Círculo Nexus: Práticas com Dados — 2025/07/16",
+          "driveId": "1jTsX6pNg_3v6bsrOulKczsTkl11_vBeF",
+          "duracao": "",
+          "descricao": "Sessão do Círculo Nexus com foco em práticas com dados (16 de julho de 2025)."
+        },
+        {
+          "id": "cn-04",
+          "titulo": "Círculo Nexus | Vox.IA — 2ª Sessão | Produção — 2026/03/05",
+          "driveId": "1eQBg8_JLTmvT9-gbsIqfMPPvDCDOtDNl",
+          "duracao": "",
+          "descricao": "Segunda sessão do Círculo Nexus sobre Vox.IA, com foco em produção (5 de março de 2026)."
+        },
+        {
+          "id": "cn-05",
+          "titulo": "Círculo Nexus | Imprensa: Extração News — 2026/02/19",
+          "driveId": "1KvtAGiaPhbIRkpGcTwpjvDC91KeixCMb",
+          "duracao": "",
+          "descricao": "Sessão do Círculo Nexus sobre extração de dados de imprensa e notícias (19 de fevereiro de 2026)."
+        },
+        {
+          "id": "cn-06",
+          "titulo": "Círculo Nexus — IR² — 2025/10/30",
+          "driveId": "1dSPFji_U1rHMGBmJfj9CsGQXA94GYazS",
+          "duracao": "",
+          "descricao": "Sessão do Círculo Nexus dedicada ao índice IR² (30 de outubro de 2025)."
+        },
+        {
+          "id": "cn-07",
+          "titulo": "Círculo Nexus | Sugestões de uso do Slack — 2026/03/26",
+          "driveId": "1pR8mZltGRL3i0AdgJZ9KGLPOrfSx3PZN",
+          "duracao": "",
+          "descricao": "Sessão do Círculo Nexus com sugestões e boas práticas de uso do Slack (26 de março de 2026)."
+        },
+        {
+          "id": "cn-08",
+          "titulo": "Círculo Nexus: Práticas com Dados — 2025/07/02",
+          "driveId": "1YAuak2aWBURowLaY32gIH6TizB0X24nM",
+          "duracao": "",
+          "descricao": "Sessão do Círculo Nexus com foco em práticas com dados (2 de julho de 2025)."
+        },
+        {
+          "id": "cn-09",
+          "titulo": "Círculo Nexus: Práticas com Dados — 2025/06/11 (2)",
+          "driveId": "13g-uMog7dUIQH0Xn3ysKgyzrn5FHNrK6",
+          "duracao": "",
+          "descricao": "Gravação complementar da sessão do Círculo Nexus de práticas com dados (11 de junho de 2025)."
+        },
+        {
+          "id": "cn-10",
+          "titulo": "Círculo Nexus | Mapa de Narrativas — 2026/05/14",
+          "driveId": "1SOsiVD4uE5IG5oYnLog0nqHscQqJ5-Mh",
+          "duracao": "",
+          "descricao": "Sessão do Círculo Nexus sobre mapeamento de narrativas (14 de maio de 2026)."
+        },
+        {
+          "id": "cn-11",
+          "titulo": "Círculo Nexus: Práticas com Dados — 2025/06/18",
+          "driveId": "1b0tmjlWe82eOdu8E3oicrKo8DpNB-l3L",
+          "duracao": "",
+          "descricao": "Sessão do Círculo Nexus com foco em práticas com dados (18 de junho de 2025)."
+        },
+        {
+          "id": "cn-12",
+          "titulo": "Círculo Nexus | Introdução Pesquisa — 2026/04/30",
+          "driveId": "1xz0TuMiuGBmM49_U9L9xuv9_S2jVtRmH",
+          "duracao": "",
+          "descricao": "Sessão do Círculo Nexus com introdução aos métodos de pesquisa (30 de abril de 2026)."
+        }
+      ]
+    }
+  ]
+}

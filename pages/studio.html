@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HUB.nexus — Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/global.css"/>
+  <!-- Fabric.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+  <!-- Chart.js para gráficos nos slides -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* ═══ RESET / LAYOUT ═══ */
+    body {
+      display: flex; flex-direction: column;
+      height: 100vh; overflow: hidden;
+      background: var(--bg); font-family: var(--font-body);
+    }
+    .studio-wrap {
+      flex: 1; display: flex; overflow: hidden; position: relative;
+    }
+
+    /* ══════════════════════════════════════
+       PAINEL ESQUERDO — slides + templates
+    ══════════════════════════════════════ */
+    .panel-left {
+      width: 200px; flex-shrink: 0;
+      display: flex; flex-direction: column;
+      background: var(--surface);
+      border-right: 1.5px solid rgba(255,255,255,0.55);
+      box-shadow: var(--clay-shadow-sm);
+      z-index: 5; overflow: hidden;
+    }
+    body.dark .panel-left { border-right-color: rgba(255,255,255,0.06); }
+
+    .panel-left-tabs {
+      display: flex; padding: 10px 10px 0;
+      gap: 4px; flex-shrink: 0;
+    }
+    .plt {
+      flex: 1; padding: 7px 4px; border-radius: var(--r-md);
+      font-family: var(--font-ui); font-size: 10px; font-weight: 800;
+      text-align: center; cursor: pointer; border: none;
+      background: var(--bg); color: var(--text-muted);
+      box-shadow: var(--clay-shadow-sm);
+      border: 1.5px solid rgba(255,255,255,0.55);
+      transition: all var(--t-normal);
+    }
+    body.dark .plt { border-color: rgba(255,255,255,0.06); }
+    .plt.active {
+      background: var(--accent-soft); color: var(--accent-dark);
+      border-color: rgba(255,255,255,0.70);
+    }
+    body.dark .plt.active { color: var(--accent-light); }
+
+    .panel-left-body { flex: 1; overflow-y: auto; padding: 10px; }
+
+    /* Thumbnails */
+    .slide-thumb-wrap {
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .slide-thumb {
+      position: relative; border-radius: var(--r-md);
+      overflow: hidden; cursor: pointer;
+      box-shadow: var(--clay-shadow-sm);
+      border: 2px solid rgba(255,255,255,0.55);
+      transition: all var(--t-normal);
+      aspect-ratio: 16/9; background: #fff;
+      flex-shrink: 0;
+    }
+    body.dark .slide-thumb { border-color: rgba(255,255,255,0.06); }
+    .slide-thumb.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft), var(--clay-shadow); }
+    .slide-thumb:hover:not(.active) { transform: scale(1.02); border-color: var(--accent-light); }
+    .slide-thumb canvas { width: 100% !important; height: auto !important; }
+    .slide-thumb-num {
+      position: absolute; bottom: 4px; left: 5px;
+      font-family: var(--font-ui); font-size: 8px; font-weight: 800;
+      color: rgba(0,0,0,0.35); background: rgba(255,255,255,0.60);
+      padding: 1px 5px; border-radius: 4px;
+    }
+    .slide-thumb-actions {
+      position: absolute; top: 4px; right: 4px;
+      display: none; gap: 3px;
+    }
+    .slide-thumb:hover .slide-thumb-actions { display: flex; }
+    .sta-btn {
+      width: 20px; height: 20px; border-radius: 5px;
+      background: rgba(255,255,255,0.85); border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+      transition: transform var(--t-fast);
+    }
+    .sta-btn:hover { transform: scale(1.15); }
+
+    .add-slide-btn {
+      width: 100%; padding: 9px; border-radius: var(--r-md);
+      background: var(--bg); border: 1.5px dashed rgba(255,255,255,0.55);
+      font-family: var(--font-ui); font-size: 11px; font-weight: 700;
+      color: var(--text-muted); cursor: pointer;
+      transition: all var(--t-normal); margin-top: 4px;
+    }
+    body.dark .add-slide-btn { border-color: rgba(255,255,255,0.12); }
+    .add-slide-btn:hover { background: var(--accent-soft); color: var(--accent-dark); border-color: var(--accent); }
+
+    /* Templates */
+    .template-grid { display: flex; flex-direction: column; gap: 8px; }
+    .tpl-card {
+      border-radius: var(--r-md); overflow: hidden; cursor: pointer;
+      box-shadow: var(--clay-shadow-sm);
+      border: 1.5px solid rgba(255,255,255,0.55);
+      transition: all var(--t-slow); aspect-ratio: 16/9;
+      position: relative;
+    }
+    body.dark .tpl-card { border-color: rgba(255,255,255,0.06); }
+    .tpl-card:hover { transform: scale(1.03); border-color: var(--accent); box-shadow: var(--clay-shadow); }
+    .tpl-card-name {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 4px 7px;
+      background: rgba(0,0,0,0.50); backdrop-filter: blur(6px);
+      font-family: var(--font-ui); font-size: 9px; font-weight: 800;
+      color: #fff; letter-spacing: .3px;
+    }
+
+    /* ══════════════════════════════════════
+       ÁREA CENTRAL — canvas
+    ══════════════════════════════════════ */
+    .canvas-area {
+      flex: 1; display: flex; flex-direction: column;
+      background: var(--bg-2); overflow: hidden; position: relative;
+    }
+
+    /* Toolbar de objetos */
+    .object-toolbar {
+      height: 46px; flex-shrink: 0;
+      display: flex; align-items: center; gap: 4px;
+      padding: 0 14px;
+      background: var(--surface);
+      border-bottom: 1.5px solid rgba(255,255,255,0.55);
+      box-shadow: var(--clay-shadow-sm);
+    }
+    body.dark .object-toolbar { border-bottom-color: rgba(255,255,255,0.05); }
+
+    .otb-group { display: flex; align-items: center; gap: 3px; }
+    .otb-sep {
+      width: 1px; height: 22px; background: var(--bg-2);
+      margin: 0 5px; flex-shrink: 0;
+    }
+    .otb-btn {
+      height: 32px; min-width: 32px; padding: 0 9px;
+      border-radius: var(--r-md);
+      background: var(--bg); border: 1.5px solid rgba(255,255,255,0.55);
+      box-shadow: var(--clay-shadow-sm);
+      font-family: var(--font-ui); font-size: 11px; font-weight: 700;
+      color: var(--text-secondary); cursor: pointer;
+      display: flex; align-items: center; gap: 5px;
+      transition: all var(--t-normal); white-space: nowrap;
+    }
+    body.dark .otb-btn { border-color: rgba(255,255,255,0.06); }
+    .otb-btn:hover { background: var(--accent-soft); color: var(--accent-dark); border-color: var(--accent); transform: translateY(-1px); }
+    .otb-btn:active { transform: scale(0.96); box-shadow: var(--clay-shadow-pressed); }
+    .otb-btn.active { background: var(--accent-soft); color: var(--accent-dark); border-color: var(--accent); }
+    body.dark .otb-btn.active { color: var(--accent-light); }
+    .otb-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    .otb-btn.danger:hover { background: rgba(239,68,68,0.10); color: var(--red); border-color: var(--red); }
+
+    /* Zoom controls */
+    .zoom-controls {
+      margin-left: auto; display: flex; align-items: center; gap: 4px;
+    }
+    .zoom-label {
+      font-family: var(--font-ui); font-size: 11px; font-weight: 700;
+      color: var(--text-muted); min-width: 36px; text-align: center;
+    }
+
+    /* Canvas container */
+    .canvas-container-wrap {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      overflow: auto; padding: 24px;
+      position: relative;
+    }
+    .canvas-shadow-wrap {
+      box-shadow: 0 8px 40px rgba(0,0,0,0.22), 0 2px 0 rgba(0,0,0,0.08);
+      border-radius: 4px; position: relative;
+    }
+    #slideCanvas { display: block; cursor: default; }
+
+    /* ══════════════════════════════════════
+       PAINEL DIREITO — propriedades
+    ══════════════════════════════════════ */
+    .panel-right {
+      width: 230px; flex-shrink: 0;
+      display: flex; flex-direction: column;
+      background: var(--surface);
+      border-left: 1.5px solid rgba(255,255,255,0.55);
+      box-shadow: var(--clay-shadow-sm);
+      z-index: 5; overflow-y: auto;
+    }
+    body.dark .panel-right { border-left-color: rgba(255,255,255,0.06); }
+
+    .pr-section {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--bg-2);
+    }
+    .pr-title {
+      font-family: var(--font-ui); font-size: 10px; font-weight: 800;
+      color: var(--text-muted); letter-spacing: .8px; text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .pr-row {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    }
+    .pr-label {
+      font-family: var(--font-ui); font-size: 10px; font-weight: 700;
+      color: var(--text-muted); width: 52px; flex-shrink: 0;
+    }
+    .pr-input {
+      flex: 1; padding: 6px 9px;
+      background: var(--bg); border: 1.5px solid rgba(255,255,255,0.55);
+      border-radius: var(--r-sm); font-family: var(--font-ui);
+      font-size: 12px; color: var(--text-primary); outline: none;
+      box-shadow: var(--clay-shadow-pressed);
+      transition: border-color var(--t-normal);
+    }
+    body.dark .pr-input { border-color: rgba(255,255,255,0.06); background: var(--bg-2); }
+    .pr-input:focus { border-color: var(--accent); }
+    .pr-input[type="color"] {
+      padding: 2px 4px; height: 30px; cursor: pointer;
+    }
+    .pr-input[type="range"] {
+      padding: 0; background: transparent; border: none;
+      box-shadow: none; cursor: pointer; accent-color: var(--accent);
+    }
+
+    .pr-btn-row { display: flex; gap: 5px; }
+    .pr-btn {
+      flex: 1; padding: 7px 6px;
+      background: var(--bg); border: 1.5px solid rgba(255,255,255,0.55);
+      border-radius: var(--r-md); font-family: var(--font-ui);
+      font-size: 10px; font-weight: 800; color: var(--text-secondary);
+      cursor: pointer; text-align: center;
+      box-shadow: var(--clay-shadow-sm); transition: all var(--t-normal);
+    }
+    body.dark .pr-btn { border-color: rgba(255,255,255,0.06); }
+    .pr-btn:hover { background: var(--accent-soft); color: var(--accent-dark); border-color: var(--accent); }
+    .pr-btn.active { background: var(--accent-soft); color: var(--accent-dark); border-color: var(--accent); }
+
+    .no-selection-msg {
+      padding: 20px 14px; text-align: center;
+      font-size: 12px; color: var(--text-muted); line-height: 1.5;
+    }
+
+    /* ══════════════════════════════════════
+       DATA PANEL (modal flutuante)
+    ══════════════════════════════════════ */
+    .data-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(0,0,0,0.45); backdrop-filter: blur(10px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+    .data-overlay.open { opacity: 1; pointer-events: all; }
+    .data-panel {
+      width: 560px; max-width: 94vw; max-height: 80vh;
+      background: var(--surface); border-radius: var(--r-2xl);
+      box-shadow: var(--clay-shadow-lg);
+      border: 1.5px solid rgba(255,255,255,0.70);
+      display: flex; flex-direction: column; overflow: hidden;
+      transform: scale(0.95) translateY(14px);
+      transition: transform 0.28s cubic-bezier(0.34,1.5,0.64,1);
+    }
+    body.dark .data-panel { border-color: rgba(255,255,255,0.07); }
+    .data-overlay.open .data-panel { transform: scale(1) translateY(0); }
+
+    .dp-head {
+      padding: 16px 20px 12px; display: flex; align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--bg-2); flex-shrink: 0;
+    }
+    .dp-head-title {
+      font-family: var(--font-ui); font-size: 15px; font-weight: 800;
+      color: var(--text-primary);
+    }
+    .dp-close {
+      width: 30px; height: 30px; border-radius: var(--r-sm);
+      background: var(--bg); border: 1.5px solid rgba(255,255,255,0.55);
+      box-shadow: var(--clay-shadow-sm); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 14px;
+      transition: transform var(--t-slow);
+    }
+    .dp-close:hover { transform: scale(1.1) rotate(8deg); }
+
+    .dp-sources {
+      display: flex; gap: 6px; padding: 12px 16px; flex-wrap: wrap; flex-shrink: 0;
+      border-bottom: 1px solid var(--bg-2);
+    }
+    .dp-src {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: var(--r-pill);
+      background: var(--bg); border: 1.5px solid rgba(255,255,255,0.55);
+      box-shadow: var(--clay-shadow-sm);
+      font-family: var(--font-ui); font-size: 11px; font-weight: 700;
+      color: var(--text-secondary); cursor: pointer;
+      transition: all var(--t-normal);
+    }
+    body.dark .dp-src { border-color: rgba(255,255,255,0.06); }
+    .dp-src:hover { border-color: var(--accent); color: var(--accent); }
+    .dp-src.active { background: var(--accent-soft); color: var(--accent-dark); border-color: var(--accent); }
+    body.dark .dp-src.active { color: var(--accent-light); }
+
+    .dp-body { flex: 1; overflow-y: auto; padding: 14px 16px; }
+    .dp-loading { text-align: center; padding: 30px; color: var(--text-muted); font-size: 13px; }
+
+    .dp-chart-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+    .dp-chart-opt {
+      padding: 12px; border-radius: var(--r-lg);
+      background: var(--bg); border: 1.5px solid rgba(255,255,255,0.55);
+      box-shadow: var(--clay-shadow-sm); cursor: pointer;
+      text-align: center; transition: all var(--t-normal);
+    }
+    body.dark .dp-chart-opt { border-color: rgba(255,255,255,0.06); }
+    .dp-chart-opt:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--clay-shadow); }
+    .dp-chart-opt.active { background: var(--accent-soft); border-color: var(--accent); }
+    .dp-chart-opt-icon { font-size: 22px; margin-bottom: 5px; }
+    .dp-chart-opt-name { font-family: var(--font-ui); font-size: 11px; font-weight: 700; color: var(--text-primary); }
+
+    .dp-data-preview {
+      background: var(--bg); border-radius: var(--r-md);
+      border: 1.5px solid rgba(255,255,255,0.55);
+      box-shadow: var(--clay-shadow-pressed);
+      padding: 12px; margin-bottom: 12px; max-height: 180px; overflow-y: auto;
+      font-size: 11px; color: var(--text-secondary);
+    }
+    body.dark .dp-data-preview { border-color: rgba(255,255,255,0.06); }
+    .dp-data-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--bg-2); }
+    .dp-data-row:last-child { border-bottom: none; }
+    .dp-data-key { font-weight: 700; color: var(--text-primary); }
+
+    .dp-insert-btn {
+      width: 100%; padding: 12px;
+      background: var(--accent); border: none; border-radius: var(--r-pill);
+      font-family: var(--font-ui); font-size: 13px; font-weight: 800;
+      color: #fff; cursor: pointer;
+      box-shadow: var(--clay-shadow-accent);
+      transition: all var(--t-slow);
+    }
+    .dp-insert-btn:hover { transform: translateY(-2px); background: var(--accent-light); }
+    .dp-insert-btn:active { transform: scale(0.98); }
+
+    /* ══════════════════════════════════════
+       SAVE indicator
+    ══════════════════════════════════════ */
+    .save-indicator {
+      display: flex; align-items: center; gap: 6px;
+      font-family: var(--font-ui); font-size: 11px; font-weight: 700;
+      color: var(--text-muted); padding: 0 6px;
+    }
+    .save-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green); transition: background 0.3s;
+    }
+    .save-dot.saving { background: var(--amber); animation: pulse-anim 0.8s infinite; }
+    .save-dot.unsaved { background: var(--red); }
+
+    /* ══════════════════════════════════════
+       PRESENTATION NAME (topbar)
+    ══════════════════════════════════════ */
+    .pres-name-input {
+      background: transparent; border: none; outline: none;
+      font-family: var(--font-ui); font-size: 13px; font-weight: 700;
+      color: var(--text-primary); max-width: 200px;
+      border-bottom: 1.5px solid transparent;
+      padding: 2px 4px; transition: border-color var(--t-normal);
+    }
+    .pres-name-input:focus { border-bottom-color: var(--accent); }
+    .pres-name-input::placeholder { color: var(--text-faint); }
+
+    /* Slide background color picker */
+    .bg-color-swatch {
+      width: 20px; height: 20px; border-radius: var(--r-sm);
+      border: 2px solid rgba(255,255,255,0.70);
+      box-shadow: var(--clay-shadow-sm); cursor: pointer;
+      transition: transform var(--t-normal); flex-shrink: 0;
+    }
+    .bg-color-swatch:hover { transform: scale(1.15); }
+
+    /* Font family select */
+    .pr-select {
+      flex: 1; padding: 6px 8px;
+      background: var(--bg); border: 1.5px solid rgba(255,255,255,0.55);
+      border-radius: var(--r-sm); font-family: var(--font-ui);
+      font-size: 11px; color: var(--text-primary); outline: none;
+      box-shadow: var(--clay-shadow-pressed);
+      cursor: pointer;
+    }
+    body.dark .pr-select { border-color: rgba(255,255,255,0.06); background: var(--bg-2); }
+    .pr-select:focus { border-color: var(--accent); }
+
+    /* Layer order buttons */
+    .layer-btns { display: flex; gap: 4px; }
+    .layer-btn {
+      flex: 1; padding: 6px 4px;
+      background: var(--bg); border: 1.5px solid rgba(255,255,255,0.55);
+      border-radius: var(--r-sm); font-size: 10px;
+      font-family: var(--font-ui); font-weight: 700;
+      color: var(--text-secondary); cursor: pointer;
+      box-shadow: var(--clay-shadow-sm); text-align: center;
+      transition: all var(--t-normal);
+    }
+    body.dark .layer-btn { border-color: rgba(255,255,255,0.06); }
+    .layer-btn:hover { background: var(--accent-soft); color: var(--accent-dark); border-color: var(--accent); }
+
+    /* Toast canvas */
+    #canvasHiddenExport { display: none; }
+
+    /* Scrollbar */
+    .panel-left-body::-webkit-scrollbar,
+    .panel-right::-webkit-scrollbar,
+    .dp-body::-webkit-scrollbar { width: 4px; }
+    .panel-left-body::-webkit-scrollbar-thumb,
+    .panel-right::-webkit-scrollbar-thumb,
+    .dp-body::-webkit-scrollbar-thumb { background: var(--accent-mid); border-radius: 8px; }
+  </style>
+</head>
+<body>
+
+<!-- ══ NAVBAR ══ -->
+<div id="navbar-container"></div>
+
+<!-- ══ PROJECT NAME BAR ══ -->
+<div id="studioNameBar" style="
+  display:flex; align-items:center; gap:10px;
+  padding: 0 16px; height: 38px; flex-shrink:0;
+  background: var(--bg); border-bottom: 1px solid rgba(255,255,255,0.07);
+  position: relative; z-index: 4;
+">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+  <input class="pres-name-input" id="presNameInput" type="text" placeholder="Nome da apresentação..." 
+         oninput="scheduleAutosave()" 
+         style="flex:1;max-width:300px;"/>
+  <span id="studioSaveStatus" style="font-family:var(--font-ui);font-size:10px;font-weight:700;color:var(--text-muted);">Salvo</span>
+</div>
+
+<!-- ══ STUDIO ══ -->
+<div class="studio-wrap">
+
+  <!-- ─ PAINEL ESQUERDO ─ -->
+  <aside class="panel-left">
+    <div class="panel-left-tabs">
+      <button class="plt active" id="tab-slides" onclick="switchLeftTab('slides')">Slides</button>
+      <button class="plt" id="tab-templates" onclick="switchLeftTab('templates')">Templates</button>
+    </div>
+    <div class="panel-left-body">
+      <!-- Slides -->
+      <div id="left-slides">
+        <div class="slide-thumb-wrap" id="slideThumbs"></div>
+        <button class="add-slide-btn" onclick="addSlide()">+ Novo slide</button>
+      </div>
+      <!-- Templates -->
+      <div id="left-templates" style="display:none;">
+        <div class="template-grid" id="templateGrid"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─ ÁREA CENTRAL ─ -->
+  <main class="canvas-area">
+
+    <!-- Toolbar -->
+    <div class="object-toolbar">
+      <div class="otb-group">
+        <!-- Texto -->
+        <button class="otb-btn" onclick="addText()" title="Adicionar texto (T)">
+          <svg viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+          Texto
+        </button>
+        <!-- Formas -->
+        <button class="otb-btn" id="btn-rect" onclick="addShape('rect')" title="Retângulo (R)">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          Rect
+        </button>
+        <button class="otb-btn" id="btn-circle" onclick="addShape('circle')" title="Círculo (C)">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>
+          Círculo
+        </button>
+        <button class="otb-btn" id="btn-line" onclick="addShape('line')" title="Linha">
+          <svg viewBox="0 0 24 24"><line x1="5" y1="19" x2="19" y2="5"/></svg>
+          Linha
+        </button>
+        <!-- Imagem -->
+        <button class="otb-btn" onclick="triggerImageUpload()" title="Inserir imagem (I)">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Imagem
+        </button>
+        <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="insertImage(event)"/>
+      </div>
+
+      <div class="otb-sep"></div>
+
+      <!-- Dados do hub -->
+      <div class="otb-group">
+        <button class="otb-btn" onclick="openDataPanel()" title="Inserir dado do Hub" style="background:var(--accent-soft);color:var(--accent-dark);border-color:var(--accent);">
+          <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          Dados do Hub
+        </button>
+      </div>
+
+      <div class="otb-sep"></div>
+
+      <!-- Edição -->
+      <div class="otb-group">
+        <button class="otb-btn" onclick="duplicateSelected()" title="Duplicar (Ctrl+D)">
+          <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        </button>
+        <button class="otb-btn" onclick="bringForward()" title="Trazer à frente">
+          <svg viewBox="0 0 24 24"><polyline points="17 11 21 7 17 3"/><line x1="21" y1="7" x2="9" y2="7"/><polyline points="7 21 3 17 7 13"/><line x1="3" y1="17" x2="15" y2="17"/></svg>
+        </button>
+        <button class="otb-btn danger" onclick="deleteSelected()" title="Deletar (Del)">
+          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </div>
+
+      <div class="otb-sep"></div>
+
+      <!-- Histórico -->
+      <div class="otb-group">
+        <button class="otb-btn" onclick="undoAction()" title="Desfazer (Ctrl+Z)">
+          <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 101.85-3.39L1 10"/></svg>
+        </button>
+        <button class="otb-btn" onclick="redoAction()" title="Refazer (Ctrl+Y)">
+          <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-1.85-3.39L23 10"/></svg>
+        </button>
+      </div>
+
+      <!-- Zoom + Save -->
+      <div class="zoom-controls">
+        <div class="save-indicator">
+          <div class="save-dot" id="saveDot"></div>
+          <span id="saveLabel">Salvo</span>
+        </div>
+        <div class="otb-sep"></div>
+        <button class="otb-btn" onclick="zoomOut()">−</button>
+        <span class="zoom-label" id="zoomLabel">100%</span>
+        <button class="otb-btn" onclick="zoomIn()">+</button>
+        <button class="otb-btn" onclick="zoomFit()" title="Ajustar ao ecrã">⊡</button>
+        <div class="otb-sep"></div>
+        <button class="otb-btn" onclick="exportCurrentSlide()" title="Exportar PNG">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+        <button class="otb-btn" onclick="savePresentation()" style="background:var(--accent);color:#fff;border-color:var(--accent-dark);" title="Salvar (Ctrl+S)">
+          <svg viewBox="0 0 24 24" style="stroke:#fff"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar
+        </button>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <div class="canvas-container-wrap" id="canvasWrap">
+      <div class="canvas-shadow-wrap" id="canvasShadow">
+        <canvas id="slideCanvas"></canvas>
+      </div>
+    </div>
+  </main>
+
+  <!-- ─ PAINEL DIREITO ─ -->
+  <aside class="panel-right" id="panelRight">
+    <div id="noSelMsg" class="no-selection-msg">
+      <div style="font-size:24px;margin-bottom:8px;">🎨</div>
+      Selecione um elemento para editar suas propriedades
+    </div>
+
+    <!-- Propriedades de texto -->
+    <div id="propsText" style="display:none;">
+      <div class="pr-section">
+        <div class="pr-title">Texto</div>
+        <div class="pr-row">
+          <span class="pr-label">Fonte</span>
+          <select class="pr-select" id="propFontFamily" onchange="applyTextProp('fontFamily', this.value)">
+            <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+            <option value="Nunito">Nunito</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Arial">Arial</option>
+            <option value="Courier New">Courier New</option>
+          </select>
+        </div>
+        <div class="pr-row">
+          <span class="pr-label">Tamanho</span>
+          <input class="pr-input" type="number" id="propFontSize" min="8" max="200" value="24" oninput="applyTextProp('fontSize', +this.value)"/>
+        </div>
+        <div class="pr-row">
+          <span class="pr-label">Cor</span>
+          <input class="pr-input" type="color" id="propFontColor" value="#1a1a1a" oninput="applyTextProp('fill', this.value)"/>
+        </div>
+        <div class="pr-btn-row">
+          <button class="pr-btn" id="btnBold" onclick="toggleTextStyle('bold')"><b>B</b></button>
+          <button class="pr-btn" id="btnItalic" onclick="toggleTextStyle('italic')"><i>I</i></button>
+          <button class="pr-btn" id="btnUnder" onclick="toggleTextStyle('underline')"><u>U</u></button>
+        </div>
+        <div class="pr-row" style="margin-top:8px;">
+          <span class="pr-label">Alinhamento</span>
+        </div>
+        <div class="pr-btn-row">
+          <button class="pr-btn" onclick="applyTextProp('textAlign','left')">⬅</button>
+          <button class="pr-btn" onclick="applyTextProp('textAlign','center')">↔</button>
+          <button class="pr-btn" onclick="applyTextProp('textAlign','right')">➡</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Propriedades de forma -->
+    <div id="propsShape" style="display:none;">
+      <div class="pr-section">
+        <div class="pr-title">Preenchimento</div>
+        <div class="pr-row">
+          <span class="pr-label">Cor</span>
+          <input class="pr-input" type="color" id="propFill" value="#4f8ef7" oninput="applyShapeProp('fill', this.value)"/>
+        </div>
+        <div class="pr-row">
+          <span class="pr-label">Borda</span>
+          <input class="pr-input" type="color" id="propStroke" value="#333333" oninput="applyShapeProp('stroke', this.value)"/>
+        </div>
+        <div class="pr-row">
+          <span class="pr-label">Espessura</span>
+          <input class="pr-input" type="number" id="propStrokeW" min="0" max="20" value="0" oninput="applyShapeProp('strokeWidth', +this.value)"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Propriedades gerais (posição/tamanho) -->
+    <div id="propsGeneral" style="display:none;">
+      <div class="pr-section">
+        <div class="pr-title">Posição & Tamanho</div>
+        <div class="pr-row">
+          <span class="pr-label">X</span>
+          <input class="pr-input" type="number" id="propX" oninput="applyPosition('left', +this.value)"/>
+          <span class="pr-label" style="width:20px;text-align:center;">Y</span>
+          <input class="pr-input" type="number" id="propY" oninput="applyPosition('top', +this.value)"/>
+        </div>
+        <div class="pr-row">
+          <span class="pr-label">W</span>
+          <input class="pr-input" type="number" id="propW" oninput="applySize('width', +this.value)"/>
+          <span class="pr-label" style="width:20px;text-align:center;">H</span>
+          <input class="pr-input" type="number" id="propH" oninput="applySize('height', +this.value)"/>
+        </div>
+        <div class="pr-row">
+          <span class="pr-label">Rotação</span>
+          <input class="pr-input" type="number" id="propAngle" min="-360" max="360" value="0" oninput="applyGenProp('angle', +this.value)"/>
+        </div>
+        <div class="pr-row">
+          <span class="pr-label">Opacidade</span>
+          <input class="pr-input" type="range" id="propOpacity" min="0" max="1" step="0.01" value="1" oninput="applyGenProp('opacity', +this.value); document.getElementById('propOpacityVal').textContent = Math.round(this.value*100)+'%'"/>
+          <span style="font-size:10px;font-family:var(--font-ui);color:var(--text-muted);min-width:30px;text-align:right;" id="propOpacityVal">100%</span>
+        </div>
+      </div>
+      <div class="pr-section">
+        <div class="pr-title">Camadas</div>
+        <div class="layer-btns">
+          <button class="layer-btn" onclick="canvas.bringToFront(canvas.getActiveObject());canvas.renderAll()">↑ Frente</button>
+          <button class="layer-btn" onclick="canvas.bringForward(canvas.getActiveObject());canvas.renderAll()">↑</button>
+          <button class="layer-btn" onclick="canvas.sendBackwards(canvas.getActiveObject());canvas.renderAll()">↓</button>
+          <button class="layer-btn" onclick="canvas.sendToBack(canvas.getActiveObject());canvas.renderAll()">↓ Fundo</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide background -->
+    <div class="pr-section">
+      <div class="pr-title">Slide</div>
+      <div class="pr-row">
+        <span class="pr-label">Fundo</span>
+        <input class="pr-input" type="color" id="propSlideBg" value="#ffffff" oninput="changeSlideBg(this.value)"/>
+      </div>
+      <div style="font-family:var(--font-ui);font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">Nome do slide</div>
+      <input class="pr-input" type="text" id="propSlideName" placeholder="Sem nome" oninput="renameCurrent(this.value)" style="width:100%;"/>
+    </div>
+  </aside>
+</div>
+
+<!-- ══ DATA PANEL MODAL ══ -->
+<div class="data-overlay" id="dataOverlay" onclick="if(event.target===this)closeDataPanel()">
+  <div class="data-panel">
+    <div class="dp-head">
+      <span class="dp-head-title">📊 Dados do Hub</span>
+      <div class="dp-close" onclick="closeDataPanel()">✕</div>
+    </div>
+    <div class="dp-sources" id="dpSources">
+      <div class="dp-src active" data-src="ekklesia" onclick="selectDataSource(this,'ekklesia')">🏛️ Ekklesia</div>
+      <div class="dp-src" data-src="voxia" onclick="selectDataSource(this,'voxia')">🤖 Vox.ia</div>
+      <div class="dp-src" data-src="kanban" onclick="selectDataSource(this,'kanban')">📋 Kanban</div>
+      <div class="dp-src" data-src="irx" onclick="selectDataSource(this,'irx')">⚡ Pipeline IRX</div>
+    </div>
+    <div class="dp-body" id="dpBody">
+      <div class="dp-loading">Carregando dados...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden canvas for export -->
+<canvas id="canvasHiddenExport"></canvas>
+
+<div id="toast" class="toast"></div>
+
+<script src="../js/utils.js"></script>
+<script src="../js/theme.js"></script>
+<script>
+/* ════════════════════════════════════════════════════════════════
+   HUB.nexus Studio — Editor de Apresentações
+   Fabric.js v5 · Salvamento em JSON · Dados do Hub
+════════════════════════════════════════════════════════════════ */
+
+// ── Init hub ──
+checkAuth();
+initMode();
+initTheme();
+updateModeButtons();
+document.getElementById('navbar-container').innerHTML = renderNavbar('studio');
+if (typeof renderSwatches === 'function') renderSwatches();
+if (typeof initTheme === 'function') { initTheme(); updateModeButtons(); }
+
+// ── Estado global ──
+let canvas = null;
+let slides = [];          // Array de JSONs dos slides
+let currentSlide = 0;
+let zoomLevel = 1;
+let undoStack = [];
+let redoStack = [];
+let saveTimer = null;
+let currentPresentationId = null;
+const SLIDE_W = 960;
+const SLIDE_H = 540;
+
+// ── URL params ──
+const urlParams   = new URLSearchParams(window.location.search);
+currentPresentationId = urlParams.get('id') || null;
+
+// ─── Inicializar Fabric.js ───
+function initCanvas() {
+  canvas = new fabric.Canvas('slideCanvas', {
+    width:  SLIDE_W,
+    height: SLIDE_H,
+    backgroundColor: '#ffffff',
+    selection: true,
+    preserveObjectStacking: true,
+  });
+
+  // Zoom / escala visual
+  zoomFit();
+
+  // Eventos
+  canvas.on('object:modified',   () => { markUnsaved(); scheduleAutosave(); updatePropsPanel(); updateThumb(currentSlide); });
+  canvas.on('object:added',      () => { markUnsaved(); updateThumb(currentSlide); });
+  canvas.on('object:removed',    () => { markUnsaved(); updateThumb(currentSlide); });
+  canvas.on('selection:created', updatePropsPanel);
+  canvas.on('selection:updated', updatePropsPanel);
+  canvas.on('selection:cleared', clearPropsPanel);
+  canvas.on('mouse:down',        () => { undoStack.push(JSON.stringify(canvas)); redoStack = []; });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', handleKeydown);
+}
+
+// ─── Zoom ───
+function getScaleFactor() {
+  const wrap = document.getElementById('canvasWrap');
+  const maxW = wrap.clientWidth  - 48;
+  const maxH = wrap.clientHeight - 48;
+  return Math.min(maxW / SLIDE_W, maxH / SLIDE_H);
+}
+
+function applyZoom() {
+  const scale = getScaleFactor() * zoomLevel;
+  const el = document.getElementById('canvasShadow');
+  el.style.transform = `scale(${scale})`;
+  el.style.transformOrigin = 'center center';
+  document.getElementById('zoomLabel').textContent = Math.round(zoomLevel * 100) + '%';
+}
+function zoomIn()  { zoomLevel = Math.min(zoomLevel + 0.1, 3.0); applyZoom(); }
+function zoomOut() { zoomLevel = Math.max(zoomLevel - 0.1, 0.2); applyZoom(); }
+function zoomFit() { zoomLevel = 1; applyZoom(); }
+window.addEventListener('resize', applyZoom);
+
+// ─── Slides ───
+function addSlide(json = null, name = '') {
+  slides.push({ json: json || null, name: name || `Slide ${slides.length + 1}`, bg: '#ffffff' });
+  renderThumbs();
+  switchSlide(slides.length - 1);
+}
+
+function switchSlide(idx) {
+  if (idx < 0 || idx >= slides.length) return;
+  // Salva slide atual
+  if (canvas && slides[currentSlide] !== undefined) {
+    slides[currentSlide].json = JSON.stringify(canvas);
+    slides[currentSlide].bg   = canvas.backgroundColor;
+  }
+  currentSlide = idx;
+  loadSlide(idx);
+  renderThumbs();
+  updateSlideProps();
+}
+
+function loadSlide(idx) {
+  const slide = slides[idx];
+  if (!slide) return;
+  if (slide.json) {
+    canvas.loadFromJSON(slide.json, () => {
+      canvas.backgroundColor = slide.bg || '#ffffff';
+      canvas.renderAll();
+      updateThumb(idx);
+    });
+  } else {
+    canvas.clear();
+    canvas.backgroundColor = slide.bg || '#ffffff';
+    canvas.renderAll();
+  }
+}
+
+function deleteSlide(idx) {
+  if (slides.length <= 1) { showToast('A apresentação precisa ter pelo menos 1 slide.'); return; }
+  slides.splice(idx, 1);
+  if (currentSlide >= slides.length) currentSlide = slides.length - 1;
+  renderThumbs();
+  loadSlide(currentSlide);
+}
+
+function duplicateSlide(idx) {
+  // Salva estado atual
+  slides[currentSlide].json = JSON.stringify(canvas);
+  const copy = { ...slides[idx], json: slides[idx].json, name: slides[idx].name + ' (cópia)' };
+  slides.splice(idx + 1, 0, copy);
+  renderThumbs();
+  switchSlide(idx + 1);
+}
+
+function renameCurrent(name) {
+  if (slides[currentSlide]) slides[currentSlide].name = name;
+  renderThumbs();
+}
+
+// ─── Thumbnails ───
+function renderThumbs() {
+  const wrap = document.getElementById('slideThumbs');
+  wrap.innerHTML = slides.map((s, i) => `
+    <div class="slide-thumb ${i === currentSlide ? 'active' : ''}" onclick="switchSlide(${i})" id="thumb-${i}">
+      <canvas id="thumb-canvas-${i}" width="320" height="180"></canvas>
+      <div class="slide-thumb-num">${i + 1}</div>
+      <div class="slide-thumb-actions">
+        <button class="sta-btn" onclick="event.stopPropagation();duplicateSlide(${i})" title="Duplicar">⧉</button>
+        <button class="sta-btn" onclick="event.stopPropagation();deleteSlide(${i})" title="Deletar" style="color:#ef4444;">✕</button>
+      </div>
+    </div>
+  `).join('');
+  slides.forEach((_, i) => updateThumb(i));
+}
+
+function updateThumb(idx) {
+  const slide = slides[idx];
+  if (!slide) return;
+  const thumbCanvas = document.getElementById(`thumb-canvas-${idx}`);
+  if (!thumbCanvas) return;
+  const ctx = thumbCanvas.getContext('2d');
+  ctx.clearRect(0, 0, 320, 180);
+
+  // Render the slide into the thumbnail using Fabric's toDataURL for active slide
+  if (idx === currentSlide && canvas) {
+    const dataURL = canvas.toDataURL({ format: 'png', multiplier: 320 / SLIDE_W });
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0, 320, 180);
+    img.src = dataURL;
+  } else if (slide.json) {
+    const tmpCanvas = new fabric.Canvas(document.createElement('canvas'), { width: SLIDE_W, height: SLIDE_H });
+    tmpCanvas.loadFromJSON(slide.json, () => {
+      tmpCanvas.backgroundColor = slide.bg || '#ffffff';
+      tmpCanvas.renderAll();
+      const dataURL = tmpCanvas.toDataURL({ format: 'png', multiplier: 320 / SLIDE_W });
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0, 320, 180);
+      img.src = dataURL;
+      tmpCanvas.dispose();
+    });
+  } else {
+    ctx.fillStyle = slide.bg || '#ffffff';
+    ctx.fillRect(0, 0, 320, 180);
+  }
+}
+
+// ─── Painel esquerdo: tabs ───
+function switchLeftTab(tab) {
+  document.getElementById('tab-slides').classList.toggle('active', tab === 'slides');
+  document.getElementById('tab-templates').classList.toggle('active', tab === 'templates');
+  document.getElementById('left-slides').style.display    = tab === 'slides'    ? 'block' : 'none';
+  document.getElementById('left-templates').style.display = tab === 'templates' ? 'block' : 'none';
+}
+
+// ─── Templates ───
+const TEMPLATES = [
+  { name: 'Capa de Relatório', bg: 'var(--accent)', fn: tplCover },
+  { name: 'Slide de Título', bg: '#3B82F6', fn: tplTitle },
+  { name: 'Texto + Dados', bg: '#22C55E', fn: tplTextData },
+  { name: 'Gráfico Full', bg: '#A855F7', fn: tplChartFull },
+  { name: 'Dois Blocos', bg: '#F59E0B', fn: tplTwoBlocks },
+  { name: 'Citação', bg: '#F43F5E', fn: tplQuote },
+];
+
+function renderTemplates() {
+  const grid = document.getElementById('templateGrid');
+  grid.innerHTML = TEMPLATES.map((t, i) => `
+    <div class="tpl-card" onclick="applyTemplate(${i})"
+         style="background:linear-gradient(135deg,${t.bg}cc,${t.bg}44);">
+      <div class="tpl-card-name">${t.name}</div>
+    </div>
+  `).join('');
+}
+
+function applyTemplate(idx) {
+  TEMPLATES[idx].fn();
+  updateThumb(currentSlide);
+  showToast('Template aplicado!');
+  switchLeftTab('slides');
+}
+
+function tplCover() {
+  canvas.clear();
+  canvas.backgroundColor = 'var(--accent)';
+  addFabricRect({ left:0, top:0, width: SLIDE_W, height: SLIDE_H, fill:'var(--accent)', selectable:false });
+  addFabricRect({ left:0, top: SLIDE_H*0.55, width: SLIDE_W, height: SLIDE_H*0.45, fill:'rgba(0,0,0,0.25)', selectable:false });
+  addFabricText('NEXUS', { left: SLIDE_W*0.08, top: SLIDE_H*0.15, fontSize:80, fontWeight:'800', fill:'rgba(255,255,255,0.25)', fontFamily:'Plus Jakarta Sans' });
+  addFabricText('Relatório de Análise', { left: SLIDE_W*0.08, top: SLIDE_H*0.35, fontSize:40, fontWeight:'800', fill:'#fff', fontFamily:'Plus Jakarta Sans' });
+  addFabricText('Data · Cliente · Período', { left: SLIDE_W*0.08, top: SLIDE_H*0.55, fontSize:18, fill:'rgba(255,255,255,0.80)', fontFamily:'Nunito' });
+  canvas.renderAll();
+}
+
+function tplTitle() {
+  canvas.clear();
+  canvas.backgroundColor = '#ffffff';
+  addFabricRect({ left:0, top:0, width:8, height: SLIDE_H, fill:'#3B82F6' });
+  addFabricText('Título Principal', { left: SLIDE_W*0.08, top: SLIDE_H*0.30, fontSize:48, fontWeight:'800', fill:'#1a1a1a', fontFamily:'Plus Jakarta Sans' });
+  addFabricText('Subtítulo descritivo aqui', { left: SLIDE_W*0.08, top: SLIDE_H*0.52, fontSize:22, fill:'#6b7280', fontFamily:'Nunito' });
+  addFabricRect({ left: SLIDE_W*0.08, top: SLIDE_H*0.48, width:80, height:4, fill:'#3B82F6' });
+  canvas.renderAll();
+}
+
+function tplTextData() {
+  canvas.clear();
+  canvas.backgroundColor = '#f8fafc';
+  addFabricRect({ left:0, top:0, width: SLIDE_W*0.48, height: SLIDE_H, fill:'#1e293b' });
+  addFabricText('Análise', { left: 30, top: 50, fontSize:36, fontWeight:'800', fill:'#fff', fontFamily:'Plus Jakarta Sans' });
+  addFabricText('Insira seu texto\nanalítico aqui.\n\nDescreva os dados\nao lado.', { left: 30, top: 120, fontSize:16, fill:'rgba(255,255,255,0.75)', fontFamily:'Nunito', lineHeight:1.6 });
+  addFabricText('Dados', { left: SLIDE_W*0.52, top: 50, fontSize:28, fontWeight:'800', fill:'#1e293b', fontFamily:'Plus Jakarta Sans' });
+  canvas.renderAll();
+}
+
+function tplChartFull() {
+  canvas.clear();
+  canvas.backgroundColor = '#ffffff';
+  addFabricText('Visualização de Dados', { left: SLIDE_W*0.06, top: 28, fontSize:28, fontWeight:'800', fill:'#1a1a1a', fontFamily:'Plus Jakarta Sans' });
+  addFabricRect({ left: SLIDE_W*0.06, top: 72, width: SLIDE_W*0.88, height: SLIDE_H*0.70, fill:'#f1f5f9', rx:12, ry:12 });
+  addFabricText('↑ Insira um gráfico via "Dados do Hub"', { left: SLIDE_W*0.5, top: SLIDE_H*0.5, fontSize:16, fill:'#94a3b8', fontFamily:'Nunito', originX:'center', originY:'center' });
+  canvas.renderAll();
+}
+
+function tplTwoBlocks() {
+  canvas.clear();
+  canvas.backgroundColor = '#ffffff';
+  addFabricRect({ left: 30, top: 80, width: SLIDE_W*0.44, height: SLIDE_H*0.72, fill:'#eff6ff', rx:16, ry:16 });
+  addFabricRect({ left: SLIDE_W*0.52, top: 80, width: SLIDE_W*0.44, height: SLIDE_H*0.72, fill:'#fef3c7', rx:16, ry:16 });
+  addFabricText('Bloco A', { left: 55, top: 110, fontSize:22, fontWeight:'800', fill:'#1d4ed8', fontFamily:'Plus Jakarta Sans' });
+  addFabricText('Bloco B', { left: SLIDE_W*0.52+25, top: 110, fontSize:22, fontWeight:'800', fill:'#d97706', fontFamily:'Plus Jakarta Sans' });
+  addFabricText('Título da Comparação', { left: SLIDE_W*0.5, top: 30, fontSize:28, fontWeight:'800', fill:'#1a1a1a', fontFamily:'Plus Jakarta Sans', originX:'center' });
+  canvas.renderAll();
+}
+
+function tplQuote() {
+  canvas.clear();
+  canvas.backgroundColor = '#0f172a';
+  addFabricText('"', { left: 60, top: 60, fontSize:160, fontWeight:'900', fill:'hsla(var(--theme-h),90%,50%,0.25)', fontFamily:'Georgia' });
+  addFabricText('Insira aqui a\ncitação ou destaque\nda análise.', { left: SLIDE_W*0.12, top: SLIDE_H*0.28, fontSize:32, fontWeight:'700', fill:'#f8fafc', fontFamily:'Plus Jakarta Sans', lineHeight:1.4 });
+  addFabricText('— Fonte, 2024', { left: SLIDE_W*0.12, top: SLIDE_H*0.75, fontSize:16, fill:'rgba(255,255,255,0.45)', fontFamily:'Nunito' });
+  canvas.renderAll();
+}
+
+// ─── Helpers Fabric ───
+function addFabricText(text, opts) {
+  const t = new fabric.Textbox(text, {
+    fontFamily: opts.fontFamily || 'Plus Jakarta Sans',
+    fontSize:   opts.fontSize   || 24,
+    fontWeight: opts.fontWeight || '400',
+    fill:       opts.fill       || '#1a1a1a',
+    left:       opts.left       || 100,
+    top:        opts.top        || 100,
+    width:      opts.width      || SLIDE_W * 0.8,
+    lineHeight: opts.lineHeight || 1.2,
+    textAlign:  opts.textAlign  || 'left',
+    originX:    opts.originX    || 'left',
+    originY:    opts.originY    || 'top',
+  });
+  canvas.add(t);
+  return t;
+}
+
+function addFabricRect(opts) {
+  const r = new fabric.Rect({
+    left:        opts.left   || 0,
+    top:         opts.top    || 0,
+    width:       opts.width  || 200,
+    height:      opts.height || 100,
+    fill:        opts.fill   || '#4f8ef7',
+    stroke:      opts.stroke || '',
+    strokeWidth: opts.strokeWidth || 0,
+    rx:          opts.rx || 0,
+    ry:          opts.ry || 0,
+    selectable:  opts.selectable !== false,
+    opacity:     opts.opacity || 1,
+  });
+  canvas.add(r);
+  return r;
+}
+
+// ─── Adicionar objetos (toolbar) ───
+function addText() {
+  const t = addFabricText('Clique para editar', {
+    left: 80, top: 80, fontSize: 28,
+    fontFamily: 'Plus Jakarta Sans', fontWeight: '700',
+  });
+  canvas.setActiveObject(t);
+  canvas.renderAll();
+}
+
+function addShape(type) {
+  let obj;
+  if (type === 'rect') {
+    obj = addFabricRect({ left:100, top:100, width:200, height:120, fill:'#4f8ef7', rx:8, ry:8 });
+  } else if (type === 'circle') {
+    obj = new fabric.Circle({ left:100, top:100, radius:80, fill:'#22c55e' });
+    canvas.add(obj);
+  } else if (type === 'line') {
+    obj = new fabric.Line([50, 200, 500, 200], { stroke:'#1a1a1a', strokeWidth:3 });
+    canvas.add(obj);
+  }
+  if (obj) { canvas.setActiveObject(obj); canvas.renderAll(); }
+}
+
+function triggerImageUpload() { document.getElementById('imageUpload').click(); }
+
+function insertImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    fabric.Image.fromURL(e.target.result, (img) => {
+      img.scaleToWidth(300);
+      img.set({ left: 100, top: 100 });
+      canvas.add(img);
+      canvas.setActiveObject(img);
+      canvas.renderAll();
+      showToast('Imagem inserida!');
+    });
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+// ─── Operações de edição ───
+function duplicateSelected() {
+  const obj = canvas.getActiveObject();
+  if (!obj) return;
+  obj.clone((cloned) => {
+    cloned.set({ left: obj.left + 18, top: obj.top + 18 });
+    canvas.add(cloned);
+    canvas.setActiveObject(cloned);
+    canvas.renderAll();
+  });
+}
+
+function deleteSelected() {
+  const obj = canvas.getActiveObject();
+  if (!obj) return;
+  canvas.remove(obj);
+  canvas.renderAll();
+}
+
+function bringForward() {
+  const obj = canvas.getActiveObject();
+  if (obj) { canvas.bringForward(obj); canvas.renderAll(); }
+}
+
+function undoAction() {
+  if (!undoStack.length) return;
+  redoStack.push(JSON.stringify(canvas));
+  const state = undoStack.pop();
+  canvas.loadFromJSON(state, () => canvas.renderAll());
+}
+
+function redoAction() {
+  if (!redoStack.length) return;
+  undoStack.push(JSON.stringify(canvas));
+  const state = redoStack.pop();
+  canvas.loadFromJSON(state, () => canvas.renderAll());
+}
+
+// ─── Painel de propriedades ───
+function updatePropsPanel() {
+  const obj = canvas.getActiveObject();
+  if (!obj) { clearPropsPanel(); return; }
+
+  document.getElementById('noSelMsg').style.display   = 'none';
+  document.getElementById('propsGeneral').style.display = 'block';
+
+  const isText  = obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text';
+  const isShape = !isText && obj.type !== 'image';
+
+  document.getElementById('propsText').style.display  = isText  ? 'block' : 'none';
+  document.getElementById('propsShape').style.display = isShape ? 'block' : 'none';
+
+  // General
+  document.getElementById('propX').value     = Math.round(obj.left);
+  document.getElementById('propY').value     = Math.round(obj.top);
+  document.getElementById('propW').value     = Math.round(obj.getScaledWidth());
+  document.getElementById('propH').value     = Math.round(obj.getScaledHeight());
+  document.getElementById('propAngle').value = Math.round(obj.angle || 0);
+  document.getElementById('propOpacity').value     = obj.opacity !== undefined ? obj.opacity : 1;
+  document.getElementById('propOpacityVal').textContent = Math.round((obj.opacity||1)*100)+'%';
+
+  if (isText) {
+    document.getElementById('propFontFamily').value = obj.fontFamily || 'Plus Jakarta Sans';
+    document.getElementById('propFontSize').value   = obj.fontSize || 24;
+    document.getElementById('propFontColor').value  = obj.fill || '#1a1a1a';
+    document.getElementById('btnBold').classList.toggle('active', obj.fontWeight === 'bold' || obj.fontWeight === '700' || obj.fontWeight === '800');
+    document.getElementById('btnItalic').classList.toggle('active', obj.fontStyle === 'italic');
+    document.getElementById('btnUnder').classList.toggle('active', !!obj.underline);
+  }
+
+  if (isShape) {
+    document.getElementById('propFill').value    = rgbToHex(obj.fill || '#4f8ef7');
+    document.getElementById('propStroke').value  = rgbToHex(obj.stroke || '#333');
+    document.getElementById('propStrokeW').value = obj.strokeWidth || 0;
+  }
+}
+
+function clearPropsPanel() {
+  document.getElementById('noSelMsg').style.display     = 'block';
+  document.getElementById('propsText').style.display    = 'none';
+  document.getElementById('propsShape').style.display   = 'none';
+  document.getElementById('propsGeneral').style.display = 'none';
+}
+
+function applyTextProp(prop, value) {
+  const obj = canvas.getActiveObject();
+  if (!obj) return;
+  obj.set(prop, value);
+  canvas.renderAll();
+  markUnsaved();
+}
+
+function toggleTextStyle(style) {
+  const obj = canvas.getActiveObject();
+  if (!obj) return;
+  if (style === 'bold') {
+    const isBold = obj.fontWeight === 'bold' || obj.fontWeight === '700' || obj.fontWeight === '800';
+    obj.set('fontWeight', isBold ? '400' : 'bold');
+  } else if (style === 'italic') {
+    obj.set('fontStyle', obj.fontStyle === 'italic' ? 'normal' : 'italic');
+  } else if (style === 'underline') {
+    obj.set('underline', !obj.underline);
+  }
+  canvas.renderAll();
+  updatePropsPanel();
+  markUnsaved();
+}
+
+function applyShapeProp(prop, value) {
+  const obj = canvas.getActiveObject();
+  if (!obj) return;
+  obj.set(prop, value);
+  canvas.renderAll();
+  markUnsaved();
+}
+
+function applyGenProp(prop, value) {
+  const obj = canvas.getActiveObject();
+  if (!obj) return;
+  obj.set(prop, value);
+  canvas.renderAll();
+  markUnsaved();
+}
+
+function applyPosition(prop, value) {
+  const obj = canvas.getActiveObject();
+  if (!obj) return;
+  obj.set(prop, value);
+  obj.setCoords();
+  canvas.renderAll();
+  markUnsaved();
+}
+
+function applySize(prop, value) {
+  const obj = canvas.getActiveObject();
+  if (!obj) return;
+  if (prop === 'width')  obj.set('scaleX', value / obj.width);
+  if (prop === 'height') obj.set('scaleY', value / obj.height);
+  obj.setCoords();
+  canvas.renderAll();
+  markUnsaved();
+}
+
+function changeSlideBg(color) {
+  canvas.setBackgroundColor(color, canvas.renderAll.bind(canvas));
+  if (slides[currentSlide]) slides[currentSlide].bg = color;
+  updateThumb(currentSlide);
+  markUnsaved();
+}
+
+function updateSlideProps() {
+  const slide = slides[currentSlide];
+  if (!slide) return;
+  document.getElementById('propSlideBg').value   = slide.bg   || '#ffffff';
+  document.getElementById('propSlideName').value = slide.name || '';
+}
+
+// ─── DADOS DO HUB ───
+let activeDataSource = 'ekklesia';
+let dataCache = {};
+
+function openDataPanel() {
+  document.getElementById('dataOverlay').classList.add('open');
+  loadDataSource('ekklesia');
+}
+function closeDataPanel() {
+  document.getElementById('dataOverlay').classList.remove('open');
+}
+
+function selectDataSource(el, src) {
+  document.querySelectorAll('.dp-src').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  activeDataSource = src;
+  loadDataSource(src);
+}
+
+async function loadDataSource(src) {
+  const body = document.getElementById('dpBody');
+  body.innerHTML = '<div class="dp-loading">⏳ Carregando dados...</div>';
+  const data = await fetchHubData(src);
+  renderDataPanel(src, data);
+}
+
+async function fetchHubData(src) {
+  if (dataCache[src]) return dataCache[src];
+  try {
+    const endpointMap = {
+      ekklesia: '/api/ekklesia/results',
+      voxia:    '/api/voxia/results',
+      kanban:   '/api/kanban',
+      irx:      '/api/irx/perfis',
+    };
+    const res = await fetch(endpointMap[src] || `/api/${src}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('API unavailable');
+    const data = await res.json();
+    dataCache[src] = data;
+    return data;
+  } catch(e) {
+    // Mock data for demo / when API not available
+    return getMockData(src);
+  }
+}
+
+function getMockData(src) {
+  const mocks = {
+    ekklesia: {
+      type: 'ranking',
+      title: 'Ranking IR² — Câmara',
+      labels: ['Dep. Silva', 'Dep. Costa', 'Dep. Souza', 'Dep. Lima', 'Dep. Alves'],
+      values: [92.4, 87.1, 81.3, 76.8, 70.2],
+      unit: 'IR²',
+    },
+    voxia: {
+      type: 'sov',
+      title: 'Share of Voice — IAs',
+      labels: ['ChatGPT', 'Gemini', 'Grok', 'Perplexity', 'Copilot'],
+      values: [12, 8, 5, 3, 2],
+      unit: '%',
+    },
+    kanban: {
+      type: 'status',
+      title: 'Demandas por Status',
+      labels: ['Novo', 'Em andamento', 'Revisão', 'Concluído'],
+      values: [4, 8, 3, 14],
+      unit: 'dem',
+    },
+    irx: {
+      type: 'classification',
+      title: 'Influenciadores por Nível',
+      labels: ['Avançar', 'Revisar', 'Descartar'],
+      values: [45, 23, 12],
+      unit: 'perfis',
+    },
+  };
+  return mocks[src] || { type: 'empty', labels: [], values: [] };
+}
+
+function renderDataPanel(src, data) {
+  const body = document.getElementById('dpBody');
+
+  const chartTypes = [
+    { type: 'bar',    icon: '📊', name: 'Barras' },
+    { type: 'line',   icon: '📈', name: 'Linha' },
+    { type: 'doughnut', icon: '🍩', name: 'Rosca' },
+    { type: 'pie',    icon: '🥧', name: 'Pizza' },
+  ];
+
+  body.innerHTML = `
+    <div style="font-family:var(--font-ui);font-size:11px;font-weight:800;color:var(--text-muted);letter-spacing:.6px;text-transform:uppercase;margin-bottom:10px;">
+      📂 ${data.title || 'Dados disponíveis'}
+    </div>
+
+    <div class="dp-data-preview" id="dpPreview">
+      ${data.labels?.map((l, i) => `
+        <div class="dp-data-row">
+          <span class="dp-data-key">${l}</span>
+          <span>${data.values?.[i] ?? '—'} ${data.unit || ''}</span>
+        </div>
+      `).join('') || '<div style="color:var(--text-muted);font-size:12px;">Nenhum dado disponível nesta fonte.</div>'}
+    </div>
+
+    <div style="font-family:var(--font-ui);font-size:11px;font-weight:800;color:var(--text-muted);letter-spacing:.6px;text-transform:uppercase;margin-bottom:8px;">
+      Tipo de gráfico
+    </div>
+    <div class="dp-chart-options">
+      ${chartTypes.map(c => `
+        <div class="dp-chart-opt ${c.type === 'bar' ? 'active' : ''}"
+             onclick="document.querySelectorAll('.dp-chart-opt').forEach(e=>e.classList.remove('active'));this.classList.add('active')"
+             data-chart="${c.type}">
+          <div class="dp-chart-opt-icon">${c.icon}</div>
+          <div class="dp-chart-opt-name">${c.name}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <button class="dp-insert-btn" onclick="insertChartFromData()">
+      ✦ Inserir gráfico no slide
+    </button>
+  `;
+
+  body._data = data;
+}
+
+function insertChartFromData() {
+  const body     = document.getElementById('dpBody');
+  const data     = body._data;
+  const chartOpt = document.querySelector('.dp-chart-opt.active');
+  const chartType = chartOpt?.dataset.chart || 'bar';
+
+  if (!data || !data.labels || !data.labels.length) {
+    showToast('Nenhum dado para inserir.'); return;
+  }
+
+  // Render chart via Chart.js onto an offscreen canvas, then add to Fabric
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width  = 600;
+  offCanvas.height = 360;
+  document.body.appendChild(offCanvas);
+
+  const accentH = getComputedStyle(document.documentElement).getPropertyValue('--theme-h').trim() || '22';
+  const colors  = data.labels.map((_, i) => `hsla(${(+accentH + i * 35) % 360}, 75%, 55%, 0.80)`);
+
+  new Chart(offCanvas, {
+    type: chartType,
+    data: {
+      labels: data.labels,
+      datasets: [{ data: data.values, backgroundColor: colors, borderRadius: 6, borderWidth: 0 }],
+    },
+    options: {
+      responsive: false,
+      animation: { duration: 0 },
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { family: 'Plus Jakarta Sans', size: 11, weight: '700' }, color: '#4b5563' } },
+        title:  { display: true, text: data.title || '', font: { family: 'Plus Jakarta Sans', size: 14, weight: '800' }, color: '#1a1a1a' },
+      },
+      scales: chartType === 'bar' || chartType === 'line' ? {
+        y: { grid: { color: 'rgba(0,0,0,0.06)' }, ticks: { font: { family: 'Plus Jakarta Sans', size: 10 }, color: '#6b7280' } },
+        x: { grid: { display: false }, ticks: { font: { family: 'Plus Jakarta Sans', size: 10 }, color: '#6b7280' } },
+      } : {},
+    },
+  });
+
+  setTimeout(() => {
+    const dataURL = offCanvas.toDataURL('image/png');
+    document.body.removeChild(offCanvas);
+
+    fabric.Image.fromURL(dataURL, (img) => {
+      img.scaleToWidth(400);
+      img.set({ left: 80, top: 80, cornerStyle: 'circle' });
+      canvas.add(img);
+      canvas.setActiveObject(img);
+      canvas.renderAll();
+      closeDataPanel();
+      showToast('Gráfico inserido! ✦');
+      markUnsaved();
+    });
+  }, 200);
+}
+
+// ─── Save / Load ───
+function markUnsaved() {
+  var sd=document.getElementById('saveDot'); if(sd) sd.className='save-dot unsaved';
+  var sl=document.getElementById('saveLabel'); if(sl) sl.textContent='Não salvo';
+  var ss=document.getElementById('studioSaveStatus'); if(ss) ss.textContent='● Não salvo';
+}
+
+function scheduleAutosave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(savePresentation, 8000);
+}
+
+async function savePresentation() {
+  slides[currentSlide].json = JSON.stringify(canvas);
+  slides[currentSlide].bg   = canvas.backgroundColor;
+
+  var sd=document.getElementById('saveDot'); if(sd) sd.className='save-dot saving';
+  var sl=document.getElementById('saveLabel'); if(sl) sl.textContent='Salvando…';
+  var ss=document.getElementById('studioSaveStatus'); if(ss) ss.textContent='⟳ Salvando…';
+
+  const presName = document.getElementById('presNameInput')?.value?.trim() || 'Apresentação sem nome';
+  const payload  = { id: currentPresentationId, name: presName, slides };
+
+  try {
+    const res = await fetch('/api/studio', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.id) {
+        currentPresentationId = data.id;
+        history.replaceState({}, '', `?id=${data.id}`);
+      }
+    }
+  } catch(e) {
+    // Fallback: salva no localStorage
+    localStorage.setItem('hubnexus-studio-' + (currentPresentationId || 'draft'), JSON.stringify(payload));
+  }
+
+  var sd=document.getElementById('saveDot'); if(sd) sd.className='save-dot';
+  var sl=document.getElementById('saveLabel'); if(sl) sl.textContent='Salvo';
+  var ss=document.getElementById('studioSaveStatus'); if(ss) ss.textContent='✓ Salvo';
+}
+
+async function loadPresentation(id) {
+  try {
+    const res = await fetch(`/api/studio?id=${id}`);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    slides = data.slides || [];
+    if (document.getElementById('presNameInput')) {
+      document.getElementById('presNameInput').value = data.name || '';
+    }
+    renderThumbs();
+    switchSlide(0);
+  } catch(e) {
+    // Tenta localStorage
+    const cached = localStorage.getItem('hubnexus-studio-' + id);
+    if (cached) {
+      const data = JSON.parse(cached);
+      slides = data.slides || [];
+      renderThumbs();
+      switchSlide(0);
+    }
+  }
+}
+
+// ─── Export PNG ───
+function exportCurrentSlide() {
+  const dataURL = canvas.toDataURL({ format: 'png', multiplier: 2 });
+  const a = document.createElement('a');
+  a.href     = dataURL;
+  a.download = `slide-${currentSlide + 1}.png`;
+  a.click();
+  showToast('Slide exportado como PNG!');
+}
+
+// ─── Keyboard shortcuts ───
+function handleKeydown(e) {
+  const tag = document.activeElement.tagName.toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === 's') { e.preventDefault(); savePresentation(); }
+    if (e.key === 'd') { e.preventDefault(); duplicateSelected(); }
+    if (e.key === 'z') { e.preventDefault(); undoAction(); }
+    if (e.key === 'y') { e.preventDefault(); redoAction(); }
+  }
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (canvas.getActiveObject()) { e.preventDefault(); deleteSelected(); }
+  }
+  if (e.key === 't' || e.key === 'T') addText();
+  if (e.key === 'r' || e.key === 'R') addShape('rect');
+  if (e.key === 'c' || e.key === 'C') addShape('circle');
+
+  // Arrow keys to nudge
+  const obj = canvas.getActiveObject();
+  if (obj && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) {
+    e.preventDefault();
+    const delta = e.shiftKey ? 10 : 1;
+    if (e.key === 'ArrowLeft')  obj.set('left', obj.left - delta);
+    if (e.key === 'ArrowRight') obj.set('left', obj.left + delta);
+    if (e.key === 'ArrowUp')    obj.set('top',  obj.top  - delta);
+    if (e.key === 'ArrowDown')  obj.set('top',  obj.top  + delta);
+    obj.setCoords();
+    canvas.renderAll();
+    updatePropsPanel();
+    markUnsaved();
+  }
+}
+
+// ─── Utilitário: RGB → HEX ───
+function rgbToHex(color) {
+  if (!color) return '#000000';
+  if (color.startsWith('#')) return color;
+  const m = color.match(/\d+/g);
+  if (!m) return '#000000';
+  return '#' + m.slice(0,3).map(n => parseInt(n).toString(16).padStart(2,'0')).join('');
+}
+
+// ─── Adicionar ferramenta ao hub-search ───
+if (window.HUB_TOOLS) {
+  window.HUB_TOOLS.push({
+    key: 'studio',
+    name: 'Studio',
+    label: 'Editor de apresentações',
+    desc: 'Crie apresentações com dados do Hub. Arraste, edite e exporte slides.',
+    emoji: '🎨',
+    color: '#EC4899',
+    colorSoft: 'rgba(236,72,153,0.12)',
+    tags: ['studio', 'apresentação', 'slide', 'canva', 'powerpoint', 'editar', 'criar slide', 'relatório visual', 'gráfico', 'template', 'exportar'],
+  });
+}
+
+// ─── Bootstrap ───
+window.addEventListener('load', () => {
+  initCanvas();
+  renderTemplates();
+
+  // Inicia com um slide em branco
+  if (currentPresentationId) {
+    loadPresentation(currentPresentationId);
+  } else {
+    addSlide();
+  }
+
+  // Update nome da navbar
+  if (typeof setNavLabel === 'function') setNavLabel('Studio');
+
+  // Ajuste de zoom ao carregar
+  setTimeout(applyZoom, 100);
+});
+</script>
+</body>
+</html>

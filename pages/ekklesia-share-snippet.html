@@ -1,0 +1,247 @@
+<!-- ══════════════════════════════════════════════════════════════════
+  COMPARTILHAMENTO DE RELATÓRIO — Ekklesia for Social
+  
+  INSTRUÇÕES DE INTEGRAÇÃO:
+  
+  1. BOTÃO na topbar (.topbar-right), ao lado do #exportBtn:
+     Adicione o bloco "BOTÃO" abaixo logo após o <button id="exportBtn">…</button>
+  
+  2. CSS do modal de share:
+     Adicione o bloco "CSS" dentro do <style> existente
+  
+  3. FUNÇÃO JavaScript:
+     Adicione o bloco "JS" em qualquer lugar no bloco <script>, 
+     recomendado próximo a exportarDados()
+═══════════════════════════════════════════════════════════════════ -->
+
+
+<!-- ── 1. BOTÃO (topbar-right, ao lado do exportBtn) ─────────────── -->
+<button class="tbtn" id="shareBtn" onclick="compartilharRelatorio()" style="display:none" title="Gerar link de compartilhamento">
+  <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+  Compartilhar
+</button>
+
+<!-- Ative/desative shareBtn junto com exportBtn: 
+     Procure cada linha com:  document.getElementById('exportBtn').style.display = ...
+     E duplique a linha logo abaixo substituindo 'exportBtn' por 'shareBtn'
+     Ex:
+       document.getElementById('exportBtn').style.display = DB.length ? 'inline-flex' : 'none';
+       document.getElementById('shareBtn').style.display  = DB.length ? 'inline-flex' : 'none';
+-->
+
+
+<!-- ── 2. CSS (adicionar dentro do <style>) ───────────────────────── -->
+<style>
+  /* Share modal */
+  #shareModal { display:none; position:fixed; inset:0; z-index:9999; align-items:center; justify-content:center; }
+  #shareModal.open { display:flex; }
+  .share-modal-backdrop { position:absolute; inset:0; background:rgba(0,0,0,.72); backdrop-filter:blur(6px); }
+  .share-modal-box {
+    position:relative; z-index:1;
+    background:hsl(var(--theme-h),22%,10%);
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:var(--r-xl);
+    padding:28px 32px;
+    max-width:480px; width:calc(100% - 32px);
+    box-shadow:0 24px 60px rgba(0,0,0,.6);
+  }
+  .share-modal-close { position:absolute; top:14px; right:16px; background:none; border:none; color:var(--text-muted); font-size:20px; cursor:pointer; line-height:1; padding:4px; }
+  .share-modal-close:hover { color:var(--text-primary); }
+  .share-modal-title { font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:4px; }
+  .share-modal-sub   { font-size:11px; color:var(--text-muted); margin-bottom:20px; line-height:1.5; }
+  .share-link-box {
+    display:flex; align-items:center; gap:8px;
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.10);
+    border-radius:var(--r-md); padding:10px 12px;
+    margin-bottom:14px;
+  }
+  .share-link-input {
+    flex:1; background:none; border:none; outline:none;
+    font-size:12px; color:var(--text-secondary); font-family:'Inter',sans-serif;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .share-copy-btn {
+    flex-shrink:0; display:inline-flex; align-items:center; gap:5px;
+    padding:5px 12px; background:hsla(var(--theme-h),90%,50%,.12);
+    border:1px solid hsla(var(--theme-h),90%,50%,.28);
+    border-radius:var(--r-sm); font-size:11px; color:var(--orange-2);
+    cursor:pointer; font-family:'Inter',sans-serif; transition:all .15s;
+  }
+  .share-copy-btn:hover { background:hsla(var(--theme-h),90%,50%,.22); }
+  .share-notice { font-size:10px; color:var(--text-muted); line-height:1.6; }
+  .share-loading { text-align:center; padding:20px 0; }
+  .share-spinner {
+    width:24px; height:24px; border:2px solid rgba(255,255,255,.08);
+    border-top-color:var(--orange); border-radius:50%; animation:shareSpinAnim .7s linear infinite;
+    margin:0 auto 8px;
+  }
+  @keyframes shareSpinAnim { to { transform:rotate(360deg); } }
+</style>
+
+
+<!-- ── 3. MODAL HTML (adicionar antes do </body>) ─────────────────── -->
+<div id="shareModal">
+  <div class="share-modal-backdrop" onclick="fecharShareModal()"></div>
+  <div class="share-modal-box">
+    <button class="share-modal-close" onclick="fecharShareModal()">×</button>
+    <div class="share-modal-title">🔗 Compartilhar relatório</div>
+    <div class="share-modal-sub" id="shareModalSub">Gerando link público do dashboard atual…</div>
+    <div id="shareModalBody">
+      <div class="share-loading">
+        <div class="share-spinner"></div>
+        <div style="font-size:11px;color:var(--text-muted);">Salvando snapshot…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── 4. JAVASCRIPT ──────────────────────────────────────────────── -->
+<script>
+  // ── Compartilhar relatório ────────────────────────────────────────────
+  async function compartilharRelatorio() {
+    if (!DB.length) { showToast('⚠️ Sem dados para compartilhar.'); return; }
+
+    // Abre modal com loading
+    document.getElementById('shareModal').classList.add('open');
+    document.getElementById('shareModalBody').innerHTML = `
+      <div class="share-loading">
+        <div class="share-spinner"></div>
+        <div style="font-size:11px;color:var(--text-muted);">Salvando snapshot…</div>
+      </div>`;
+
+    try {
+      const snapshot = _buildShareSnapshot();
+      const res  = await fetch('/api/ekklesia/share', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(snapshot),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.token) throw new Error(data.error || 'Erro ao salvar snapshot');
+
+      const link = `${location.origin}/pages/ekklesia-share.html?token=${data.token}`;
+      _renderShareLink(link, snapshot);
+    } catch (err) {
+      document.getElementById('shareModalBody').innerHTML = `
+        <div style="font-size:12px;color:var(--red);padding:12px 0;">❌ ${err.message}</div>`;
+    }
+  }
+
+  function _renderShareLink(link, snapshot) {
+    document.getElementById('shareModalSub').textContent =
+      `Link público gerado · expira em 90 dias`;
+    document.getElementById('shareModalBody').innerHTML = `
+      <div class="share-link-box">
+        <input class="share-link-input" id="shareLinkInput" value="${link}" readonly onclick="this.select()"/>
+        <button class="share-copy-btn" id="shareCopyBtn" onclick="_copiarShareLink()">
+          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          Copiar
+        </button>
+      </div>
+      <div class="share-notice">
+        O link dá acesso de <strong style="color:var(--text-secondary)">leitura pública</strong> ao dashboard —
+        qualquer pessoa com o link consegue ver os dados sem precisar de login.
+        Válido por 90 dias · ${(snapshot.totalPubs||0).toLocaleString('pt-BR')} publicações · CENA ${(snapshot.cena?.cenaFinal||0).toFixed(2)}
+      </div>`;
+  }
+
+  function _copiarShareLink() {
+    const input = document.getElementById('shareLinkInput');
+    if (!input) return;
+    navigator.clipboard.writeText(input.value).then(() => {
+      const btn = document.getElementById('shareCopyBtn');
+      if (btn) { btn.textContent = '✓ Copiado!'; setTimeout(() => btn.innerHTML = `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar`, 2000); }
+    });
+  }
+
+  function fecharShareModal() {
+    document.getElementById('shareModal').classList.remove('open');
+  }
+
+  // Monta o objeto snapshot a partir do estado atual do Ekklesia
+  function _buildShareSnapshot() {
+    const df = DB; // base completa
+
+    // ── Redes ──────────────────────────────────────────────────────────
+    const byRede = {};
+    df.forEach(r => {
+      const c = (r.canal||'desconhecido').toLowerCase();
+      if (!byRede[c]) byRede[c] = { rede: r.canal||c, pubs: 0, inter: 0 };
+      byRede[c].pubs++;
+      byRede[c].inter += (r.interacoes||0);
+    });
+    const redes = Object.values(byRede).sort((a,b) => b.pubs - a.pubs);
+
+    // ── Sentimentos ─────────────────────────────────────────────────────
+    const bySent = {};
+    df.forEach(r => {
+      if (r.sentimento) {
+        bySent[r.sentimento] = (bySent[r.sentimento]||0) + 1;
+      }
+    });
+
+    // ── Top publicadores ────────────────────────────────────────────────
+    const byPub = {};
+    df.forEach(r => {
+      const k = r.nome_publicador||'';
+      if (!k) return;
+      if (!byPub[k]) byPub[k] = { nome: k, rede: r.canal||'', interacoes: 0, pubs: 0 };
+      byPub[k].interacoes += (r.interacoes||0);
+      byPub[k].pubs++;
+    });
+    const topPublicadores = Object.values(byPub).sort((a,b) => b.interacoes - a.interacoes).slice(0,15);
+
+    // ── KPIs ────────────────────────────────────────────────────────────
+    const totalInter = df.reduce((s,r) => s+(r.interacoes||0), 0);
+    const totalPublicadores = Object.keys(byPub).length;
+    const kpis = [
+      { label:'Publicações',   valor: df.length,          color:'var(--orange-2)' },
+      { label:'Interações',    valor: totalInter,          color:'var(--green)' },
+      { label:'Publicadores',  valor: totalPublicadores,   color:'var(--blue, #60a5fa)' },
+      { label:'Redes',         valor: redes.length,        color:'var(--amber, #fbbf24)' },
+    ];
+
+    // ── Período ─────────────────────────────────────────────────────────
+    const datas = df.map(r => r.data).filter(Boolean).sort();
+    let periodo = '';
+    if (datas.length >= 2) {
+      const fmt = d => { try { return new Date(d).toLocaleDateString('pt-BR', {day:'2-digit',month:'short'}); } catch { return d; } };
+      periodo = `${fmt(datas[0])} – ${fmt(datas[datas.length-1])}`;
+    }
+
+    // ── Fontes ──────────────────────────────────────────────────────────
+    const fontes = [...new Set(df.map(r => r.fonte).filter(Boolean))];
+
+    // ── Narrativas (usa macro_rows se disponíveis) ──────────────────────
+    let narrativas = [];
+    if (typeof MACRO_ROWS !== 'undefined' && Array.isArray(MACRO_ROWS) && MACRO_ROWS.length) {
+      narrativas = MACRO_ROWS.slice(0, 8).map(n => ({
+        tema: n.tema || n.nome || '—',
+        pubs: n.pubs || n.total || 0,
+        interacoes: n.interacoes || n.inter || 0,
+        sentimento_predominante: n.sentimento_predominante || n.sent || '',
+      }));
+    }
+
+    return {
+      projeto:          EKKLESIA_PROJETO_NOME || 'Monitoramento',
+      cliente:          '',                        // opcional: adicione campo se disponível
+      periodo,
+      fontes,
+      totalPubs:        df.length,
+      totalPublicadores,
+      cena: {
+        cenaFinal: window._repCena?.cenaFinal ?? 0,
+        bySent:    window._repCena?.bySent    ?? bySent,
+      },
+      kpis,
+      redes,
+      topPublicadores,
+      narrativas,
+    };
+  }
+</script>

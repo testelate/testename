@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HUB.nexus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/global.css"/>
+  <style>
+    body {
+      display: flex; flex-direction: column;
+      height: 100vh; overflow: hidden;
+      background: var(--bg);
+      font-family: var(--font-body);
+    }
+
+    /* ══════════════════════════════
+       TOPBAR — compacta, sem sidebar
+    ══════════════════════════════ */
+    .home-topbar {
+      height: 54px; flex-shrink: 0;
+      display: flex; align-items: center;
+      padding: 0 20px; gap: 12px;
+      background: var(--surface);
+      box-shadow: var(--clay-shadow-sm);
+      border-bottom: 1.5px solid rgba(255,255,255,0.60);
+      z-index: 20; position: relative;
+    }
+    body.dark .home-topbar { border-bottom-color: rgba(255,255,255,0.05); }
+
+    .topbar-logo {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none; flex-shrink: 0;
+    }
+    .topbar-logo img {
+      height: 44px; width: auto; object-fit: contain;
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.15));
+    }
+    .topbar-logo-name {
+      font-family: var(--font-ui);
+      font-size: 13px; font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.3px;
+    }
+
+    .topbar-spacer { flex: 1; }
+
+    /* Urgência chips no topbar */
+    .topbar-urgency {
+      display: flex; align-items: center; gap: 6px;
+      overflow: hidden; flex: 1; max-width: 480px;
+    }
+    .urgency-label {
+      font-family: var(--font-ui); font-size: 10px; font-weight: 800;
+      color: var(--text-muted); letter-spacing: .6px; text-transform: uppercase;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .urgency-chips { display: flex; gap: 5px; overflow: hidden; flex: 1; }
+    .urg-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: var(--r-pill);
+      font-family: var(--font-ui); font-size: 10px; font-weight: 700;
+      white-space: nowrap; flex-shrink: 0;
+      box-shadow: var(--clay-shadow-sm);
+      border: 1.5px solid rgba(255,255,255,0.60);
+      cursor: pointer; transition: transform var(--t-normal);
+      max-width: 160px; overflow: hidden; text-overflow: ellipsis;
+    }
+    body.dark .urg-chip { border-color: rgba(255,255,255,0.06); }
+    .urg-chip:hover { transform: scale(1.04) translateY(-1px); }
+    .urg-chip.atrasado  { background: rgba(239,68,68,0.10); color: var(--red); }
+    .urg-chip.hoje      { background: rgba(245,158,11,0.10); color: var(--amber); }
+    .urg-chip.amanha    { background: rgba(59,130,246,0.10); color: var(--blue); }
+    .urg-chip.semana    { background: rgba(34,197,94,0.10);  color: var(--green); }
+    .urg-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .topbar-dem-count {
+      display: flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: var(--r-pill);
+      background: var(--accent-soft);
+      border: 1.5px solid rgba(255,255,255,0.70);
+      box-shadow: var(--clay-shadow-sm);
+      font-family: var(--font-ui); font-size: 11px; font-weight: 800;
+      color: var(--accent-dark); white-space: nowrap; flex-shrink: 0;
+      cursor: pointer; transition: transform var(--t-normal);
+    }
+    body.dark .topbar-dem-count { border-color: rgba(255,255,255,0.08); color: var(--accent-light); }
+    .topbar-dem-count:hover { transform: scale(1.04); }
+    .topbar-right-controls { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+
+    /* ══════════════════════════════
+       SCROLL AREA
+    ══════════════════════════════ */
+    .home-scroll {
+      flex: 1; overflow-y: auto; overflow-x: hidden;
+      padding: 32px 24px 48px;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 36px;
+    }
+    .home-inner { width: 100%; max-width: 820px; }
+
+    /* ══════════════════════════════
+       SAUDAÇÃO
+    ══════════════════════════════ */
+    @keyframes nexinhoShake {
+      0%,100% { transform: translateX(0) rotate(0deg); }
+      15%      { transform: translateX(-8px) rotate(-4deg); }
+      30%      { transform: translateX(8px) rotate(4deg); }
+      45%      { transform: translateX(-6px) rotate(-3deg); }
+      60%      { transform: translateX(6px) rotate(3deg); }
+      75%      { transform: translateX(-3px) rotate(-1deg); }
+      90%      { transform: translateX(3px) rotate(1deg); }
+    }
+    @keyframes nexinhoAlert {
+      0%   { transform: translateX(0) scale(1); }
+      10%  { transform: translateX(-10px) scale(1.05) rotate(-5deg); }
+      25%  { transform: translateX(10px) scale(1.05) rotate(5deg); }
+      40%  { transform: translateX(-8px) rotate(-4deg); }
+      55%  { transform: translateX(8px) rotate(4deg); }
+      70%  { transform: translateX(0) scale(1.08); }
+      80%  { transform: translateX(-120%) scale(0.8); }
+      90%  { transform: translateX(-120%) scale(0.8); }
+      100% { transform: translateX(0) scale(1); }
+    }
+    @keyframes bubbleAlert {
+      0%,100% { border-color: var(--accent); box-shadow: 0 4px 20px hsla(var(--theme-h),70%,50%,0.20), var(--clay-shadow-sm); }
+      30%      { border-color: var(--red); box-shadow: 0 0 0 4px rgba(239,68,68,0.20), 0 4px 20px rgba(239,68,68,0.25); }
+      60%      { border-color: var(--red); box-shadow: 0 0 0 4px rgba(239,68,68,0.20), 0 4px 20px rgba(239,68,68,0.25); }
+    }
+    @keyframes mascoteFloat {
+      0%,100% { transform: translateY(0px); }
+      50%      { transform: translateY(-8px); }
+    }
+    @keyframes mascoteJump {
+      0%   { transform: translateY(0) rotate(0deg); }
+      40%  { transform: translateY(-28px) rotate(10deg); }
+      70%  { transform: translateY(-14px) rotate(-5deg); }
+      100% { transform: translateY(0) rotate(0deg); }
+    }
+    #homeMascote:hover {
+      filter: drop-shadow(0 10px 24px rgba(0,0,0,0.22)) drop-shadow(0 0 44px hsla(var(--theme-h),85%,55%,0.45)) !important;
+      transform: scale(1.06) !important;
+    }
+    .greeting-section {
+      text-align: center;
+      animation: fadeUp 0.5s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .greeting-time {
+      font-family: var(--font-ui); font-size: 11px; font-weight: 700;
+      color: var(--text-muted); letter-spacing: .8px; text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .greeting-title {
+      font-family: var(--font-ui);
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+    .greeting-title .accent { color: var(--accent); }
+    .greeting-question {
+      font-family: var(--font-body);
+      font-size: 15px; color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* ══════════════════════════════
+       CAMPO DE BUSCA CENTRAL
+    ══════════════════════════════ */
+    .search-section {
+      animation: fadeUp 0.55s 0.08s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+    }
+    .hub-search-wrap {
+      background: var(--surface);
+      border-radius: var(--r-2xl);
+      box-shadow: var(--clay-shadow-lg);
+      border: 1.5px solid rgba(255,255,255,0.70);
+      overflow: hidden;
+    }
+    body.dark .hub-search-wrap { border-color: rgba(255,255,255,0.07); }
+
+    .hub-search-input-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 20px;
+    }
+    .hub-search-spark {
+      width: 32px; height: 32px; border-radius: var(--r-md);
+      background: var(--accent-soft); border: 1.5px solid rgba(255,255,255,0.70);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; box-shadow: var(--clay-shadow-sm);
+    }
+    body.dark .hub-search-spark { border-color: rgba(255,255,255,0.08); }
+    .hub-search-spark svg { width: 16px; height: 16px; fill: var(--accent); }
+
+    .hub-search-input {
+      flex: 1; background: transparent; border: none; outline: none;
+      font-family: var(--font-ui); font-size: 15px; font-weight: 500;
+      color: var(--text-primary); caret-color: var(--accent);
+    }
+    .hub-search-input::placeholder { color: var(--text-faint); }
+
+    .hub-search-send {
+      width: 34px; height: 34px; border-radius: var(--r-pill);
+      background: var(--accent);
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--clay-shadow-accent);
+      transition: all var(--t-slow); flex-shrink: 0;
+    }
+    .hub-search-send:hover { transform: scale(1.10); background: var(--accent-light); }
+    .hub-search-send:active { transform: scale(0.94); }
+    .hub-search-send svg { width: 15px; height: 15px; stroke: #fff; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .hub-search-send.loading { animation: spinSend 0.6s linear infinite; background: var(--accent-light); }
+    @keyframes spinSend { to { transform: rotate(360deg); } }
+
+    /* Sugestões abaixo do input */
+    .hub-search-suggestions {
+      padding: 0 16px 14px;
+      display: flex; flex-wrap: wrap; gap: 7px;
+    }
+    .sug-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: var(--r-pill);
+      background: var(--bg); border: 1.5px solid rgba(255,255,255,0.55);
+      box-shadow: var(--clay-shadow-sm);
+      font-family: var(--font-body); font-size: 12px; color: var(--text-secondary);
+      cursor: pointer; transition: all var(--t-normal);
+      user-select: none;
+    }
+    body.dark .sug-pill { border-color: rgba(255,255,255,0.06); }
+    .sug-pill:hover { transform: translateY(-2px) scale(1.03); color: var(--accent); border-color: var(--accent); }
+    .sug-pill:active { transform: scale(0.97); }
+
+    /* Divisor no search */
+    .search-divider {
+      height: 1px; background: var(--bg-2); margin: 0 16px;
+    }
+
+    /* Resultados da busca */
+    .hub-search-results {
+      padding: 10px 12px 12px;
+      display: flex; flex-direction: column; gap: 6px;
+      max-height: 320px; overflow-y: auto;
+    }
+    .search-result-tool {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 12px; border-radius: var(--r-lg);
+      background: var(--bg); border: 1.5px solid rgba(255,255,255,0.60);
+      box-shadow: var(--clay-shadow-sm);
+      cursor: pointer; transition: all var(--t-normal);
+      animation: resultIn 0.25s cubic-bezier(0.34, 1.5, 0.64, 1) both;
+      text-decoration: none;
+    }
+    body.dark .search-result-tool { border-color: rgba(255,255,255,0.05); }
+    @keyframes resultIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .search-result-tool:hover {
+      transform: translateX(4px);
+      border-color: var(--accent);
+      box-shadow: var(--clay-shadow);
+    }
+    .srt-icon {
+      width: 40px; height: 40px; border-radius: var(--r-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+      box-shadow: var(--clay-shadow-sm);
+      background: hsl(var(--theme-h), 30%, 32%);
+      border: 1.5px solid hsla(var(--theme-h), 40%, 60%, 0.25);
+    }
+    body.dark .srt-icon {
+      background: hsl(var(--theme-h), 28%, 22%);
+      border-color: hsla(var(--theme-h), 35%, 55%, 0.18);
+    }
+    .srt-info { flex: 1; min-width: 0; }
+    .srt-name { font-family: var(--font-ui); font-size: 13px; font-weight: 700; color: var(--text-primary); }
+    .srt-desc { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .srt-arrow {
+      width: 28px; height: 28px; border-radius: var(--r-sm);
+      background: var(--bg-2); border: 1.5px solid rgba(255,255,255,0.55);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; box-shadow: var(--clay-shadow-sm);
+    }
+    body.dark .srt-arrow { border-color: rgba(255,255,255,0.05); }
+    .srt-arrow svg { width: 12px; height: 12px; stroke: var(--text-muted); fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .search-result-tool:hover .srt-arrow { background: var(--accent-soft); }
+    .search-result-tool:hover .srt-arrow svg { stroke: var(--accent); }
+
+    .search-no-result {
+      padding: 18px; text-align: center;
+      font-family: var(--font-body); font-size: 13px; color: var(--text-muted);
+    }
+
+    /* ══════════════════════════════
+       FERRAMENTAS
+    ══════════════════════════════ */
+    .tools-section {
+      animation: fadeUp 0.6s 0.15s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+    }
+    .tools-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .tools-title {
+      font-family: var(--font-ui); font-size: 11px; font-weight: 800;
+      color: var(--text-muted); letter-spacing: .8px; text-transform: uppercase;
+    }
+    .tools-see-all {
+      font-family: var(--font-ui); font-size: 11px; font-weight: 700;
+      color: var(--accent); cursor: pointer; transition: opacity var(--t-fast);
+      background: none; border: none;
+    }
+    .tools-see-all:hover { opacity: 0.7; }
+
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 600px) { .tools-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .tool-card {
+      background: var(--surface);
+      border-radius: var(--r-xl);
+      padding: 16px;
+      box-shadow: var(--clay-shadow);
+      border: 1.5px solid rgba(255,255,255,0.65);
+      cursor: pointer;
+      transition: all var(--t-slow);
+      position: relative;
+      overflow: hidden;
+      text-decoration: none;
+      display: block;
+      animation: cardIn 0.5s cubic-bezier(0.34, 1.5, 0.64, 1) both;
+    }
+    body.dark .tool-card { border-color: rgba(255,255,255,0.06); }
+    .tool-card:nth-child(1) { animation-delay: 0.10s; }
+    .tool-card:nth-child(2) { animation-delay: 0.15s; }
+    .tool-card:nth-child(3) { animation-delay: 0.20s; }
+    .tool-card:nth-child(4) { animation-delay: 0.25s; }
+    .tool-card:nth-child(5) { animation-delay: 0.30s; }
+    .tool-card:nth-child(6) { animation-delay: 0.35s; }
+    @keyframes cardIn {
+      from { opacity: 0; transform: scale(0.92) translateY(12px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .tool-card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: var(--tc-color-soft, var(--accent-soft));
+      opacity: 0;
+      transition: opacity var(--t-normal);
+      border-radius: inherit;
+    }
+    .tool-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: var(--clay-shadow-lg); }
+    .tool-card:hover::before { opacity: 1; }
+    .tool-card:active { transform: scale(0.97); box-shadow: var(--clay-shadow-pressed); }
+
+    .tc-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; position: relative; z-index: 1; }
+    .tc-icon {
+      width: 42px; height: 42px; border-radius: var(--r-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      box-shadow: var(--clay-shadow-sm);
+      border: 1.5px solid rgba(255,255,255,0.65);
+      transition: transform var(--t-slow);
+    }
+    body.dark .tc-icon { border-color: rgba(255,255,255,0.07); }
+    .tool-card:hover .tc-icon { transform: scale(1.12) rotate(-4deg); }
+
+    /* ── SVG Frosted-Glass Icons (vidro fosco, recolore com o tema) ── */
+    .hub-icon {
+      background: transparent !important;
+      border-color: transparent !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      color: hsl(var(--theme-h), 78%, 48%);
+      overflow: visible;
+      position: relative;
+      -webkit-backdrop-filter: blur(2px);
+      backdrop-filter: blur(2px);
+    }
+    body.dark .hub-icon { color: hsl(var(--theme-h), 82%, 62%); }
+    .hub-icon svg {
+      width: 100%; height: 100%; display: block;
+      filter:
+        drop-shadow(0 1px 1px hsla(0,0%,100%,0.45))
+        drop-shadow(0 3px 9px hsla(var(--theme-h), 70%, 45%, 0.30));
+      transition: filter var(--t-slow);
+    }
+    body.dark .hub-icon svg {
+      filter:
+        drop-shadow(0 1px 1px hsla(0,0%,100%,0.10))
+        drop-shadow(0 3px 10px hsla(var(--theme-h), 80%, 55%, 0.40));
+    }
+    .tool-card:hover .hub-icon svg {
+      filter:
+        drop-shadow(0 1px 1px hsla(0,0%,100%,0.55))
+        drop-shadow(0 6px 16px hsla(var(--theme-h), 75%, 48%, 0.42));
+    }
+
+    /* ── PNG Chroma-Key Glass Icons ── */
+    .hub-glass-icon {
+      display: block; width: 100%; height: 100%;
+      position: relative;
+    }
+    .hgi-color {
+      position: absolute; inset: 0;
+      background: linear-gradient(150deg,
+        hsl(var(--theme-h),96%,58%) 0%,
+        hsl(var(--theme-h),92%,44%) 48%,
+        hsl(var(--theme-h),95%,35%) 100%);
+      -webkit-mask: var(--tex) center/contain no-repeat;
+              mask: var(--tex) center/contain no-repeat;
+    }
+    .hgi-tex {
+      position: absolute; inset: 0;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      mix-blend-mode: soft-light;
+      opacity: .50;
+    }
+    .hgi-shine {
+      position: absolute; inset: 0;
+      background: white;
+      -webkit-mask-size: contain; mask-size: contain;
+      -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+      -webkit-mask-position: center; mask-position: center;
+      mix-blend-mode: screen;
+      opacity: .32;
+    }
+
+    /* ── Chip SVG icons no sug-pill ── */
+    .sug-pill svg {
+      width: 14px; height: 14px; flex-shrink: 0;
+      vertical-align: middle; display: inline-block;
+    }
+
+    .tc-fav {
+      width: 24px; height: 24px; border-radius: var(--r-sm);
+      background: var(--bg-2);
+      border: 1.5px solid rgba(255,255,255,0.50);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--clay-shadow-sm); cursor: pointer;
+      transition: all var(--t-normal); flex-shrink: 0;
+    }
+    body.dark .tc-fav {
+      background: hsl(var(--theme-h), 28%, 22%);
+      border-color: hsla(var(--theme-h), 35%, 55%, 0.18);
+    }
+    .tc-fav:hover { transform: scale(1.15); }
+    .tc-fav svg { width: 11px; height: 11px; fill: none; stroke: var(--text-faint); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: all var(--t-normal); }
+    .tc-fav.active svg { fill: var(--amber); stroke: var(--amber); }
+
+    .tc-name {
+      font-family: var(--font-ui); font-size: 13px; font-weight: 800;
+      color: var(--text-primary); line-height: 1.2; margin-bottom: 4px;
+      position: relative; z-index: 1;
+    }
+    .tc-label {
+      font-size: 11px; color: var(--text-muted); line-height: 1.4;
+      position: relative; z-index: 1;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+
+    /* All tools panel */
+    .all-tools-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.40); backdrop-filter: blur(10px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+    .all-tools-overlay.open { opacity: 1; pointer-events: all; }
+    .all-tools-panel {
+      width: 560px; max-width: 94vw; max-height: 80vh;
+      background: var(--surface); border-radius: var(--r-2xl);
+      box-shadow: var(--clay-shadow-lg); border: 1.5px solid rgba(255,255,255,0.70);
+      overflow: hidden; display: flex; flex-direction: column;
+      transform: scale(0.95) translateY(12px);
+      transition: transform 0.28s cubic-bezier(0.34, 1.5, 0.64, 1);
+    }
+    body.dark .all-tools-panel { border-color: rgba(255,255,255,0.07); }
+    .all-tools-overlay.open .all-tools-panel { transform: scale(1) translateY(0); }
+    .all-tools-head {
+      padding: 18px 20px 14px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--bg-2); flex-shrink: 0;
+    }
+    .all-tools-head-title {
+      font-family: var(--font-ui); font-size: 15px; font-weight: 800; color: var(--text-primary);
+    }
+    .all-tools-close {
+      width: 30px; height: 30px; border-radius: var(--r-sm);
+      background: var(--bg); border: 1.5px solid rgba(255,255,255,0.55);
+      box-shadow: var(--clay-shadow-sm); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform var(--t-slow); font-size: 14px;
+    }
+    body.dark .all-tools-close { border-color: rgba(255,255,255,0.06); }
+    .all-tools-close:hover { transform: scale(1.10) rotate(8deg); }
+    .all-tools-body { overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+    .all-tool-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; border-radius: var(--r-lg);
+      background: var(--bg); border: 1.5px solid rgba(255,255,255,0.60);
+      box-shadow: var(--clay-shadow-sm); cursor: pointer;
+      transition: all var(--t-normal); text-decoration: none;
+    }
+    body.dark .all-tool-row { border-color: rgba(255,255,255,0.05); }
+    .all-tool-row:hover { transform: translateX(4px); border-color: var(--accent); }
+    .atr-icon { width: 36px; height: 36px; border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; font-size: 17px; box-shadow: var(--clay-shadow-sm); background: hsl(var(--theme-h), 30%, 32%); border: 1.5px solid hsla(var(--theme-h), 40%, 60%, 0.25); flex-shrink: 0; }
+    body.dark .atr-icon { background: hsl(var(--theme-h), 28%, 22%); border-color: hsla(var(--theme-h), 35%, 55%, 0.18); }
+    .atr-info { flex: 1; min-width: 0; }
+    .atr-name { font-family: var(--font-ui); font-size: 13px; font-weight: 700; color: var(--text-primary); }
+    .atr-label { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ══════════════════════════════
+       THEME PICKER
+    ══════════════════════════════ */
+    .theme-picker-panel {
+      top: 62px; right: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══ TOPBAR ══ -->
+  <header class="home-topbar">
+
+    <a href="index.html" class="topbar-logo">
+      <img src="assets/logo.png" alt="HUB.nexus"/>
+    </a>
+
+    <!-- Urgência ticker (hidden - moved to greeting area) -->
+    <div id="topbarUrgency" style="display:none;">
+      <div id="urgencyChips"></div>
+    </div>
+
+    <div class="topbar-spacer"></div>
+
+    <!-- Contagem de demandas -->
+    <div class="topbar-dem-count" id="topbarDemCount" onclick="openDemandsPopup()" title="Ver minhas demandas" style="display:none;">
+      <span id="demCountNum">0</span> demandas ativas
+    </div>
+
+    <!-- Controls -->
+    <div class="topbar-right-controls">
+      <!-- Tamanho do texto -->
+      <div class="notif-btn font-size-btn" id="fontSizeBtn" onclick="cycleFontSize()" title="Tamanho do texto: 100%">
+        <span class="fsz-label">A</span>
+      </div>
+      <!-- Acessibilidade W3C -->
+      <div class="notif-btn" id="a11yBtn" onclick="toggleA11y()" title="Modo acessibilidade W3C">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="12" cy="12" r="10.5"/>
+          <circle cx="12" cy="6.8" r="2.4" fill="currentColor" stroke="none"/>
+          <line x1="12" y1="10.8" x2="1.5" y2="12"/>
+          <line x1="12" y1="10.8" x2="22.5" y2="12"/>
+          <circle cx="1.5" cy="12" r="1.3" fill="currentColor" stroke="none"/>
+          <circle cx="22.5" cy="12" r="1.3" fill="currentColor" stroke="none"/>
+          <line x1="12" y1="13.2" x2="4.6" y2="19.4"/>
+          <line x1="12" y1="13.2" x2="19.4" y2="19.4"/>
+          <circle cx="4.6" cy="19.4" r="1.3" fill="currentColor" stroke="none"/>
+          <circle cx="19.4" cy="19.4" r="1.3" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div class="palette-btn" id="paletteBtn" onclick="togglePicker()" title="Personalizar cor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.06 11.9l8.07-8.06a2.85 2.85 0 114.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1 1 2.4 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 00-3-3.02z" fill="currentColor" opacity="0.35"/></svg>
+      </div>
+      <div class="notif-btn mode-btn" onclick="toggleMode()" title="Alternar modo">
+        <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      </div>
+      <button class="notif-btn mode-btn" onclick="handleLogout()" title="Sair" style="color:rgba(239,68,68,.6);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+      </button>
+      <!-- Avatar -->
+      <a href="pages/profile.html" style="text-decoration:none;">
+        <div class="avatar-mini" id="topbar-avatar" title="Perfil">?</div>
+      </a>
+    </div>
+  </header>
+
+  <!-- Theme Picker -->
+  <div class="theme-picker-panel" id="themePanel">
+    <div class="theme-picker-title">🎨 Cor do hub</div>
+    <div class="theme-swatches" id="swatchGrid"></div>
+    <div class="theme-divider"></div>
+    <div style="font-family:var(--font-ui);font-size:10px;font-weight:800;color:var(--text-muted);letter-spacing:.6px;text-transform:uppercase;margin-bottom:7px;">Código HEX personalizado</div>
+    <div class="hex-row">
+      <div class="hex-preview" id="hexPreview" title="Clique para escolher cor" onclick="this.querySelector('input').click()">
+        <input type="color" id="nativeColorPicker" value="#FF6500"
+               style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;border:none;padding:0;"
+               oninput="applyThemeColor(this.value);document.getElementById('hexInput').value=this.value;document.getElementById('hexPreview').style.background=this.value"
+               onchange="applyThemeColor(this.value);closePicker()"/>
+      </div>
+      <input class="hex-input" id="hexInput" type="text" placeholder="#FF6500" maxlength="7" oninput="onHexInput(this.value)"/>
+      <button class="hex-apply-btn" onclick="applyHexColor()">OK</button>
+    </div>
+    <div class="theme-divider"></div>
+    <div class="theme-picker-title">Modo</div>
+    <div class="mode-row">
+      <div class="mode-option" id="mode-light" onclick="applyMode('light')">☀️ Claro</div>
+      <div class="mode-option" id="mode-dark"  onclick="applyMode('dark')">🌙 Escuro</div>
+    </div>
+  </div>
+
+  <!-- ══ SCROLL AREA ══ -->
+  <div class="home-scroll">
+    <div class="home-inner">
+
+      <!-- Saudação -->
+      <section class="greeting-section" style="margin-bottom:28px;">
+        <div class="greeting-time" id="greetingTime"></div>
+        <h1 class="greeting-title">
+          <span id="greetingText">Olá.</span>
+        </h1>
+        <p class="greeting-question" id="greetingQuestion">O que você quer fazer hoje?</p>
+      </section>
+
+      <!-- Nexinho — mascote interativo -->
+      <div style="display:flex;justify-content:center;align-items:center;gap:0;margin-bottom:20px;margin-top:-4px;position:relative;">
+
+        <!-- Nexinho GIF — fica à ESQUERDA -->
+        <div style="flex-shrink:0;position:relative;z-index:2;">
+          <img src="assets/mascote.gif"
+               id="homeMascote"
+               alt="Nexinho — Mascote HUB.nexus"
+               onerror="this.style.display='none'"
+               style="height:150px;width:auto;object-fit:contain;
+                      filter:drop-shadow(0 10px 24px rgba(0,0,0,0.22)) drop-shadow(0 0 36px hsla(var(--theme-h),80%,55%,0.30));
+                      cursor:pointer;
+                      display:block;
+                      transition:filter 0.3s ease, transform 0.3s ease;
+                      animation:mascoteFloat 4s ease-in-out infinite;"
+               onclick="nexinhoNextMsg()"
+               title="Sou o Nexinho! 🤖"/>
+        </div>
+
+        <!-- Balão de fala — fica à DIREITA do Nexinho -->
+        <div id="nexinhoBubble" style="
+          position:relative;
+          max-width:260px;
+          background:var(--surface);
+          border:2px solid var(--accent);
+          border-radius:4px 18px 18px 18px;
+          padding:14px 16px;
+          margin-left:8px;
+          box-shadow:0 4px 20px hsla(var(--theme-h),70%,50%,0.20), var(--clay-shadow-sm);
+          animation:fadeUp 0.5s 0.3s cubic-bezier(0.34,1.4,0.64,1) both;
+          cursor:pointer;
+          z-index:1;
+        " onclick="nexinhoNextMsg()" title="Clique para próxima dica">
+          <!-- Pontinha sai do LADO ESQUERDO, no topo -->
+          <div style="
+            position:absolute;top:18px;left:-11px;
+            width:0;height:0;
+            border-top:8px solid transparent;
+            border-bottom:8px solid transparent;
+            border-right:11px solid var(--accent);
+          "></div>
+          <div style="
+            position:absolute;top:19px;left:-8px;
+            width:0;height:0;
+            border-top:7px solid transparent;
+            border-bottom:7px solid transparent;
+            border-right:9px solid var(--surface);
+          "></div>
+
+          <!-- Indicador de mensagem -->
+          <div style="display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap;">
+            <div class="nexinho-dot" id="ndot-0" style="width:6px;height:6px;border-radius:50%;background:var(--accent);transition:all .3s;"></div>
+            <div class="nexinho-dot" id="ndot-1" style="width:6px;height:6px;border-radius:50%;background:var(--text-faint);transition:all .3s;"></div>
+            <div class="nexinho-dot" id="ndot-2" style="width:6px;height:6px;border-radius:50%;background:var(--text-faint);transition:all .3s;"></div>
+            <div class="nexinho-dot" id="ndot-3" style="width:6px;height:6px;border-radius:50%;background:var(--text-faint);transition:all .3s;"></div>
+            <div class="nexinho-dot" id="ndot-4" style="width:6px;height:6px;border-radius:50%;background:var(--text-faint);transition:all .3s;"></div>
+            <div class="nexinho-dot" id="ndot-5" style="width:6px;height:6px;border-radius:50%;background:var(--text-faint);transition:all .3s;"></div>
+            <div class="nexinho-dot" id="ndot-6" style="width:6px;height:6px;border-radius:50%;background:var(--text-faint);transition:all .3s;"></div>
+          </div>
+
+          <p id="nexinhoText" style="
+            font-family:var(--font-ui);
+            font-size:13px;
+            font-weight:600;
+            color:var(--text-primary);
+            line-height:1.55;
+            margin:0;
+            min-height:52px;
+          "></p>
+
+          <div style="
+            margin-top:8px;
+            font-family:var(--font-ui);font-size:10px;font-weight:700;
+            color:var(--text-muted);letter-spacing:.3px;
+          ">Clique para continuar →</div>
+        </div>
+
+      </div>
+
+      <!-- Campo de busca -->
+      <section class="search-section" style="margin-bottom:28px;">
+        <div class="hub-search-wrap">
+          <div class="hub-search-input-row">
+            <div class="hub-search-spark">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L13.8 8.4L20 12L13.8 15.6L12 22L10.2 15.6L4 12L10.2 8.4L12 2Z"/>
+              </svg>
+            </div>
+            <input
+              class="hub-search-input"
+              id="hubSearchInput"
+              type="text"
+              placeholder="Descreva o que você quer fazer..."
+              autocomplete="off"
+              oninput="onHubSearchInput(this.value)"
+              onkeydown="if(event.key==='Enter') triggerHubSearch()"
+            />
+            <button class="hub-search-send" id="hubSearchSend" onclick="triggerHubSearch()" title="Buscar">
+              <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+
+          <div class="hub-search-suggestions" id="hubSuggestions">
+            <!-- Pills de sugestão, geradas via JS -->
+          </div>
+
+          <!-- Resultados aparecem aqui -->
+          <div id="hubSearchResults" style="display:none;">
+            <div class="search-divider"></div>
+            <div class="hub-search-results" id="hubSearchResultsList"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Ferramentas -->
+      <section class="tools-section">
+        <div class="tools-header">
+          <span class="tools-title" id="toolsSectionTitle">✦ Ferramentas</span>
+          <button class="tools-see-all" onclick="openAllTools()">Ver todas →</button>
+        </div>
+        <div class="tools-grid" id="toolsGrid">
+          <!-- Gerado via JS -->
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- All Tools overlay -->
+  <div class="all-tools-overlay" id="allToolsOverlay" onclick="if(event.target===this)closeAllTools()">
+    <div class="all-tools-panel">
+      <div class="all-tools-head">
+        <span class="all-tools-head-title">Todas as ferramentas</span>
+        <div class="all-tools-close" onclick="closeAllTools()">✕</div>
+      </div>
+      <div class="all-tools-body" id="allToolsBody"></div>
+    </div>
+  </div>
+
+
+  <!-- ══ DEMANDS POPUP ══ -->
+  <div id="demandsOverlay" style="
+    position:fixed;inset:0;z-index:500;
+    background:rgba(0,0,0,0.40);backdrop-filter:blur(8px);
+    display:flex;align-items:flex-start;justify-content:flex-end;
+    padding-top:60px;padding-right:16px;
+    opacity:0;pointer-events:none;transition:opacity 0.2s ease;
+  " onclick="if(event.target===this)closeDemandsPopup()">
+    <div id="demandsPanel" style="
+      width:360px;max-height:70vh;
+      background:var(--surface);border-radius:var(--r-2xl);
+      box-shadow:var(--clay-shadow-lg);
+      border:1.5px solid rgba(255,255,255,0.65);
+      display:flex;flex-direction:column;overflow:hidden;
+      transform:translateY(-12px) scale(0.96);
+      transition:transform 0.25s cubic-bezier(0.34,1.5,0.64,1);
+    ">
+      <div style="padding:16px 18px 12px;border-bottom:1px solid var(--bg-2);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+        <span style="font-family:var(--font-ui);font-size:14px;font-weight:800;color:var(--text-primary);">Minhas demandas</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span id="demPopupCount" style="font-family:var(--font-ui);font-size:11px;font-weight:700;color:var(--text-muted);"></span>
+          <div onclick="closeDemandsPopup()" style="
+            width:28px;height:28px;border-radius:var(--r-sm);
+            background:var(--bg);border:1.5px solid rgba(255,255,255,0.55);
+            box-shadow:var(--clay-shadow-sm);cursor:pointer;
+            display:flex;align-items:center;justify-content:center;font-size:13px;
+            transition:transform var(--t-slow);
+          " onmouseover="this.style.transform='scale(1.1) rotate(8deg)'" onmouseout="this.style.transform=''">✕</div>
+        </div>
+      </div>
+      <div id="demPopupList" style="overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:6px;max-height:calc(70vh - 100px);"></div>
+      <div style="padding:12px 14px;border-top:1px solid var(--bg-2);flex-shrink:0;">
+        <a href="pages/kanban.html" style="
+          display:block;text-align:center;text-decoration:none;
+          padding:9px;background:var(--accent);border-radius:var(--r-pill);
+          font-family:var(--font-ui);font-size:12px;font-weight:800;color:#fff;
+          box-shadow:var(--clay-shadow-accent);transition:all var(--t-slow);
+        " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+          Ver Kanban completo →
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="js/utils.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/hub-search.js"></script>
+  <script>
+  /* ── Init ── */
+  checkAuth();
+  initMode();
+  initTheme();
+  updateModeButtons();
+
+  /* ── getToolPath ── */
+  function getToolPath(key) {
+    var p = window.location.pathname.includes('/pages/') ? '' : 'pages/';
+    var map = {
+      dashboard: window.location.pathname.includes('/pages/') ? '../index.html' : 'index.html',
+      monitoramento: p+'monitoramento.html', tasks: p+'tasks.html',
+      kanban: p+'kanban.html', briefing: p+'briefing-team.html',
+      tutorials: p+'tutorials.html',
+      ekklesia: p+'ekklesia.html',
+      'ekklesia-social': p+'ekklesia.html',
+      'ekklesia-embratur': p+'ekklesia-embratur.html',
+      'ekklesia-eleicoes': p+'ekklesia-eleicoes.html',
+      'ekklesia-press': p+'ekklesia-press.html',
+      'alertas-panoramas': p+'alertas-panoramas.html',
+      voxia: p+'voxia.html', gestao: p+'gestao.html',
+      irx: p+'pipeline-irx.html', guruquest: p+'guruquest.html',
+      studio: p+'studio.html', storydesk: p+'storydesk.html',
+      automacoes: p+'automacoes.html',
+      'irx-classificacao': p+'irx-classificacao.html',
+      reputaition: p+'reputaition.html',
+      escavador: p+'escavador-comentarios.html',
+      manifestacao: p+'manifestacao.html',
+      'ekklesia-multi': p+'ekklesia-multi.html',
+      'ekklesia-secom': p+'ekklesia-secom.html',
+      'ekklesia-para': p+'ekklesia-multi.html?client=governo-para',
+      'ekklesia-multi-radar': p+'ekklesia-multi-radar.html',
+      linkly: p+'linkly.html',
+    };
+    return map[key] || '#';
+  }
+
+  /* ── Avatar + saudação ── */
+  (function() {
+    try {
+      var auth  = JSON.parse(localStorage.getItem('hubnexus-auth') || '{}');
+      var nome  = auth.nome || (auth.email ? auth.email.split('@')[0].replace(/[._-]/g,' ').replace(/\b\w/g,function(l){return l.toUpperCase();}) : '');
+      var parts = nome.trim().split(/\s+/).filter(Boolean);
+      var firstName = parts[0] || 'equipe';
+      var initials = parts.length >= 2
+        ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase()
+        : (parts[0] ? parts[0].slice(0,2).toUpperCase() : '?');
+
+      var avatarEl = document.getElementById('topbar-avatar');
+      if (avatarEl) avatarEl.textContent = initials;
+
+      var greeting = (typeof getGreeting==='function') ? getGreeting() : 'Olá';
+      var timeCtx  = (typeof getTimeContext==='function') ? getTimeContext() : '';
+      var timeQ    = (typeof getTimeQuestion==='function') ? getTimeQuestion() : 'O que você quer fazer hoje?';
+
+      var el1 = document.getElementById('greetingTime');
+      var el2 = document.getElementById('greetingText');
+      var el3 = document.getElementById('greetingQuestion');
+      if (el1) el1.textContent = timeCtx;
+      if (el2) el2.innerHTML = greeting + ', <span class="accent">' + firstName + '.</span>';
+      if (el3) el3.textContent = timeQ;
+    } catch(e) { console.warn('greeting:', e); }
+  })();
+
+  /* ── Sugestões ── */
+  (function() {
+    var SUGS = [
+      {text:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="5" r="2.5"/><path d="M3 14c0-3 2-5 5-5s5 2 5 5"/><path d="M11 7l2 1-1 2"/></svg> Analisar um político',       q:'analisar político score influência'},
+      {text:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="3" width="3" height="10" rx="1"/><rect x="6.5" y="1.5" width="3" height="13" rx="1"/><rect x="11" y="5" width="3" height="8" rx="1"/></svg> Ver minhas demandas',         q:'organizar demandas kanban'},
+      {text:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 8 C4 8 4.5 5 5.5 5 C6.5 5 7 11 8 11 C9 11 9.5 5 10.5 5 C11.5 5 12 8 13 8"/><path d="M1.5 6.5 L0.5 8 L1.5 9.5"/><path d="M14.5 6.5 L15.5 8 L14.5 9.5"/></svg> Diagnóstico de IA',           q:'como aparecemos na IA'},
+      {text:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M4 8 C4.5 8 5 5.5 6 5.5 C7 5.5 7.5 10.5 8.5 10.5 C9.5 10.5 10 8 10.5 8 C11 8 11.5 8 12 8"/></svg> Monitoramento do dia',        q:'monitoramento diário cliente'},
+      {text:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 12 L8 4 L12 8"/><circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="8" cy="4" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg> Classificar influenciadores', q:'classificar influenciadores lista'},
+      {text:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 6 L8 3 L14 6 L8 9 Z"/><path d="M5 8 L5 12 C5 13 6.5 14 8 14 C9.5 14 11 13 11 12 L11 8"/><line x1="14" y1="6" x2="14" y2="11"/><circle cx="14" cy="12" r="1" fill="currentColor" stroke="none"/></svg> Aprender uma ferramenta',     q:'tutorial como usar ferramenta'},
+    ];
+    var el = document.getElementById('hubSuggestions');
+    if (!el) return;
+    el.innerHTML = SUGS.map(function(s) {
+      return '<div class="sug-pill" data-q="'+s.q+'">'+s.text+'</div>';
+    }).join('');
+    el.addEventListener('click', function(e) {
+      var pill = e.target.closest('.sug-pill');
+      if (!pill) return;
+      var inp = document.getElementById('hubSearchInput');
+      if (inp) { inp.value = pill.dataset.q; triggerHubSearch(); }
+    });
+  })();
+
+  /* ── Busca ── */
+  var _searchTimer;
+  function onHubSearchInput(val) {
+    clearTimeout(_searchTimer);
+    if (!val || !val.trim()) { hideResults(); return; }
+    _searchTimer = setTimeout(function(){ runSearch(val); }, 300);
+  }
+  function triggerHubSearch() {
+    var inp = document.getElementById('hubSearchInput');
+    if (inp && inp.value.trim()) runSearch(inp.value.trim());
+  }
+  function runSearch(q) {
+    var tools = (typeof hubSearch==='function') ? hubSearch(q, 5) : [];
+    showResults(tools, q);
+  }
+  function showResults(tools, q) {
+    var wrap = document.getElementById('hubSearchResults');
+    var list = document.getElementById('hubSearchResultsList');
+    if (!wrap || !list) return;
+    wrap.style.display = 'block';
+    if (!tools || !tools.length) {
+      list.innerHTML = '<div class="search-no-result">Nenhuma ferramenta para <b>'+q+'</b>. Tente: "análise", "demandas", "tutorial"…</div>';
+      return;
+    }
+    list.innerHTML = tools.map(function(t, i) {
+      return '<a class="search-result-tool" href="'+getToolPath(t.key)+'" data-key="'+t.key+'" style="animation-delay:'+(i*0.06)+'s">'
+        +'<div class="srt-icon hub-icon">'+(t.icon||t.emoji)+'</div>'
+        +'<div class="srt-info"><div class="srt-name">'+t.name+'</div><div class="srt-desc">'+t.label+'</div></div>'
+        +'<div class="srt-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>'
+        +'</a>';
+    }).join('');
+    list.addEventListener('click', function(e) {
+      var a = e.target.closest('[data-key]');
+      if (a) { if (typeof addRecentTool==='function') addRecentTool(a.dataset.key); }
+    });
+  }
+  function hideResults() {
+    var w = document.getElementById('hubSearchResults');
+    if (w) w.style.display = 'none';
+  }
+  document.addEventListener('click', function(e) {
+    var wrap = document.querySelector('.hub-search-wrap');
+    if (wrap && !wrap.contains(e.target)) hideResults();
+  });
+
+  /* ── Tools Grid ── */
+  function renderToolsGrid() {
+    var tools = (typeof getDisplayTools==='function') ? getDisplayTools() : [];
+    var favs  = (typeof getFavorites==='function') ? getFavorites() : [];
+    var grid  = document.getElementById('toolsGrid');
+    if (!grid) return;
+    if (!tools || !tools.length) {
+      grid.innerHTML = '<div style="grid-column:span 3;text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Carregando...</div>';
+      setTimeout(renderToolsGrid, 400); return;
+    }
+    grid.innerHTML = tools.map(function(t) {
+      var isFav = favs.indexOf(t.key) >= 0;
+      return '<a class="tool-card" href="'+getToolPath(t.key)+'" data-key="'+t.key+'"'
+        +' style="--tc-color-soft:'+t.colorSoft+'">'
+        +'<div class="tc-header">'
+        +'<div class="tc-icon hub-icon">'+(t.icon||t.emoji)+'</div>'
+        +'<button class="tc-fav'+(isFav?' active':'')+'" data-fav="'+t.key+'" title="Favoritar" '
+        +'onclick="event.preventDefault();event.stopPropagation();handleFav(this.dataset.fav)">'
+        +'<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
+        +'</button>'
+        +'</div>'
+        +'<div class="tc-name">'+t.name+'</div>'
+        +'<div class="tc-label">'+t.label+'</div>'
+        +'</a>';
+    }).join('');
+    grid.addEventListener('click', function(e) {
+      var a = e.target.closest('[data-key]');
+      if (a && !e.target.closest('[data-fav]') && typeof addRecentTool==='function') addRecentTool(a.dataset.key);
+    });
+  }
+  renderToolsGrid();
+
+  function handleFav(key) {
+    var isNowFav = (typeof toggleFavorite==='function') ? toggleFavorite(key) : false;
+    if (typeof showToast==='function') showToast(isNowFav ? '⭐ Favorito adicionado' : 'Favorito removido');
+    renderToolsGrid();
+  }
+
+  /* ── Ver todas ── */
+  function openAllTools() {
+    var overlay = document.getElementById('allToolsOverlay');
+    var body    = document.getElementById('allToolsBody');
+    if (!overlay || !body) return;
+    overlay.classList.add('open');
+    var tools = (typeof HUB_TOOLS!=='undefined') ? HUB_TOOLS : [];
+    var favs  = (typeof getFavorites==='function') ? getFavorites() : [];
+    body.innerHTML = tools.map(function(t) {
+      var isFav = favs.indexOf(t.key) >= 0;
+      return '<a class="all-tool-row" href="'+getToolPath(t.key)+'" data-key="'+t.key+'">'
+        +'<div class="atr-icon hub-icon">'+(t.icon||t.emoji)+'</div>'
+        +'<div class="atr-info"><div class="atr-name">'+t.name+'</div><div class="atr-label">'+t.label+'</div></div>'
+        +'<button class="tc-fav'+(isFav?' active':'')+'" data-fav="'+t.key+'" '
+        +'onclick="event.preventDefault();event.stopPropagation();handleFav(this.dataset.fav)">'
+        +'<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
+        +'</button></a>';
+    }).join('');
+    body.addEventListener('click', function(e) {
+      var a = e.target.closest('[data-key]');
+      if (a && !e.target.closest('[data-fav]') && typeof addRecentTool==='function') addRecentTool(a.dataset.key);
+    });
+  }
+  function closeAllTools() {
+    var o = document.getElementById('allToolsOverlay');
+    if (o) o.classList.remove('open');
+  }
+
+  /* ── Demandas urgentes ── */
+  function classificarPrazo(s) {
+    if (!s) return null;
+    var hoje = new Date(); hoje.setHours(0,0,0,0);
+    var amanha = new Date(hoje); amanha.setDate(hoje.getDate()+1);
+    var semana = new Date(hoje); semana.setDate(hoje.getDate()+7);
+    var d = new Date(s.includes('T') ? s : s+'T00:00:00'); d.setHours(0,0,0,0);
+    if (d < hoje) return 'atrasado';
+    if (d.getTime()===hoje.getTime()) return 'hoje';
+    if (d.getTime()===amanha.getTime()) return 'amanha';
+    if (d <= semana) return 'semana';
+    return null;
+  }
+  function renderTopbarDemandas(kd, td) {
+    var userEmail = '';
+    var userName  = '';
+    try {
+      var _auth = JSON.parse(localStorage.getItem('hubnexus-auth')||'{}');
+      userEmail = (_auth.email||'').toLowerCase().trim();
+      userName  = (_auth.nome||'').toLowerCase().trim();
+    } catch(e) {}
+
+    function _isMyCard(k) {
+      if (userName && k.responsavel && k.responsavel.toLowerCase().includes(userName)) return true;
+      var avs = Array.isArray(k.avatars) ? k.avatars : [];
+      for (var i=0; i<avs.length; i++) {
+        var av = avs[i]||{};
+        if (userEmail && av.email && av.email.toLowerCase()===userEmail) return true;
+        if (userName && av.nome && av.nome.toLowerCase().includes(userName)) return true;
+      }
+      return false;
+    }
+
+    var ativas = kd.filter(function(k){return k.col!=='concluido' && _isMyCard(k);})
+                   .concat(td.filter(function(t){return !t.done&&t.status!=='concluido';}));
+    var countEl = document.getElementById('topbarDemCount');
+    var numEl   = document.getElementById('demCountNum');
+    if (numEl) numEl.textContent = ativas.length;
+    if (countEl && ativas.length>0) countEl.style.display='flex';
+
+    var urgentes = ativas
+      .map(function(t){ return {titulo:t.titulo||t.title||'Sem título',prazo:t.data_entrega||t.data_revisao||t.prazo,_c:''};})
+      .filter(function(t){return t.prazo;})
+      .map(function(t){t._c=classificarPrazo(t.prazo);return t;})
+      .filter(function(t){return t._c==='atrasado'||t._c==='hoje';})
+      .sort(function(a,b){return a._c==='atrasado'?-1:1;})
+      .slice(0,4);
+
+    var chipsEl = document.getElementById('urgencyChips');
+    var urgWrap = document.getElementById('topbarUrgency');
+    if (urgentes.length && chipsEl) {
+      chipsEl.innerHTML = urgentes.map(function(t){
+        return '<div class="urg-chip '+t._c+'" onclick="navigate(\'kanban\')" title="'+t.titulo+'">'
+          +'<div class="urg-dot"></div><span>'+t.titulo+'</span></div>';
+      }).join('');
+      if (urgWrap) urgWrap.style.opacity='1';
+    }
+    var qEl = document.getElementById('greetingQuestion');
+    if (qEl && ativas.length>0) {
+      var atrasadas = ativas.filter(function(t){
+        var p=t.data_entrega||t.data_revisao||t.data_apresentacao||t.prazo;
+        return p && classificarPrazo(p)==='atrasado';
+      }).length;
+      var hoje_count = ativas.filter(function(t){
+        var p=t.data_entrega||t.data_revisao||t.data_apresentacao||t.prazo;
+        return p && classificarPrazo(p)==='hoje';
+      }).length;
+      var semana_count = ativas.filter(function(t){
+        var p=t.data_entrega||t.data_revisao||t.data_apresentacao||t.prazo;
+        return p && classificarPrazo(p)==='semana';
+      }).length;
+
+      var parts = [ativas.length+' demanda'+(ativas.length>1?'s':'')+' ativa'+(ativas.length>1?'s':'')];
+      if (atrasadas>0)    parts.push(atrasadas+' atrasada'+(atrasadas>1?'s':''));
+      if (hoje_count>0)   parts.push(hoje_count+' para hoje');
+      if (semana_count>0) parts.push(semana_count+' essa semana');
+      if (urgentes[0])    parts.push('mais urgente: '+urgentes[0].titulo);
+      qEl.textContent = parts.join(' · ');
+    } else if (qEl) {
+      var timeQ = (typeof getTimeQuestion==='function') ? getTimeQuestion() : 'O que você quer fazer hoje?';
+      qEl.textContent = timeQ;
+    }
+
+    nexinhoInjectAlerts(ativas);
+  }
+
+  /* ── Nexinho alert injection ── */
+  var _nexinhoAlertMsgs = [];
+  var _nexinhoAlertActive = false;
+
+  function nexinhoInjectAlerts(ativas) {
+    var alertMsgs = [];
+
+    var atrasadas = ativas.filter(function(t){
+      var p = t.data_entrega||t.data_revisao||t.data_apresentacao||t.prazo;
+      return p && classificarPrazo(p) === 'atrasado';
+    });
+    if (atrasadas.length > 0) {
+      var nomes = atrasadas.slice(0,3).map(function(t){return '"'+(t.titulo||t.title||'Sem título')+'"';}).join(', ');
+      alertMsgs.push({
+        text: '🚨 Atenção! Você tem '+atrasadas.length+' demanda'+(atrasadas.length>1?'s':'')
+              +' atrasada'+(atrasadas.length>1?'s':'')+': '+nomes
+              +(atrasadas.length>3?' e mais '+(atrasadas.length-3)+'...':'')+'.',
+        urgent: true
+      });
+    }
+
+    var hoje = ativas.filter(function(t){
+      var p = t.data_entrega||t.data_revisao||t.data_apresentacao||t.prazo;
+      return p && classificarPrazo(p) === 'hoje';
+    });
+    if (hoje.length > 0) {
+      var nomesHoje = hoje.slice(0,2).map(function(t){return '"'+(t.titulo||t.title||'Sem título')+'"';}).join(' e ');
+      alertMsgs.push({
+        text: '⏰ Hoje é o prazo de '+(hoje.length>2?hoje.length+' demandas':nomesHoje)
+              +'! Não esquece de entregar. 💪',
+        urgent: true
+      });
+    }
+
+    var amanha = ativas.filter(function(t){
+      var p = t.data_entrega||t.data_revisao||t.data_apresentacao||t.prazo;
+      return p && classificarPrazo(p) === 'amanha';
+    });
+    if (amanha.length > 0) {
+      var nomesAmanha = amanha.slice(0,2).map(function(t){return '"'+(t.titulo||t.title||'Sem título')+'"';}).join(' e ');
+      alertMsgs.push({
+        text: '📅 Fica de olho! Amanhã vencem '+(amanha.length>2?amanha.length+' demandas':nomesAmanha)+'.',
+        urgent: false
+      });
+    }
+
+    if (alertMsgs.length === 0) return;
+    _nexinhoAlertMsgs = alertMsgs;
+    setTimeout(function() { nexinhoShowAlert(0); }, 12000);
+  }
+
+  function nexinhoShowAlert(idx) {
+    if (!_nexinhoAlertMsgs[idx]) return;
+    var alert = _nexinhoAlertMsgs[idx];
+    var img    = document.getElementById('homeMascote');
+    var bubble = document.getElementById('nexinhoBubble');
+    var textEl = document.getElementById('nexinhoText');
+    if (!img || !bubble || !textEl) return;
+
+    textEl.style.opacity = '0';
+    setTimeout(function() {
+      textEl.textContent = alert.text;
+      textEl.style.color = alert.urgent ? 'var(--red)' : 'var(--text-primary)';
+      textEl.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      textEl.style.opacity = '1';
+      textEl.style.transform = 'translateY(0)';
+    }, 200);
+
+    for (var i = 0; i < 7; i++) {
+      var dot = document.getElementById('ndot-' + i);
+      if (dot) {
+        dot.style.background = alert.urgent ? 'var(--red)' : 'var(--amber)';
+        dot.style.width = i === 0 ? '18px' : '6px';
+      }
+    }
+
+    if (alert.urgent) {
+      bubble.style.animation = 'bubbleAlert 1.2s ease';
+      img.style.animation = 'nexinhoAlert 1.8s cubic-bezier(0.25,1,0.5,1)';
+      setTimeout(function() {
+        bubble.style.animation = '';
+        img.style.animation = 'mascoteFloat 4s ease-in-out infinite';
+        bubble.style.borderColor = 'var(--red)';
+        bubble.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.15), 0 4px 20px rgba(239,68,68,0.20)';
+      }, 1800);
+    } else {
+      img.style.animation = 'nexinhoShake 0.8s ease';
+      setTimeout(function() { img.style.animation = 'mascoteFloat 4s ease-in-out infinite'; }, 900);
+    }
+
+    if (idx + 1 < _nexinhoAlertMsgs.length) {
+      setTimeout(function() { nexinhoShowAlert(idx + 1); }, 10000);
+    } else {
+      setTimeout(function() {
+        var textEl2 = document.getElementById('nexinhoText');
+        if (textEl2) textEl2.style.color = 'var(--text-primary)';
+        var bubble2 = document.getElementById('nexinhoBubble');
+        if (bubble2) {
+          bubble2.style.borderColor = 'var(--accent)';
+          bubble2.style.boxShadow = '0 4px 20px hsla(var(--theme-h),70%,50%,0.20), var(--clay-shadow-sm)';
+        }
+        nexinhoSetMsg(0);
+      }, 10000);
+    }
+  }
+
+  (async function() {
+    try {
+      var auth  = JSON.parse(localStorage.getItem('hubnexus-auth')||'{}');
+      var email = auth.email||'';
+      var r = await Promise.all([
+        fetch('/api/kanban',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
+        fetch('/api/tasks'+(email?'?email='+encodeURIComponent(email):''),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+      ]);
+      var kd=Array.isArray(r[0])?r[0]:JSON.parse(localStorage.getItem('hubnexus_kanban')||'[]');
+      var td=Array.isArray(r[1])?r[1]:JSON.parse(localStorage.getItem('hubnexus_tasks')||'[]');
+      if(Array.isArray(r[0]))localStorage.setItem('hubnexus_kanban',JSON.stringify(kd));
+      if(Array.isArray(r[1]))localStorage.setItem('hubnexus_tasks',JSON.stringify(td));
+      renderTopbarDemandas(kd,td);
+    } catch(e){
+      renderTopbarDemandas(
+        JSON.parse(localStorage.getItem('hubnexus_kanban')||'[]'),
+        JSON.parse(localStorage.getItem('hubnexus_tasks')||'[]')
+      );
+    }
+  })();
+
+  /* ── Nexinho — mascote interativo ── */
+  var _nexinhoIdx = 0;
+  var _nexinhoMsgs = [
+    'Oie! 👋 Eu sou o Nexinho, mascote e guia do HUB.nexus. Fico feliz em te ver por aqui!',
+    'O HUB ganhou um novo visual! 🎨 Agora você pode escolher a cor do seu hub — clique no ícone de pincel no canto superior direito.',
+    'Tudo ficou mais intuitivo. Esta página inicial te mostra suas demandas urgentes, um campo de busca e os atalhos das suas ferramentas favoritas. Tudo em um só lugar! ✦',
+    'Você pode digitar aqui embaixo o que quer fazer — em linguagem natural, sem precisar saber o nome da ferramenta — e eu te indico a mais adequada. 🔍',
+    'As ferramentas têm estrelinhas! ⭐ Clique na estrelinha de qualquer card para fixar a ferramenta aqui na sua página inicial.',
+    'Clique em "Ver todas" para ver todas as ferramentas do HUB. Lá você também pode favoritar! 🛠️',
+    'E se quiser criar uma apresentação com os dados das suas análises, temos o Studio — nosso editor de slides próprio. 🎬'
+  ];
+
+  function nexinhoSetMsg(idx) {
+    _nexinhoIdx = idx;
+    var textEl = document.getElementById('nexinhoText');
+    var bubble = document.getElementById('nexinhoBubble');
+    if (!textEl) return;
+
+    textEl.style.opacity = '0';
+    textEl.style.transform = 'translateY(4px)';
+    setTimeout(function() {
+      textEl.textContent = _nexinhoMsgs[idx];
+      textEl.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      textEl.style.opacity = '1';
+      textEl.style.transform = 'translateY(0)';
+    }, 180);
+
+    for (var i = 0; i < 7; i++) {
+      var dot = document.getElementById('ndot-' + i);
+      if (dot) {
+        dot.style.background = i === idx ? 'var(--accent)' : 'var(--text-faint)';
+        dot.style.width  = i === idx ? '18px' : '6px';
+        dot.style.borderRadius = '3px';
+      }
+    }
+
+    var img = document.getElementById('homeMascote');
+    if (img) {
+      img.style.animation = 'mascoteJump 0.55s cubic-bezier(0.25,1,0.5,1)';
+      setTimeout(function() { img.style.animation = 'mascoteFloat 4s ease-in-out infinite'; }, 600);
+    }
+  }
+
+  function nexinhoNextMsg() {
+    nexinhoSetMsg((_nexinhoIdx + 1) % _nexinhoMsgs.length);
+  }
+
+  setTimeout(function() { nexinhoSetMsg(0); }, 400);
+  setInterval(function() { nexinhoNextMsg(); }, 8000);
+
+  /* ── Demands Popup ── */
+  function openDemandsPopup() {
+    var overlay = document.getElementById('demandsOverlay');
+    var panel   = document.getElementById('demandsPanel');
+    var list    = document.getElementById('demPopupList');
+    var countEl = document.getElementById('demPopupCount');
+    if (!overlay) return;
+
+    overlay.style.opacity = '1';
+    overlay.style.pointerEvents = 'all';
+    panel.style.transform = 'translateY(0) scale(1)';
+
+    var kd = JSON.parse(localStorage.getItem('hubnexus_kanban')||'[]');
+    var td = JSON.parse(localStorage.getItem('hubnexus_tasks')||'[]');
+
+    var userEmail = '', userName = '';
+    try {
+      var _auth2 = JSON.parse(localStorage.getItem('hubnexus-auth')||'{}');
+      userEmail = (_auth2.email||'').toLowerCase().trim();
+      userName  = (_auth2.nome||'').toLowerCase().trim();
+    } catch(e) {}
+
+    function isMyCard(k) {
+      if (userName && k.responsavel && k.responsavel.toLowerCase().includes(userName)) return true;
+      var avs = Array.isArray(k.avatars) ? k.avatars : [];
+      for (var i=0; i<avs.length; i++) {
+        var av = avs[i]||{};
+        if (userEmail && av.email && av.email.toLowerCase()===userEmail) return true;
+        if (userName && av.nome && av.nome.toLowerCase().includes(userName)) return true;
+      }
+      return false;
+    }
+
+    var STATUS_LABEL = {entrada:'Aguardando',producao:'Em Produção',revisao:'Em Revisão',teste:'Teste',entrega:'Entrega',concluido:'Concluído'};
+    var STATUS_COLOR = {entrada:'var(--blue)',producao:'var(--green)',revisao:'var(--amber)',teste:'var(--purple)',entrega:'var(--accent)',concluido:'var(--green)'};
+
+    function prazoTag(p) {
+      if (!p) return '';
+      var cl = classificarPrazo(p);
+      if (cl === 'atrasado') return '<span style="font-size:9px;font-weight:700;color:var(--red);background:rgba(239,68,68,.12);padding:1px 6px;border-radius:4px;flex-shrink:0;">Atrasado</span>';
+      if (cl === 'hoje')     return '<span style="font-size:9px;font-weight:700;color:var(--amber);background:rgba(245,158,11,.12);padding:1px 6px;border-radius:4px;flex-shrink:0;">Hoje</span>';
+      if (cl === 'amanha')   return '<span style="font-size:9px;font-weight:700;color:var(--blue);background:rgba(59,130,246,.12);padding:1px 6px;border-radius:4px;flex-shrink:0;">Amanhã</span>';
+      return '';
+    }
+
+    var ROW_STYLE = 'display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:var(--r-md);background:var(--bg);border:1.5px solid rgba(255,255,255,.55);box-shadow:var(--clay-shadow-sm);cursor:pointer;transition:border-color .15s,transform .15s;';
+
+    var minhas      = kd.filter(function(k){ return k.col!=='concluido' && isMyCard(k); });
+    var minhasTasks = td.filter(function(t){ return !t.done && t.status!=='concluido'; });
+
+    if (countEl) countEl.textContent = (minhas.length + minhasTasks.length) + ' ativas';
+
+    if (!minhas.length && !minhasTasks.length) {
+      list.innerHTML = '<div style="text-align:center;padding:24px;font-size:13px;color:var(--text-muted);">Nenhuma demanda ativa 🎉</div>';
+      return;
+    }
+
+    var html = '';
+
+    if (minhas.length) {
+      html += '<div style="font-family:var(--font-ui);font-size:9px;font-weight:800;color:var(--text-muted);letter-spacing:.6px;text-transform:uppercase;padding:4px 2px 6px;">Kanban</div>';
+      html += minhas.map(function(k) {
+        var kid   = k.id || '';
+        var prazo = k.data_entrega||k.data_revisao||k.data_apresentacao||k.prazo||'';
+        var col   = STATUS_LABEL[k.col] || k.col || '—';
+        var color = STATUS_COLOR[k.col] || 'var(--text-muted)';
+        var title = (k.title||k.titulo||'Sem título').replace(/"/g,'&quot;');
+        return '<div class="dem-pop-row" data-target="kanban" data-kid="'+kid+'" style="'+ROW_STYLE+'">'
+          +'<div style="width:7px;height:7px;border-radius:50%;background:'+color+';flex-shrink:0;"></div>'
+          +'<div style="flex:1;min-width:0;">'
+          +'<div style="font-family:var(--font-ui);font-size:12px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+title+'</div>'
+          +'<div style="font-size:10px;color:var(--text-muted);margin-top:1px;">'+col+(k.tipo?' · '+k.tipo:'')+'</div>'
+          +'</div>'
+          +prazoTag(prazo)
+          +(kid?'<button class="dem-del-btn" data-kid="'+kid+'" title="Remover" style="width:24px;height:24px;border-radius:6px;border:1.5px solid rgba(239,68,68,.30);background:rgba(239,68,68,.08);color:var(--red);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>':'')
+          +'</div>';
+      }).join('');
+    }
+
+    if (minhasTasks.length) {
+      html += '<div style="font-family:var(--font-ui);font-size:9px;font-weight:800;color:var(--text-muted);letter-spacing:.6px;text-transform:uppercase;padding:10px 2px 6px;border-top:1px solid var(--bg-2);margin-top:6px;">Tarefas pessoais</div>';
+      html += minhasTasks.map(function(t) {
+        var prazo = t.prazo||'';
+        var title = (t.titulo||t.title||'Tarefa').replace(/"/g,'&quot;');
+        return '<div class="dem-pop-row" data-target="tasks" style="'+ROW_STYLE+'">'
+          +'<div style="width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;"></div>'
+          +'<div style="flex:1;min-width:0;">'
+          +'<div style="font-family:var(--font-ui);font-size:12px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+title+'</div>'
+          +'<div style="font-size:10px;color:var(--text-muted);margin-top:1px;">Pessoal</div>'
+          +'</div>'
+          +prazoTag(prazo)
+          +'</div>';
+      }).join('');
+    }
+
+    list.innerHTML = html;
+
+    list.addEventListener('mouseover', function(e) {
+      var row = e.target.closest('.dem-pop-row');
+      if (row) { row.style.borderColor='var(--accent)'; row.style.transform='translateX(3px)'; }
+    });
+    list.addEventListener('mouseout', function(e) {
+      var row = e.target.closest('.dem-pop-row');
+      if (row) { row.style.borderColor='rgba(255,255,255,.55)'; row.style.transform=''; }
+    });
+
+    list.addEventListener('click', function(e) {
+      var delBtn = e.target.closest('.dem-del-btn');
+      if (delBtn) { deleteKanbanCard(delBtn.dataset.kid); return; }
+      var row = e.target.closest('.dem-pop-row');
+      if (!row) return;
+      closeDemandsPopup();
+      if (row.dataset.target === 'kanban') {
+        window.location.href = 'pages/kanban.html' + (row.dataset.kid ? '?card='+row.dataset.kid : '');
+      } else {
+        window.location.href = 'pages/tasks.html';
+      }
+    });
+  }
+
+  function closeDemandsPopup() {
+    var overlay = document.getElementById('demandsOverlay');
+    var panel   = document.getElementById('demandsPanel');
+    if (!overlay) return;
+    overlay.style.opacity = '0';
+    overlay.style.pointerEvents = 'none';
+    panel.style.transform = 'translateY(-12px) scale(0.96)';
+  }
+
+  async function deleteKanbanCard(id) {
+    if (!confirm('Remover este card do banco de dados?')) return;
+    try {
+      var res = await fetch('/api/kanban?id='+encodeURIComponent(id), {method:'DELETE'});
+      if (res.ok) {
+        var kd = JSON.parse(localStorage.getItem('hubnexus_kanban')||'[]');
+        kd = kd.filter(function(k){ return k.id != id; });
+        localStorage.setItem('hubnexus_kanban', JSON.stringify(kd));
+        showToast('Card removido ✓');
+        openDemandsPopup();
+        renderTopbarDemandas(kd, JSON.parse(localStorage.getItem('hubnexus_tasks')||'[]'));
+      } else {
+        showToast('Erro ao remover. Tente novamente.');
+      }
+    } catch(e) {
+      showToast('Erro de conexão.');
+    }
+  }
+
+  function homeMascoteClick() { nexinhoNextMsg(); }
+  </script>
+</body>
+</html>

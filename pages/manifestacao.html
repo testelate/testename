@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HUB.nexus — Análise de Manifestações</title>
+<script>
+  // Evita FOUC: aplica a cor de tema salva antes do CSS carregar (mesmo padrão das outras páginas do hub)
+  (function(){
+    try{
+      var h=localStorage.getItem('hubnexus-theme-color')||'#FF6500';
+      var hex=h.replace('#','');
+      var r=parseInt(hex.slice(0,2),16)/255,g=parseInt(hex.slice(2,4),16)/255,b=parseInt(hex.slice(4,6),16)/255;
+      var max=Math.max(r,g,b),min=Math.min(r,g,b),hh=0,s=0,l=(max+min)/2;
+      if(max!==min){var d=max-min;s=l>.5?d/(2-max-min):d/(max+min);switch(max){case r:hh=((g-b)/d+(g<b?6:0))/6;break;case g:hh=((b-r)/d+2)/6;break;case b:hh=((r-g)/d+4)/6;break;}}
+      var root=document.documentElement;
+      root.style.setProperty('--theme-h',Math.round(hh*360));
+      root.style.setProperty('--theme-s',Math.round(s*100)+'%');
+      root.style.setProperty('--theme-l',Math.round(l*100)+'%');
+    }catch(e){}
+  })();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="../css/global.css"/>
+<style>
+  body{overflow-y:auto;overflow-x:hidden;height:auto;min-height:100vh;}
+
+  .mf-wrap{max-width:1080px;margin:0 auto;padding:24px 24px 80px;}
+
+  /* Stepper */
+  .mf-steps{display:flex;margin:0 0 28px;border-radius:var(--r-2xl);overflow:hidden;background:var(--surface);box-shadow:var(--clay-shadow);border:1.5px solid rgba(255,255,255,0.70);}
+  body.dark .mf-steps{border-color:rgba(255,255,255,0.06);}
+  .mf-step{flex:1;padding:16px 20px;font-family:var(--font-ui);font-size:13px;font-weight:600;color:var(--text-muted);display:flex;align-items:center;gap:10px;border-right:1.5px solid rgba(0,0,0,0.04);transition:all var(--t-normal);}
+  body.dark .mf-step{border-right-color:rgba(255,255,255,0.06);}
+  .mf-step:last-child{border-right:none;}
+  .mf-step .num{font-family:var(--font-ui);font-size:11px;font-weight:800;width:22px;height:22px;border-radius:50%;border:2px solid var(--text-faint);display:grid;place-items:center;flex:none;transition:all var(--t-normal);}
+  .mf-step.active{color:var(--accent-dark);background:var(--accent-soft);}
+  .mf-step.active .num{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .mf-step.done{color:var(--text-primary);}
+  .mf-step.done .num{background:var(--text-primary);color:var(--surface);border-color:var(--text-primary);}
+
+  .mf-panel{display:none;}
+  .mf-panel.show{display:block;animation:mfFade var(--t-slow);}
+  @keyframes mfFade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  .mf-card-lg{padding:32px;}
+  h2.mf-sec{font-family:var(--font-ui);font-size:18px;font-weight:750;margin:0 0 8px;color:var(--text-primary);}
+  p.mf-hint{font-family:var(--font-body);color:var(--text-secondary);font-size:14px;margin:0 0 24px;}
+
+  /* Dropzone */
+  .mf-drop{border:2.5px dashed var(--accent-mid);border-radius:var(--r-xl);padding:48px 24px;text-align:center;cursor:pointer;background:var(--surface-2);box-shadow:var(--clay-shadow-pressed);transition:all var(--t-normal);}
+  .mf-drop:hover,.mf-drop.over{border-color:var(--accent);background:var(--accent-soft);transform:scale(1.01);}
+  .mf-drop .big{font-family:var(--font-ui);font-size:15px;font-weight:700;margin-bottom:6px;color:var(--text-primary);}
+  .mf-drop .small{font-family:var(--font-body);font-size:13px;color:var(--text-secondary);}
+
+  .mf-filechip{margin-top:20px;font-family:var(--font-ui);font-size:12px;font-weight:700;background:var(--accent-soft);color:var(--accent-dark);display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:var(--r-pill);box-shadow:var(--clay-shadow-sm);border:1.5px solid rgba(255,255,255,0.70);}
+  body.dark .mf-filechip{border-color:rgba(255,255,255,0.06);}
+
+  .mf-meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin:24px 0;}
+  .mf-meta-grid div{background:var(--surface-2);padding:16px 20px;border-radius:var(--r-lg);box-shadow:var(--clay-shadow);border:1.5px solid rgba(255,255,255,0.70);}
+  body.dark .mf-meta-grid div{border-color:rgba(255,255,255,0.06);}
+  .mf-meta-grid .k{font-family:var(--font-ui);text-transform:uppercase;font-size:10px;font-weight:800;letter-spacing:0.8px;color:var(--text-muted);margin-bottom:4px;display:block;}
+  .mf-meta-grid .v{font-family:var(--font-ui);font-size:18px;font-weight:750;color:var(--text-primary);}
+
+  .mf-row-actions{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap;align-items:center;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important;box-shadow:var(--clay-shadow-sm)!important;background:var(--text-faint)!important;color:var(--text-muted)!important;}
+
+  /* Progresso */
+  .mf-bar{height:12px;background:var(--bg-2);border-radius:var(--r-pill);box-shadow:var(--clay-shadow-pressed);overflow:hidden;margin:24px 0 12px;border:1.5px solid rgba(0,0,0,0.03);}
+  body.dark .mf-bar{border-color:rgba(255,255,255,0.03);}
+  .mf-bar>i{display:block;height:100%;width:0;background:var(--accent);border-radius:var(--r-pill);transition:width var(--t-normal);}
+  .mf-progress-label{font-family:var(--font-ui);font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;}
+  .mf-live-feed{margin-top:24px;max-height:280px;overflow-y:auto;border-radius:var(--r-lg);border:1.5px solid rgba(0,0,0,0.05);background:var(--surface-2);padding:12px 18px;box-shadow:var(--clay-shadow-pressed);}
+  body.dark .mf-live-feed{border-color:rgba(255,255,255,0.06);}
+  .mf-feed-row{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1.5px solid rgba(0,0,0,0.04);font-size:13.5px;font-family:var(--font-body);}
+  body.dark .mf-feed-row{border-bottom-color:rgba(255,255,255,0.04);}
+  .mf-feed-row:last-child{border-bottom:none;}
+  .mf-feed-row .tag{font-family:var(--font-ui);font-size:10px;font-weight:800;padding:3px 8px;border-radius:var(--r-pill);flex:none;letter-spacing:0.5px;box-shadow:var(--clay-shadow-sm);}
+
+  /* Revisão */
+  .mf-review-head{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:24px;}
+  .mf-counters{display:flex;gap:12px;flex-wrap:wrap;}
+  .mf-counter{background:var(--surface);border-radius:var(--r-lg);padding:10px 16px;min-width:96px;box-shadow:var(--clay-shadow);border:1.5px solid rgba(255,255,255,0.70);font-family:var(--font-body);font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;text-align:center;}
+  body.dark .mf-counter{border-color:rgba(255,255,255,0.06);}
+  .mf-counter b{font-family:var(--font-ui);font-size:18px;font-weight:800;color:var(--text-primary);display:block;margin-bottom:2px;}
+
+  .mf-filters{display:flex;gap:8px;flex-wrap:wrap;background:var(--surface-2);padding:6px;border-radius:var(--r-pill);box-shadow:var(--clay-shadow-pressed);}
+  .mf-filters button{padding:6px 14px;font-size:12px;font-weight:700;background:transparent;color:var(--text-secondary);border:none;box-shadow:none;border-radius:var(--r-pill);font-family:var(--font-ui);cursor:pointer;transition:all var(--t-fast);}
+  .mf-filters button:hover{background:rgba(0,0,0,0.03);color:var(--text-primary);}
+  body.dark .mf-filters button:hover{background:rgba(255,255,255,0.04);}
+  .mf-filters button.on{background:var(--accent);color:#fff;box-shadow:var(--clay-shadow-accent);}
+
+  .mf-item{background:var(--surface);border:1.5px solid rgba(255,255,255,0.70);border-radius:var(--r-xl);padding:24px;margin-bottom:16px;box-shadow:var(--clay-shadow);transition:all var(--t-normal);outline:none;}
+  body.dark .mf-item{border-color:rgba(255,255,255,0.06);}
+  .mf-item:focus-within,.mf-item:focus{border-color:var(--accent);box-shadow:var(--clay-shadow-lg),0 0 0 3px hsla(var(--theme-h),80%,55%,0.15);}
+  .mf-item:hover{transform:translateY(-2px);box-shadow:var(--clay-shadow-lg);}
+  .mf-item.reviewed{opacity:0.85;border-color:var(--accent-mid);}
+  .mf-item.err{border-color:var(--red);background:hsla(0,100%,50%,0.03);}
+
+  .mf-item-top{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;}
+  .mf-item-title{font-family:var(--font-ui);font-weight:700;font-size:15px;margin:0;color:var(--text-primary);}
+  .mf-item-meta{font-family:var(--font-ui);font-size:10px;font-weight:800;color:var(--text-muted);letter-spacing:0.5px;margin-top:6px;text-transform:uppercase;}
+
+  .mf-verdict-pill{font-family:var(--font-ui);font-size:10px;font-weight:800;letter-spacing:0.8px;padding:4px 12px;border-radius:var(--r-pill);flex:none;text-transform:uppercase;box-shadow:var(--clay-shadow-sm);border:1.5px solid rgba(255,255,255,0.70);}
+  body.dark .mf-verdict-pill{border-color:rgba(255,255,255,0.06);}
+  .mf-pill-sim{background:var(--accent-soft);color:var(--accent-dark);}
+  .mf-pill-nao{background:var(--bg-2);color:var(--text-secondary);}
+
+  .mf-evidence{margin-top:16px;padding:12px 18px;background:var(--surface-2);border-left:4px solid var(--accent);border-radius:0 var(--r-lg) var(--r-lg) 0;font-size:14px;color:var(--text-primary);box-shadow:var(--clay-shadow-pressed);line-height:1.6;}
+  .mf-evidence.empty{border-left-color:var(--text-faint);color:var(--text-muted);font-style:italic;}
+
+  .mf-who{font-size:13px;margin-top:12px;color:var(--text-secondary);}
+  .mf-who span{font-family:var(--font-ui);font-weight:700;color:var(--accent-dark);background:var(--accent-soft);padding:2px 6px;border-radius:var(--r-sm);}
+
+  .mf-expand{font-family:var(--font-ui);font-size:12px;font-weight:700;color:var(--accent-dark);cursor:pointer;margin-top:12px;display:inline-block;border-bottom:1.5px dotted var(--accent);}
+  .mf-fulltext{margin-top:12px;padding:16px;background:var(--surface-2);border-radius:var(--r-lg);border:1.5px solid rgba(0,0,0,0.04);font-size:13.5px;color:var(--text-secondary);max-height:200px;overflow-y:auto;white-space:pre-wrap;display:none;box-shadow:var(--clay-shadow-pressed);}
+  body.dark .mf-fulltext{border-color:rgba(255,255,255,0.04);}
+
+  .mf-decision{display:flex;gap:10px;margin-top:20px;align-items:center;flex-wrap:wrap;}
+  .mf-decision .btn{padding:8px 16px;font-size:12px;}
+  .btn-mf-reject{background:var(--surface);color:var(--red);border:1.5px solid var(--red);box-shadow:var(--clay-shadow-sm);}
+  .btn-mf-reject:hover{background:hsla(0,100%,50%,0.05);color:var(--red);border-color:var(--red);}
+  .mf-decision .state{font-family:var(--font-ui);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;margin-left:4px;color:var(--text-muted);}
+  .mf-item.reviewed .mf-decision .state{color:var(--accent-dark);}
+
+  .mf-sticky-export{position:sticky;bottom:16px;background:var(--surface);padding:18px 22px;border-radius:var(--r-xl);border:1.5px solid rgba(255,255,255,0.70);box-shadow:var(--clay-shadow-lg);margin-top:28px;display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap;z-index:40;}
+  body.dark .mf-sticky-export{border-color:rgba(255,255,255,0.06);}
+  label.mf-check{display:flex;gap:10px;align-items:center;font-size:13px;color:var(--text-secondary);cursor:pointer;user-select:none;}
+  label.mf-check input[type="checkbox"]{width:16px;height:16px;border-radius:var(--r-sm);accent-color:var(--accent);cursor:pointer;}
+
+  .mf-loader-card{text-align:center;padding:48px 24px;}
+  .mf-spinner{width:48px;height:48px;border:4px solid var(--accent-soft);border-top-color:var(--accent);border-radius:50%;margin:0 auto 24px;animation:mfSpin 1s infinite linear;box-shadow:var(--clay-shadow-sm);}
+  @keyframes mfSpin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+
+  .mf-kbd-tip{margin:16px 0;font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .mf-kbd-tip kbd{font-family:var(--font-ui);font-weight:700;background:var(--surface-2);border:1.5px solid rgba(0,0,0,0.08);box-shadow:var(--clay-shadow-sm);border-radius:var(--r-sm);padding:2px 6px;font-size:11px;color:var(--text-primary);}
+  body.dark .mf-kbd-tip kbd{border-color:rgba(255,255,255,0.08);}
+
+  .mf-err-banner{background:hsla(0,100%,50%,0.05);color:var(--red);border:1.5px solid var(--red);padding:16px 20px;border-radius:var(--r-lg);font-size:14px;margin-bottom:24px;display:none;font-family:var(--font-body);}
+</style>
+</head>
+<body>
+
+<div id="navbar-container"></div>
+
+<div class="mf-wrap">
+
+  <div class="mf-steps" id="mfSteps">
+    <div class="mf-step active" data-s="1"><span class="num">1</span> Enviar planilha</div>
+    <div class="mf-step" data-s="2"><span class="num">2</span> Análise por IA</div>
+    <div class="mf-step" data-s="3"><span class="num">3</span> Revisão</div>
+    <div class="mf-step" data-s="4"><span class="num">4</span> Exportar</div>
+  </div>
+
+  <div class="mf-err-banner" id="mfErrBanner"></div>
+
+  <!-- ETAPA 1 -->
+  <section class="mf-panel show" id="mfp1">
+    <div class="card mf-card-lg">
+      <h2 class="mf-sec">Envie a planilha de notícias</h2>
+      <p class="mf-hint">Aceita .xlsx com as colunas <b>Publicação</b> (texto da matéria) e <b>CENA</b>. A coluna <b>Manifestação</b> será inserida automaticamente antes de CENA. O arquivo é lido direto no navegador — nada é enviado para nenhum servidor além da chamada de classificação por linha ao Gemini.</p>
+      <div class="mf-drop" id="mfDrop">
+        <div class="big">Arraste o arquivo aqui ou clique para selecionar</div>
+        <div class="small">Formato .xlsx · até 25 MB</div>
+        <input type="file" id="mfFileInput" accept=".xlsx,.xls" hidden/>
+      </div>
+      <div id="mfFileInfo"></div>
+      <div class="mf-meta-grid" id="mfMetaGrid" style="display:none;"></div>
+      <div class="mf-row-actions">
+        <button class="btn btn-primary" id="mfToAnalyze" disabled>Analisar com IA</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ETAPA 2 -->
+  <section class="mf-panel" id="mfp2">
+    <div class="card mf-card-lg">
+      <h2 class="mf-sec">Analisando as matérias</h2>
+      <p class="mf-hint">O Gemini avalia cada texto e separa quem <b>se manifesta</b> (tem fala) de quem é apenas <b>mencionado</b>.</p>
+      <div class="mf-bar"><i id="mfBarFill"></i></div>
+      <div class="mf-progress-label" id="mfProgressLabel">Preparando…</div>
+      <div class="mf-live-feed" id="mfLiveFeed"></div>
+    </div>
+  </section>
+
+  <!-- ETAPA 3 -->
+  <section class="mf-panel" id="mfp3">
+    <div class="mf-review-head">
+      <div class="mf-counters">
+        <div class="mf-counter"><b id="mfCTotal">0</b>Total</div>
+        <div class="mf-counter"><b id="mfCReviewed">0</b>Revisados</div>
+        <div class="mf-counter"><b id="mfCPending">0</b>Pendentes</div>
+        <div class="mf-counter"><b id="mfCSim">0</b>Manifestação</div>
+        <div class="mf-counter"><b id="mfCNao">0</b>Menção</div>
+      </div>
+      <div class="mf-filters" id="mfFilters">
+        <button class="on" data-f="all">Todos</button>
+        <button data-f="pending">Pendentes</button>
+        <button data-f="sim">Só manifestações</button>
+        <button data-f="nao">Só menções</button>
+        <button data-f="err">Com erro</button>
+      </div>
+    </div>
+    <div class="mf-kbd-tip">Atalhos: <kbd>A</kbd> aprovar · <kbd>R</kbd> reprovar · <kbd>↓</kbd> próximo · clique no card para focar</div>
+    <button class="btn btn-ghost" id="mfApproveAll" style="margin:14px 0;">Aprovar todos os pendentes</button>
+    <div id="mfReviewList"></div>
+    <div class="mf-sticky-export">
+      <label class="mf-check"><input type="checkbox" id="mfAuditCheck"/> Incluir colunas de auditoria (porta-voz, tipo, trecho)</label>
+      <button class="btn btn-primary" id="mfExportBtn" disabled>Exportar planilha</button>
+      <span class="mf-progress-label" id="mfExportNote"></span>
+    </div>
+  </section>
+
+  <!-- ETAPA 4 -->
+  <section class="mf-panel" id="mfp4">
+    <div class="card mf-card-lg mf-loader-card">
+      <div class="mf-spinner"></div>
+      <h2 class="mf-sec">Gerando sua planilha</h2>
+      <p class="mf-hint">Montando o arquivo final com as manifestações identificadas, direto no seu navegador…</p>
+    </div>
+  </section>
+
+</div>
+
+<script src="../js/utils.js"></script>
+<script src="../js/theme.js"></script>
+<script>
+/* ── Init padrão do HUB ── */
+checkAuth();
+initMode();
+document.getElementById('navbar-container').innerHTML = renderNavbar('manifestacao');
+if (typeof initTheme === 'function') { initTheme(); updateModeButtons(); }
+if (typeof setNavLabel === 'function') setNavLabel('Análise de Manifestações');
+
+/* ══════════════════════════════════════════════════════════
+   Detector de Manifestação — lógica da ferramenta
+   Upload, classificação (via /api/manifestacao/classificar)
+   e exportação acontecem 100% no navegador (XLSX client-side),
+   seguindo o padrão do resto do HUB.nexus.
+   ══════════════════════════════════════════════════════════ */
+const $ = (s) => document.querySelector(s);
+const mfErrBanner = $('#mfErrBanner');
+function mfShowErr(msg){ mfErrBanner.textContent = msg; mfErrBanner.style.display = 'block'; }
+function mfClearErr(){ mfErrBanner.style.display = 'none'; }
+function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+let JOB = null;   // {sheetName, headers, rows, originalName, colPublicacao, colCena, colPortaVozes, colTitulo, colTipoMidia}
+let ROWS = [];    // estado por linha: {idx, titulo, tipoMidia, erro, listaVazia, tipo, trecho, quem, manifestacao, reviewed}
+let FILTER = 'all';
+
+function gotoStep(n){
+  document.querySelectorAll('.mf-panel').forEach(p=>p.classList.remove('show'));
+  const p = $('#mfp'+n);
+  if(p) p.classList.add('show');
+  document.querySelectorAll('.mf-step').forEach(s=>{
+    const v = +s.dataset.s;
+    s.classList.toggle('active', v===n);
+    s.classList.toggle('done', v<n);
+  });
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ---------- Detecção de colunas (mesmas regras do detector original) ---------- */
+function getCol(headers, possible){
+  return headers.find(h => possible.includes(String(h).trim())) || null;
+}
+function getPublicacaoColumn(h){ return getCol(h, ['Publicação','Publicacao','Texto','Matéria','Materia','Conteúdo','Conteudo','publicação','publicacao']); }
+function getCenaColumn(h){ return getCol(h, ['CENA','Cena','cena']); }
+function getPortaVozesColumn(h){ return getCol(h, ['Porta-vozes','Porta-vozes1','Porta-voz','Porta-Vozes','p.porta_voz','porta-vozes','porta-vozes1','porta-voz']); }
+function getTituloColumn(h){ return getCol(h, ['Título','Titulo','título','titulo','Manchete','manchete']); }
+function getTipoMidiaColumn(h){ return getCol(h, ['Tipo de mídia','Tipo de midia','tipo de mídia','tipo de midia','Meio','meio','Veículo','veículo','Veiculo','veiculo']); }
+function splitPortaVozes(raw){
+  if(!raw || !String(raw).trim()) return [];
+  return String(raw).split(/;|\n/).map(s=>s.trim()).filter(Boolean);
+}
+
+/* ---------- ETAPA 1: upload (lido no navegador via SheetJS) ---------- */
+const mfDrop = $('#mfDrop'), mfFileInput = $('#mfFileInput');
+mfDrop.addEventListener('click', ()=>mfFileInput.click());
+mfDrop.addEventListener('dragover', e=>{e.preventDefault(); mfDrop.classList.add('over');});
+mfDrop.addEventListener('dragleave', ()=>mfDrop.classList.remove('over'));
+mfDrop.addEventListener('drop', e=>{
+  e.preventDefault(); mfDrop.classList.remove('over');
+  if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+mfFileInput.addEventListener('change', e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); });
+
+async function handleFile(file){
+  mfClearErr();
+  $('#mfFileInfo').innerHTML = `<div class="mf-filechip">📄 ${escapeHtml(file.name)}</div>`;
+  try{
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const sheetName = wb.SheetNames[0];
+    const sheet = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    if(rows.length === 0) throw new Error('Planilha vazia.');
+
+    const headers = Object.keys(rows[0]);
+    const colPublicacao = getPublicacaoColumn(headers);
+    if(!colPublicacao) throw new Error("Coluna obrigatória contendo o texto ('Publicação' ou similar) não encontrada na planilha.");
+
+    const colCena = getCenaColumn(headers);
+    const colPortaVozes = getPortaVozesColumn(headers);
+    const colTitulo = getTituloColumn(headers);
+    const colTipoMidia = getTipoMidiaColumn(headers);
+
+    JOB = {
+      sheetName, headers, rows,
+      originalName: file.name.replace(/\.(xlsx|xls)$/i, ''),
+      colPublicacao, colCena, colPortaVozes, colTitulo, colTipoMidia,
+    };
+
+    const mg = $('#mfMetaGrid');
+    mg.style.display = 'grid';
+    mg.innerHTML = `
+      <div><div class="k">Linhas</div><div class="v">${rows.length}</div></div>
+      <div><div class="k">Coluna CENA</div><div class="v">${colCena ? 'posição '+(headers.indexOf(colCena)+1) : '—'}</div></div>
+      <div><div class="k">Porta-vozes</div><div class="v">${colPortaVozes ? 'sim' : '—'}</div></div>
+      <div><div class="k">Aba</div><div class="v" style="font-size:14px">${escapeHtml(sheetName)}</div></div>`;
+    $('#mfToAnalyze').disabled = false;
+    showToast('Planilha carregada com sucesso!');
+  }catch(e){
+    mfShowErr(e.message);
+    showToast('Falha ao carregar a planilha.');
+  }
+}
+
+$('#mfToAnalyze').addEventListener('click', startAnalyze);
+
+/* ---------- ETAPA 2: análise (chamada sequencial por linha) ---------- */
+async function classificarLinha(texto, portaVozes){
+  const r = await fetch('/api/manifestacao/classificar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ texto, portaVozes }),
+  });
+  const data = await r.json();
+  if(!r.ok || data.error) throw new Error(data.error || 'Falha na classificação.');
+  return data;
+}
+
+async function startAnalyze(){
+  gotoStep(2);
+  ROWS = [];
+  const feed = $('#mfLiveFeed'); feed.innerHTML = '';
+  showToast('Iniciando análise com IA...');
+
+  const total = JOB.rows.length;
+  for(let i=0;i<total;i++){
+    const row = JOB.rows[i];
+    const texto = String(JOB.colPublicacao ? row[JOB.colPublicacao] || '' : '').trim();
+    const lista = JOB.colPortaVozes ? splitPortaVozes(row[JOB.colPortaVozes]) : [];
+    const titulo = JOB.colTitulo ? (row[JOB.colTitulo] || '(sem título)') : '(sem título)';
+    const tipoMidia = JOB.colTipoMidia ? (row[JOB.colTipoMidia] || '') : '';
+
+    let result;
+    if(!texto){
+      result = { idx:i, titulo, tipoMidia, erro:'Publicação vazia', listaVazia: lista.length===0, sim:false, tipo:'Menção apenas', trecho:'', quem:'' };
+    } else if(lista.length === 0){
+      result = { idx:i, titulo, tipoMidia, erro:'Sem porta-voz definido nesta linha', listaVazia:true, sim:false, tipo:'Menção apenas', trecho:'', quem:'' };
+    } else {
+      try{
+        const parsed = await classificarLinha(texto, lista);
+        const sim = parsed.algum_porta_voz_se_manifesta === 'Sim';
+        const quem = (parsed.porta_vozes||[]).filter(p=>p.manifesta==='Sim');
+        const principal = quem[0];
+        result = {
+          idx:i, titulo, tipoMidia, erro:null, listaVazia:false, sim,
+          tipo: principal ? principal.tipo : (sim ? 'Indireta' : 'Menção apenas'),
+          trecho: principal ? principal.trecho_evidencia : '',
+          quem: parsed.porta_vozes_que_falaram || quem.map(p=>p.nome).join('; '),
+        };
+      }catch(e){
+        result = { idx:i, titulo, tipoMidia, erro:e.message, listaVazia:false, sim:false, tipo:'Menção apenas', trecho:'', quem:'' };
+      }
+      await sleep(300); // gentil com o rate-limit do Gemini
+    }
+
+    ROWS.push({
+      idx: result.idx, titulo: result.titulo, tipoMidia: result.tipoMidia,
+      erro: result.erro, listaVazia: result.listaVazia,
+      tipo: result.tipo, trecho: result.trecho, quem: result.quem,
+      manifestacao: result.sim ? 'Sim' : 'Não',
+      reviewed: false,
+    });
+
+    const pct = Math.round((i+1)/total*100);
+    $('#mfBarFill').style.width = pct+'%';
+    $('#mfProgressLabel').textContent = `Analisando ${i+1} / ${total}`;
+
+    const fr = document.createElement('div');
+    fr.className = 'mf-feed-row';
+    const tag = result.erro ? `<span class="tag" style="background:hsla(0,100%,50%,0.1);color:var(--red)">ERRO</span>`
+      : result.sim ? `<span class="tag mf-pill-sim">SIM</span>` : `<span class="tag mf-pill-nao">NÃO</span>`;
+    fr.innerHTML = `${tag}<span>${escapeHtml(result.titulo)}</span>`;
+    feed.prepend(fr);
+  }
+
+  buildReview();
+  gotoStep(3);
+  showToast('Análise concluída com sucesso!');
+}
+
+/* ---------- ETAPA 3: revisão ---------- */
+function buildReview(){
+  $('#mfCTotal').textContent = ROWS.length;
+  renderList();
+  updateCounters();
+}
+
+function renderList(){
+  const list = $('#mfReviewList'); list.innerHTML = '';
+  ROWS.forEach(row=>{
+    if(FILTER==='pending' && row.reviewed) return;
+    if(FILTER==='sim' && row.manifestacao!=='Sim') return;
+    if(FILTER==='nao' && row.manifestacao!=='Não') return;
+    if(FILTER==='err' && !row.erro) return;
+
+    const el = document.createElement('div');
+    el.className = 'mf-item' + (row.reviewed?' reviewed':'') + (row.erro?' err':'');
+    el.dataset.idx = row.idx; el.tabIndex = 0;
+    const pill = row.manifestacao==='Sim'
+      ? `<span class="mf-verdict-pill mf-pill-sim">Manifestação</span>`
+      : `<span class="mf-verdict-pill mf-pill-nao">Menção</span>`;
+    const ev = row.trecho
+      ? `<div class="mf-evidence">“${escapeHtml(row.trecho)}”</div>`
+      : `<div class="mf-evidence empty">Sem trecho de fala identificado.</div>`;
+    const who = row.quem
+      ? `<div class="mf-who">Quem falou: <span>${escapeHtml(row.quem)}</span> · tipo: <span>${escapeHtml(row.tipo)}</span></div>` : '';
+    const errNote = row.erro ? `<div class="mf-who" style="color:var(--red)">⚠ ${escapeHtml(row.erro)} — revisar manualmente</div>` : '';
+    const lv = row.listaVazia ? `<div class="mf-who" style="color:var(--red)">⚠ Sem porta-voz definido nesta linha — preencha a coluna Porta-vozes ou decida manualmente</div>` : '';
+
+    el.innerHTML = `
+      <div class="mf-item-top">
+        <div>
+          <p class="mf-item-title">${escapeHtml(row.titulo||'(sem título)')}</p>
+          <div class="mf-item-meta">${escapeHtml(row.tipoMidia||'—')} · linha ${row.idx+1}</div>
+        </div>
+        ${pill}
+      </div>
+      ${ev}${who}${errNote}${lv}
+      <span class="mf-expand" data-act="expand">ver texto completo</span>
+      <div class="mf-fulltext" id="mf-ft-${row.idx}"></div>
+      <div class="mf-decision">
+        <button class="btn btn-primary" data-act="approve">✓ Aprovar (${row.manifestacao})</button>
+        <button class="btn btn-mf-reject" data-act="reject">✗ Reprovar → vira ${row.manifestacao==='Sim'?'Não':'Sim'}</button>
+        <span class="state">${row.reviewed?'✓ revisado · '+row.manifestacao:'pendente'}</span>
+      </div>`;
+    list.appendChild(el);
+  });
+}
+
+$('#mfReviewList').addEventListener('click', e=>{
+  const item = e.target.closest('.mf-item'); if(!item) return;
+  const idx = +item.dataset.idx;
+  const row = ROWS.find(r=>r.idx===idx);
+  const act = e.target.dataset.act;
+  if(act==='approve') decide(row, false);
+  else if(act==='reject') decide(row, true);
+  else if(act==='expand'){
+    const ft = $('#mf-ft-'+idx);
+    if(ft.style.display==='block'){ ft.style.display='none'; }
+    else {
+      ft.style.display='block';
+      const texto = JOB.colPublicacao ? (JOB.rows[idx][JOB.colPublicacao] || '') : '';
+      ft.textContent = texto || '(texto vazio nesta linha)';
+    }
+  }
+});
+
+function decide(row, invert){
+  if(invert) {
+    row.manifestacao = row.manifestacao==='Sim' ? 'Não' : 'Sim';
+    showToast(`Classificação alterada para "${row.manifestacao}"`);
+  } else {
+    showToast('Classificação aprovada!');
+  }
+  row.reviewed = true;
+  renderList(); updateCounters();
+}
+
+function updateCounters(){
+  const rev = ROWS.filter(r=>r.reviewed).length;
+  $('#mfCReviewed').textContent = rev;
+  $('#mfCPending').textContent = ROWS.length - rev;
+  $('#mfCSim').textContent = ROWS.filter(r=>r.manifestacao==='Sim').length;
+  $('#mfCNao').textContent = ROWS.filter(r=>r.manifestacao==='Não').length;
+  const allDone = rev === ROWS.length && ROWS.length>0;
+  $('#mfExportBtn').disabled = !allDone;
+  $('#mfExportNote').textContent = allDone ? 'Tudo revisado — pronto para exportar.' : `${ROWS.length-rev} pendente(s) de revisão.`;
+}
+
+$('#mfFilters').addEventListener('click', e=>{
+  if(e.target.tagName!=='BUTTON') return;
+  document.querySelectorAll('#mfFilters button').forEach(b=>b.classList.remove('on'));
+  e.target.classList.add('on');
+  FILTER = e.target.dataset.f;
+  renderList();
+});
+
+$('#mfApproveAll').addEventListener('click', ()=>{
+  const pend = ROWS.filter(r=>!r.reviewed).length;
+  if(pend===0) return;
+  if(!confirm(`Aprovar as ${pend} sugestões pendentes como estão?`)) return;
+  ROWS.forEach(r=>{ if(!r.reviewed) r.reviewed = true; });
+  renderList(); updateCounters();
+  showToast(`${pend} sugestões aprovadas de uma vez!`);
+});
+
+/* atalhos de teclado */
+let mfFocusIdx = 0;
+document.addEventListener('keydown', e=>{
+  if(!$('#mfp3').classList.contains('show')) return;
+  const visible = [...document.querySelectorAll('#mfReviewList .mf-item')];
+  if(visible.length===0) return;
+  if(e.key==='ArrowDown'){ e.preventDefault(); mfFocusIdx=Math.min(mfFocusIdx+1,visible.length-1); visible[mfFocusIdx].focus(); }
+  else if(e.key==='ArrowUp'){ e.preventDefault(); mfFocusIdx=Math.max(mfFocusIdx-1,0); visible[mfFocusIdx].focus(); }
+  else if(e.key.toLowerCase()==='a' || e.key.toLowerCase()==='r'){
+    const el = document.activeElement.closest?.('.mf-item'); if(!el) return;
+    const row = ROWS.find(r=>r.idx===+el.dataset.idx);
+    decide(row, e.key.toLowerCase()==='r');
+  }
+});
+
+/* ---------- ETAPA 4: exportar (gerado no navegador via SheetJS) ---------- */
+$('#mfExportBtn').addEventListener('click', ()=>{
+  gotoStep(4);
+  showToast('Gerando a planilha...');
+  setTimeout(()=>{
+    try{
+      const incluirAuditoria = $('#mfAuditCheck').checked;
+      const colCena = JOB.colCena;
+      const cenaPos = colCena ? JOB.headers.indexOf(colCena) : -1;
+
+      const novasColunas = ['Manifestação'];
+      if(incluirAuditoria) novasColunas.push('Porta-voz que falou','Tipo de manifestação','Trecho-evidência');
+
+      const headersFinais = cenaPos>=0
+        ? [...JOB.headers.slice(0,cenaPos), ...novasColunas, ...JOB.headers.slice(cenaPos)]
+        : [...JOB.headers, ...novasColunas];
+
+      const verdictMap = new Map(ROWS.map(r=>[r.idx, r]));
+
+      const linhasFinais = JOB.rows.map((row, i)=>{
+        const v = verdictMap.get(i) || {};
+        const out = {};
+        const copiarFaixa = (faixa)=>{ for(const h of faixa) out[h] = row[h]; };
+        const inserirNovas = ()=>{
+          out['Manifestação'] = v.manifestacao === 'Sim' ? 'Sim' : 'Não';
+          if(incluirAuditoria){
+            out['Porta-voz que falou'] = v.manifestacao==='Sim' ? (v.quem||'') : '';
+            out['Tipo de manifestação'] = v.manifestacao==='Sim' ? (v.tipo||'') : 'Menção apenas';
+            out['Trecho-evidência'] = v.manifestacao==='Sim' ? (v.trecho||'') : '';
+          }
+        };
+        if(cenaPos>=0){
+          copiarFaixa(JOB.headers.slice(0,cenaPos));
+          inserirNovas();
+          copiarFaixa(JOB.headers.slice(cenaPos));
+        } else {
+          copiarFaixa(JOB.headers);
+          inserirNovas();
+        }
+        return out;
+      });
+
+      const ws = XLSX.utils.json_to_sheet(linhasFinais, { header: headersFinais });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, JOB.sheetName || 'Planilha1');
+      XLSX.writeFile(wb, (JOB.originalName||'planilha')+'_com_manifestacao.xlsx');
+
+      gotoStep(3);
+      showToast('Planilha gerada e baixada!');
+    }catch(e){
+      mfShowErr(e.message);
+      gotoStep(3);
+      showToast('Erro ao exportar.');
+    }
+  }, 250);
+});
+</script>
+</body>
+</html>

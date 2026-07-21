@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HUB.nexus — Pré-processamento Brandwatch</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/global.css"/>
+</head>
+<body style="display:flex;overflow:hidden;height:100vh;background:var(--bg);">
+  <div id="sidebar-container"></div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:40px;">
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--r-xl);padding:40px 48px;max-width:520px;width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;gap:20px;">
+      <div style="width:48px;height:48px;border-radius:12px;background:hsla(var(--theme-h),90%,50%,0.12);border:1px solid hsla(var(--theme-h),90%,50%,0.28);display:flex;align-items:center;justify-content:center;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--orange-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+      <div>
+        <div style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:8px;">Pré-processamento Brandwatch</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.7;">
+          Limpa e consolida a base bruta do Brandwatch (186 colunas) em um CSV leve.<br>
+          O script roda no Google Colab — sem instalar nada, direto no browser.
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:var(--r-md);padding:14px 16px;text-align:left;width:100%;">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin-bottom:10px;">O que o script faz</div>
+        <div style="font-size:11px;color:var(--text-secondary);display:flex;flex-direction:column;gap:6px;line-height:1.5;">
+          <div>✓ &nbsp;Lê o .xlsx bruto pulando as 6 linhas de metadados</div>
+          <div>✓ &nbsp;Consolida métricas em 5 colunas unificadas</div>
+          <div>✓ &nbsp;Remove ~140 colunas irrelevantes</div>
+          <div>✓ &nbsp;Faz download do CSV limpo automaticamente</div>
+        </div>
+      </div>
+      <a href="https://colab.research.google.com/drive/1nYyaLGCVUOLBkXsGjigCLHoIflkcqhAa?usp=sharing"
+         target="_blank"
+         style="display:inline-flex;align-items:center;gap:8px;padding:12px 28px;background:hsla(var(--theme-h),90%,50%,0.14);border:1px solid hsla(var(--theme-h),90%,50%,0.40);border-radius:var(--r-sm);font-size:12px;font-weight:700;color:var(--orange-2);text-decoration:none;transition:background .15s;width:100%;justify-content:center;"
+         onmouseover="this.style.background='hsla(var(--theme-h),90%,50%,0.24)'"
+         onmouseout="this.style.background='hsla(var(--theme-h),90%,50%,0.14)'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Abrir notebook no Google Colab
+      </a>
+      <a href="pipeline-irx.html" style="font-size:11px;color:var(--text-muted);text-decoration:none;">
+        ← Voltar para o Pipeline IRX
+      </a>
+    </div>
+  </div>
+  <script src="../js/utils.js"></script>
+  <script>document.getElementById('sidebar-container').innerHTML = renderSidebar('');</script>
+</body>
+</html>

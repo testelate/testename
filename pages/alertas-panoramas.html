@@ -1,0 +1,3104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HUB.nexus - Sentinela</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/global.css"/>
+  <style>
+    button, input, textarea, select { font-family:inherit; font-size:inherit; color:inherit; }
+    body { min-height:100vh; background:var(--bg); overflow:hidden; }
+    .main { height:calc(100vh - 58px); display:flex; flex-direction:column; overflow:hidden; }
+    .topbar { height:52px; display:flex; align-items:center; justify-content:space-between; gap:14px; padding:0 22px; border-bottom:1px solid rgba(255,255,255,0.07); background:rgba(255,255,255,0.03); backdrop-filter:blur(28px); flex-shrink:0; }
+    .topbar-left { display:flex; align-items:center; gap:10px; min-width:0; }
+    .topbar-subtitle { font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .topbar-right { display:flex; align-items:center; gap:8px; }
+    .tbtn { display:inline-flex; align-items:center; justify-content:center; gap:6px; height:30px; padding:0 12px; border-radius:var(--r-sm); border:1px solid rgba(255,255,255,0.10); background:rgba(255,255,255,0.05); color:var(--text-secondary); font-family:var(--font-ui); font-size:11px; font-weight:600; cursor:pointer; transition:all var(--t-slow); }
+    .tbtn:hover { background:rgba(255,255,255,0.10); color:var(--text-primary); }
+    .tbtn svg { width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .tbtn-primary { background:var(--accent-soft); border-color:hsla(var(--theme-h),90%,50%,0.30); color:var(--accent); }
+    .tbtn[disabled] { opacity:.45; cursor:not-allowed; }
+
+    .content { flex:1; overflow:auto; padding:20px 22px 30px; display:flex; flex-direction:column; align-items:center; gap:0; }
+    .screen { width:100%; max-width:880px; display:flex; flex-direction:column; gap:18px; }
+
+    .progress { display:flex; align-items:center; gap:6px; width:100%; max-width:880px; margin-bottom:2px; }
+    .progress-step { display:flex; align-items:center; gap:8px; padding:6px 10px 6px 6px; border-radius:var(--r-pill); border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); cursor:default; }
+    .progress-step.clickable { cursor:pointer; }
+    .progress-step.clickable:hover { background:rgba(255,255,255,0.07); }
+    .progress-num { width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); color:var(--text-secondary); font-size:10px; font-weight:800; flex-shrink:0; }
+    .progress-step.active .progress-num { background:var(--accent); color:#fff; }
+    .progress-step.done .progress-num { background:hsla(var(--theme-h),70%,45%,0.35); color:var(--text-primary); }
+    .progress-label { font-size:11px; font-weight:700; color:var(--text-muted); white-space:nowrap; }
+    .progress-step.active .progress-label { color:var(--text-primary); }
+    .progress-line { flex:1; height:1px; background:rgba(255,255,255,0.08); min-width:8px; }
+
+    .eyebrow { font-size:10px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; color:var(--accent); margin-bottom:6px; }
+    h1 { margin:0; font-size:24px; line-height:1.15; letter-spacing:0; color:var(--text-primary); }
+    .screen-copy { margin:8px 0 0; max-width:640px; font-size:12.5px; line-height:1.6; color:var(--text-secondary); }
+
+    /* ── Tela 1: empresa ── */
+    .search-wrap { display:flex; align-items:center; gap:9px; height:44px; padding:0 14px; border:1px solid rgba(255,255,255,0.10); border-radius:var(--r-pill); background:rgba(255,255,255,0.04); }
+    .search-wrap svg { width:15px; height:15px; fill:none; stroke:var(--text-muted); stroke-width:2; flex-shrink:0; }
+    .search-wrap input { width:100%; border:0; outline:0; background:transparent; color:var(--text-primary); font-family:var(--font-ui); font-size:13px; }
+    .search-wrap input::placeholder { color:var(--text-muted); }
+
+    .client-section-title { display:flex; align-items:center; gap:8px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; color:var(--text-muted); margin:2px 0 10px; }
+    .client-grid { display:grid; grid-template-columns:repeat(4, minmax(150px, 1fr)); gap:14px; }
+    .client-card {
+      position:relative; background:var(--surface); border-radius:var(--r-xl); padding:16px;
+      box-shadow:var(--clay-shadow); border:1.5px solid rgba(255,255,255,0.65);
+      cursor:pointer; transition:all var(--t-slow); overflow:hidden;
+    }
+    body.dark .client-card { border-color:rgba(255,255,255,0.06); }
+    .client-card:hover { transform:translateY(-5px) scale(1.02); box-shadow:var(--clay-shadow-lg); }
+    .client-card:active { transform:scale(0.97); box-shadow:var(--clay-shadow-pressed); }
+    .client-card-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; }
+    .client-icon {
+      width:38px; height:38px; border-radius:var(--r-md); display:flex; align-items:center; justify-content:center;
+      background:var(--accent-soft); color:var(--accent); box-shadow:var(--clay-shadow-sm); border:1.5px solid rgba(255,255,255,0.65); flex-shrink:0;
+    }
+    body.dark .client-icon { border-color:rgba(255,255,255,0.07); }
+    .client-icon svg { width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+    .client-name { font-size:13px; line-height:1.3; font-weight:800; color:var(--text-primary); margin-bottom:2px; word-break:break-word; }
+    .client-label { font-size:10.5px; color:var(--text-muted); }
+    .client-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+    .client-fav, .client-remove {
+      width:24px; height:24px; border-radius:var(--r-sm); background:var(--bg-2); border:1.5px solid rgba(255,255,255,0.50);
+      display:flex; align-items:center; justify-content:center; box-shadow:var(--clay-shadow-sm); cursor:pointer; transition:all var(--t-slow); flex-shrink:0;
+    }
+    body.dark .client-fav, body.dark .client-remove { background:hsl(var(--theme-h), 28%, 22%); border-color:hsla(var(--theme-h), 35%, 55%, 0.18); }
+    .client-fav svg, .client-remove svg { width:12px; height:12px; fill:none; stroke:var(--text-faint); stroke-width:2; transition:all var(--t-slow); }
+    .client-fav.active svg { fill:var(--amber, #ffb020); stroke:var(--amber, #ffb020); }
+    .client-remove:hover svg { stroke:#ff5c5c; }
+    .client-card.create { display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px; border-style:dashed; background:transparent; box-shadow:none; }
+    .client-card.create:hover { background:var(--accent-soft); box-shadow:var(--clay-shadow-sm); }
+    .create-plus { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--accent); color:#fff; font-size:20px; line-height:1; }
+    .create-label { font-size:12px; font-weight:800; color:var(--text-primary); }
+    .empty-hint { padding:22px; text-align:center; color:var(--text-muted); font-size:12px; line-height:1.6; border:1.5px dashed rgba(255,255,255,0.14); border-radius:var(--r-xl); }
+
+    .create-modal { position:fixed; inset:0; z-index:9999; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.55); backdrop-filter:blur(6px); padding:20px; }
+    .create-modal.open { display:flex; }
+    .create-modal-box { width:min(420px, 100%); border-radius:var(--r-xl); background:var(--surface); box-shadow:var(--clay-shadow-lg); border:1.5px solid rgba(255,255,255,0.65); padding:22px; display:flex; flex-direction:column; gap:14px; }
+    body.dark .create-modal-box { border-color:rgba(255,255,255,0.08); }
+    .create-modal-title { font-size:15px; font-weight:800; color:var(--text-primary); }
+    .create-modal input { height:44px; padding:0 16px; border-radius:var(--r-pill); border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.05); color:var(--text-primary); font-family:var(--font-ui); font-size:13px; outline:0; }
+    .create-modal-actions { display:flex; justify-content:flex-end; gap:8px; }
+
+    /* ── Tela 2: fonte ── */
+    .source-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; }
+    .source-card { border:1px solid rgba(255,255,255,0.08); border-radius:var(--r-lg); background:rgba(255,255,255,0.035); padding:16px; min-height:96px; display:grid; grid-template-columns:32px minmax(0,1fr); gap:12px; align-items:start; cursor:pointer; transition:all var(--t-slow); text-align:left; font-family:var(--font-ui); }
+    .source-card:hover, .source-card.active { border-color:hsla(var(--theme-h),90%,50%,0.34); background:var(--accent-soft); transform:translateY(-1px); }
+    .source-icon { width:28px; height:28px; border-radius:var(--r-sm); display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.07); color:var(--accent); }
+    .source-icon svg { width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .source-title { display:block; font-size:13.5px; font-weight:800; color:var(--text-primary); margin-bottom:4px; }
+    .source-copy { display:block; font-size:10.5px; line-height:1.5; color:var(--text-muted); }
+
+    .source-detail { border:1px solid rgba(255,255,255,0.08); border-radius:var(--r-lg); background:rgba(255,255,255,0.025); padding:16px; display:flex; flex-direction:column; gap:12px; }
+    .hybrid-tabs { display:inline-flex; padding:3px; gap:3px; border-radius:var(--r-md); border:1px solid rgba(255,255,255,0.09); background:rgba(255,255,255,0.04); align-self:flex-start; }
+    .hybrid-tab { height:28px; padding:0 13px; border:0; border-radius:var(--r-sm); background:transparent; color:var(--text-muted); font-family:var(--font-ui); font-size:11px; font-weight:700; cursor:pointer; }
+    .hybrid-tab.active { background:var(--accent-soft); color:var(--accent); }
+    .iframe-shell { position:relative; border:1px solid rgba(255,255,255,0.08); border-radius:var(--r-md); overflow:hidden; height:440px; background:rgba(0,0,0,0.10); }
+    .iframe-shell iframe { width:100%; height:100%; border:0; }
+    .iframe-status { display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--text-secondary); }
+    .status-dot { width:8px; height:8px; border-radius:50%; background:#ffb020; flex-shrink:0; }
+    .status-dot.ok { background:#22c88a; }
+    .manual-form { display:flex; flex-direction:column; gap:10px; }
+    .manual-form-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; }
+    .manual-form input, .manual-form textarea { width:100%; border:1px solid rgba(255,255,255,0.09); outline:0; background:rgba(255,255,255,0.04); border-radius:var(--r-md); padding:10px 12px; box-sizing:border-box; color:var(--text-primary); font-family:var(--font-ui); font-size:12px; }
+    .trending-upload-zone { border:2px dashed rgba(255,255,255,0.15); border-radius:var(--r-md); padding:20px; text-align:center; cursor:pointer; transition:all var(--t-fast); background:rgba(255,255,255,0.02); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; }
+    .trending-upload-zone:hover { border-color:var(--accent); background:rgba(255,255,255,0.04); }
+    .trending-preview-section { margin-top:16px; display:flex; flex-direction:column; gap:8px; }
+    .manual-form input::placeholder, .manual-form textarea::placeholder { color:var(--text-muted); }
+    .manual-form textarea { min-height:90px; resize:vertical; line-height:1.55; }
+    .manual-list { display:flex; flex-direction:column; gap:8px; margin-top:4px; }
+    .manual-item { border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.035); border-radius:var(--r-md); padding:10px 12px; display:flex; flex-direction:column; gap:5px; }
+    .manual-item-head { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12px; font-weight:800; color:var(--text-primary); }
+    .manual-item-meta { font-size:10.5px; color:var(--text-muted); }
+    .manual-item-link { font-size:10.5px; color:var(--accent); word-break:break-all; }
+    .manual-item-text { font-size:11px; color:var(--text-secondary); line-height:1.5; }
+
+    /* ── Tela 3: modelo ── */
+    .model-choice { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; }
+    .model-btn { border:1px solid rgba(255,255,255,0.08); border-radius:var(--r-lg); background:rgba(255,255,255,0.035); padding:18px; text-align:left; cursor:pointer; transition:all var(--t-slow); display:flex; flex-direction:column; gap:6px; }
+    .model-btn:hover, .model-btn.active { border-color:hsla(var(--theme-h),90%,50%,0.34); background:var(--accent-soft); }
+    .model-btn-kicker { font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:var(--accent); }
+    .model-btn-title { font-size:14px; font-weight:800; color:var(--text-primary); }
+    .model-btn-copy { font-size:11px; line-height:1.5; color:var(--text-muted); }
+    .model-panel { border:1px solid rgba(255,255,255,0.08); border-radius:var(--r-lg); background:rgba(255,255,255,0.025); padding:16px; display:flex; flex-direction:column; gap:12px; }
+    .model-panel textarea { width:100%; min-height:200px; border:1px solid rgba(255,255,255,0.09); outline:0; resize:vertical; background:rgba(255,255,255,0.04); border-radius:var(--r-md); padding:12px; box-sizing:border-box; color:var(--text-primary); font-family:var(--font-ui); font-size:12px; line-height:1.6; }
+    .alert-history-list { display:flex; flex-direction:column; gap:8px; }
+    .alert-history-item { border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.035); border-radius:var(--r-md); padding:10px 12px; display:flex; flex-direction:column; gap:6px; }
+    .alert-history-meta { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:10.5px; color:var(--text-muted); }
+    .alert-history-meta .tbtn { height:26px; padding:0 10px; font-size:10px; }
+    .alert-history-preview { font-size:11px; color:var(--text-secondary); line-height:1.5; }
+    .template-strip { display:flex; gap:8px; overflow-x:auto; padding-bottom:3px; }
+    .template-pill { flex:0 0 auto; border:1px solid rgba(255,255,255,0.09); background:rgba(255,255,255,0.04); border-radius:var(--r-pill); padding:8px 12px; color:var(--text-secondary); font-size:11px; font-weight:700; cursor:pointer; }
+    .template-pill.active { color:var(--accent); border-color:hsla(var(--theme-h),90%,50%,0.30); background:var(--accent-soft); }
+    .pieces-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; }
+    .piece-btn { min-height:60px; border:1px solid rgba(255,255,255,0.08); border-radius:var(--r-sm); background:rgba(255,255,255,0.035); padding:9px; text-align:left; color:var(--text-secondary); font-family:var(--font-ui); cursor:pointer; transition:all var(--t-slow); }
+    .piece-btn:hover { background:rgba(255,255,255,0.07); }
+    .piece-btn.active { border-color:hsla(var(--theme-h),90%,50%,0.34); background:var(--accent-soft); }
+    .piece-name { display:block; font-size:10.5px; font-weight:800; color:var(--text-primary); margin-bottom:4px; line-height:1.25; }
+    .piece-desc { display:block; font-size:9.5px; line-height:1.35; color:var(--text-muted); }
+
+    /* ── Tela 4: gerar ── */
+    .flow-box { border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.035); border-radius:var(--r-md); padding:14px; display:flex; flex-direction:column; gap:9px; }
+    .flow-box-title { font-size:11.5px; font-weight:800; color:var(--text-primary); }
+    .flow-box textarea { width:100%; min-height:160px; border:0; outline:0; resize:vertical; background:rgba(0,0,0,0.10); border-radius:var(--r-sm); padding:11px; box-sizing:border-box; color:var(--text-primary); font-family:var(--font-ui); font-size:11px; line-height:1.55; }
+    .flow-box input { width:100%; height:38px; border:0; outline:0; background:rgba(0,0,0,0.10); border-radius:var(--r-sm); padding:0 11px; box-sizing:border-box; color:var(--text-primary); font-family:var(--font-ui); font-size:12px; }
+    .preview-shell { border:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.10); border-radius:var(--r-md); padding:14px; min-height:100px; }
+    .preview-title { font-size:13px; font-weight:800; color:var(--text-primary); margin-bottom:10px; }
+    .preview-block { border-left:2px solid var(--accent); padding:0 0 0 10px; margin:10px 0; color:var(--text-secondary); font-size:11.5px; line-height:1.6; }
+
+    /* ── Rodapé de navegação ── */
+    .screen-actions { display:flex; align-items:center; justify-content:space-between; gap:12px; padding-top:6px; }
+    .screen-actions-right { display:flex; gap:8px; }
+    .selected-client-tag { display:flex; align-items:center; gap:8px; color:var(--text-muted); font-size:11px; }
+    .selected-client-tag strong { color:var(--text-primary); font-size:12.5px; }
+
+    /* ── Assistente flutuante ── */
+    .help-mascot { position:fixed; right:14px; bottom:76px; height:96px; width:auto; object-fit:contain; cursor:pointer; z-index:80; filter:drop-shadow(0 10px 20px rgba(0,0,0,0.35)); }
+    .help-fab { position:fixed; right:22px; bottom:22px; height:42px; padding:0 16px; border-radius:var(--r-pill); border:1px solid hsla(var(--theme-h),90%,50%,0.30); background:var(--accent); color:#fff; font-family:var(--font-ui); font-size:12px; font-weight:800; display:flex; align-items:center; gap:8px; cursor:pointer; box-shadow:0 12px 28px rgba(0,0,0,0.28); z-index:80; }
+    .help-fab svg { width:16px; height:16px; }
+    .chat-drawer { position:fixed; right:22px; bottom:182px; width:340px; max-height:70vh; border:1px solid rgba(255,255,255,0.10); border-radius:var(--r-lg); background:var(--bg); box-shadow:0 24px 60px rgba(0,0,0,0.36); display:none; flex-direction:column; overflow:hidden; z-index:80; }
+    .chat-drawer.open { display:flex; }
+    .chat-head { padding:11px 12px; border-bottom:1px solid rgba(255,255,255,0.07); display:flex; align-items:center; gap:10px; flex-shrink:0; }
+    .chat-avatar { width:34px; height:34px; border-radius:50%; background:var(--accent-soft); border:1px solid hsla(var(--theme-h),90%,50%,0.30); color:var(--accent); display:flex; align-items:center; justify-content:center; }
+    .chat-avatar svg { width:20px; height:20px; }
+    .chat-name { font-size:13px; font-weight:800; color:var(--text-primary); }
+    .chat-sub { font-size:10px; color:var(--text-muted); margin-top:2px; line-height:1.35; }
+    .chat-close { margin-left:auto; }
+    .chat-msgs { flex:1; min-height:120px; max-height:280px; overflow:auto; padding:11px; display:flex; flex-direction:column; gap:9px; }
+    .msg { display:flex; }
+    .msg.user { justify-content:flex-end; }
+    .bubble { max-width:88%; border-radius:var(--r-md); padding:9px 11px; font-size:11px; line-height:1.55; color:var(--text-secondary); border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.04); }
+    .msg.user .bubble { background:var(--accent-soft); border-color:hsla(var(--theme-h),90%,50%,0.22); color:var(--text-primary); }
+    .chat-chips { display:flex; gap:6px; padding:0 11px 8px; overflow-x:auto; flex-shrink:0; }
+    .chat-chip { flex:0 0 auto; border:1px solid rgba(255,255,255,0.08); border-radius:var(--r-pill); background:rgba(255,255,255,0.04); padding:6px 9px; font-size:10px; color:var(--text-secondary); cursor:pointer; }
+    .chat-input { padding:9px 11px 11px; border-top:1px solid rgba(255,255,255,0.07); flex-shrink:0; }
+    .chat-input-box { display:flex; align-items:flex-end; gap:8px; border:1px solid rgba(255,255,255,0.09); background:rgba(255,255,255,0.04); border-radius:var(--r-md); padding:8px; }
+    .chat-input-box textarea { flex:1; border:0; outline:0; background:transparent; resize:none; min-height:24px; max-height:92px; color:var(--text-primary); font-family:var(--font-ui); font-size:12px; line-height:1.5; }
+    .send-btn { width:30px; height:30px; border:0; border-radius:var(--r-sm); background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+    .send-btn svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+    .view-hidden { display:none !important; }
+
+    body.light .source-detail, body.light .model-panel, body.light .flow-box, body.light .preview-shell, body.light .chat-drawer, body.light .search-wrap, body.light .source-card, body.light .model-btn { border-color:rgba(180,100,40,0.14); background:rgba(255,255,255,0.62); }
+
+    @media (max-width: 920px) {
+      body { overflow:auto; }
+      .main { height:auto; min-height:calc(100vh - 58px); overflow:visible; }
+      .client-grid, .source-grid, .model-choice { grid-template-columns:repeat(2, minmax(0,1fr)); }
+      .pieces-grid { grid-template-columns:repeat(2, minmax(0,1fr)); }
+    }
+    @media (max-width: 620px) {
+      .topbar { padding:0 14px; }
+      .topbar-subtitle { display:none; }
+      .content { padding:16px 14px 24px; }
+      h1 { font-size:20px; }
+      .client-grid, .source-grid, .model-choice, .pieces-grid { grid-template-columns:1fr; }
+      .progress-label { display:none; }
+      .chat-drawer { left:14px; right:14px; width:auto; }
+      .help-fab { right:14px; }
+      .help-mascot { right:8px; height:76px; }
+    }
+  
+    /* ── Overlay de migração (bloqueia o uso e força ida para o novo link) ── */
+    .migr-overlay { position:fixed; inset:0; z-index:99999; display:flex; align-items:center; justify-content:center; padding:24px; background:radial-gradient(circle at 50% 30%, hsl(var(--theme-h),35%,10%), hsl(var(--theme-h),40%,5%) 70%); backdrop-filter:blur(10px); }
+    .migr-card { position:relative; max-width:560px; width:100%; text-align:center; background:hsl(var(--theme-h),24%,12%); border:1px solid hsla(var(--theme-h),90%,50%,0.30); border-radius:20px; padding:44px 36px 36px; box-shadow:0 30px 80px rgba(0,0,0,.6), 0 0 0 1px hsla(var(--theme-h),90%,50%,0.08); }
+    .migr-icon { width:64px; height:64px; margin:0 auto 20px; border-radius:50%; background:hsla(var(--theme-h),90%,50%,0.16); border:1px solid hsla(var(--theme-h),90%,50%,0.4); display:flex; align-items:center; justify-content:center; font-size:30px; }
+    .migr-title { font-size:19px; font-weight:700; color:var(--text-primary); margin-bottom:12px; letter-spacing:-.2px; }
+    .migr-desc { font-size:13.5px; line-height:1.65; color:var(--text-secondary); margin-bottom:26px; }
+    .migr-desc strong { color:var(--orange-2); }
+    .migr-cta { display:inline-flex; align-items:center; gap:8px; padding:13px 26px; background:var(--orange); color:#1a0d05; font-weight:700; font-size:13.5px; border-radius:var(--r-pill); text-decoration:none; box-shadow:0 6px 20px hsla(var(--theme-h),90%,50%,0.4); transition:transform .15s, box-shadow .15s; }
+    .migr-cta:hover { transform:translateY(-1px); box-shadow:0 8px 26px hsla(var(--theme-h),90%,50%,0.5); }
+    .migr-link-fallback { margin-top:16px; font-size:11px; color:var(--text-muted); word-break:break-all; }
+    .migr-link-fallback a { color:var(--orange-2); }
+    body.light .migr-card { background:#fff8f0; }
+</style>
+</head>
+<body>
+  <!-- Overlay bloqueante: impede o uso desta ferramenta e encaminha pro novo link -->
+  <div id="migrOverlay" class="migr-overlay">
+    <div class="migr-card">
+      <div class="migr-icon">🚀</div>
+      <div class="migr-title">Este fluxo mudou de endereço</div>
+      <div class="migr-desc">
+        O Sentinela agora vive em um <strong>novo link</strong>, com a IA já implementada de ponta a ponta — o processo ficou mais fácil e ainda mais rápido.<br/>Esta versão não está mais disponível para uso.
+      </div>
+      <a class="migr-cta" href="https://hub-dev.reputaition.nexus.fsb.com.br/alertas-panoramas">
+        Acessar novo Sentinela
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg>
+      </a>
+      <div class="migr-link-fallback">Se o botão não funcionar, acesse: <a href="https://hub-dev.reputaition.nexus.fsb.com.br/alertas-panoramas">hub-dev.reputaition.nexus.fsb.com.br/alertas-panoramas</a></div>
+    </div>
+  </div>
+
+  <div id="navbar-container"></div>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-subtitle">Criador de alertas e panoramas &middot; redes sociais e imprensa</span>
+      </div>
+      <div class="topbar-right">
+        <button class="tbtn" onclick="toggleMode()" title="Alternar modo">
+          <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        </button>
+        <button class="tbtn" id="restartBtn" onclick="restartFlow()" title="Recome&ccedil;ar">
+          <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Recome&ccedil;ar
+        </button>
+      </div>
+    </div>
+
+    <section class="content">
+
+      <!-- ═══ TELA 1: EMPRESA ═══ -->
+      <section id="clientView" class="screen">
+        <div>
+          <div class="eyebrow">Passo 1 de 4</div>
+          <h1>Para qual empresa voc&ecirc; quer criar um alerta?</h1>
+          <p class="screen-copy">Digite o nome, escolha entre favoritos/recentes ou crie uma nova empresa.</p>
+        </div>
+
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input id="clientSearchInput" type="text" placeholder="Buscar ou digitar o nome da empresa..." autocomplete="off" oninput="onClientSearch(this.value)" onkeydown="if(event.key==='Enter')chooseClient(null)"/>
+        </div>
+
+        <div id="searchCreateBlock"></div>
+
+        <div>
+          <div class="client-section-title">Criar</div>
+          <div class="client-grid">
+            <div class="client-card create" tabindex="0" role="button" onclick="openCreateClient()" onkeydown="if(event.key==='Enter')openCreateClient()">
+              <span class="create-plus">+</span>
+              <span class="create-label">Criar nova empresa</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="favoritesBlock"></div>
+        <div id="recentBlock"></div>
+        <div id="dbClientsBlock"></div>
+        <div id="emptyClientsBlock"></div>
+      </section>
+
+      <!-- ═══ TELA 2: FONTE ═══ -->
+      <section id="sourceView" class="screen view-hidden">
+        <div id="progressBar2" class="progress"></div>
+        <div>
+          <div class="eyebrow">Passo 2 de 4</div>
+          <h1>Qual a fonte dos dados?</h1>
+          <p class="screen-copy">Escolha uma base do Ekklesia, combine as duas fontes ou adicione links manualmente.</p>
+        </div>
+
+        <div class="source-grid">
+          <button class="source-card" data-source="social" onclick="selectSource('social')">
+            <span class="source-icon"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.7l6.8-4.4M8.6 13.3l6.8 4.4"/></svg></span>
+            <span>
+              <span class="source-title">Base Ekklesia Social</span>
+              <span class="source-copy">Carregue a base de redes sociais direto aqui, sem sair da tela.</span>
+            </span>
+          </button>
+          <button class="source-card" data-source="press" onclick="selectSource('press')">
+            <span class="source-icon"><svg viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 012-2h11a2 2 0 012 2v14"/><path d="M8 7h7M8 11h7M8 15h4"/></svg></span>
+            <span>
+              <span class="source-title">Base Ekklesia Press</span>
+              <span class="source-copy">Use clipping de imprensa tratado no Ekklesia Press.</span>
+            </span>
+          </button>
+          <button class="source-card" data-source="hibrido" onclick="selectSource('hibrido')">
+            <span class="source-icon"><svg viewBox="0 0 24 24"><path d="M17 3a2 2 0 012 2v6a2 2 0 01-2 2H9l-4 4V5a2 2 0 012-2z"/></svg></span>
+            <span>
+              <span class="source-title">H&iacute;brido (redes + imprensa)</span>
+              <span class="source-copy">Sobe as duas bases e combina no mesmo relat&oacute;rio.</span>
+            </span>
+          </button>
+          <button class="source-card" data-source="link" onclick="selectSource('link')">
+            <span class="source-icon"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.07 0l2.12-2.12a5 5 0 00-7.07-7.07L11 4.93"/><path d="M14 11a5 5 0 00-7.07 0L4.8 13.12a5 5 0 007.07 7.07L13 19.07"/></svg></span>
+            <span>
+              <span class="source-title">Adicionar links manualmente</span>
+              <span class="source-copy">Cole links de publica&ccedil;&otilde;es e informa&ccedil;&otilde;es avulsas.</span>
+            </span>
+          </button>
+          <button class="source-card" data-source="trending" onclick="selectSource('trending')">
+            <span class="source-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
+            <span>
+              <span class="source-title">Trending Topics X</span>
+              <span class="source-copy">Gere alertas de Trending Topics do X no formato padr&atilde;o com print.</span>
+            </span>
+          </button>
+        </div>
+
+        <div id="sourceDetail"></div>
+
+        <div class="screen-actions">
+          <button class="tbtn" onclick="goToView('client')">Voltar</button>
+          <div class="screen-actions-right">
+            <div class="selected-client-tag">Empresa: <strong id="selectedClientLabel2">-</strong></div>
+            <button class="tbtn tbtn-primary" id="sourceContinueBtn" onclick="advanceTo('model')" disabled>Continuar</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ TELA 3: MODELO ═══ -->
+      <section id="modelView" class="screen view-hidden">
+        <div id="progressBar3" class="progress"></div>
+        <div>
+          <div class="eyebrow">Passo 3 de 4</div>
+          <h1>Qual o modelo do relat&oacute;rio?</h1>
+          <p class="screen-copy">Reaproveite um modelo j&aacute; usado com esse cliente ou monte um novo com os blocos dispon&iacute;veis.</p>
+        </div>
+
+        <div class="model-choice">
+          <button class="model-btn" id="modelBtnExisting" onclick="selectModelMode('existing')">
+            <span class="model-btn-kicker">Op&ccedil;&atilde;o recomendada</span>
+            <span class="model-btn-title">J&aacute; existe um modelo pronto?</span>
+            <span class="model-btn-copy">Cole o texto de um alerta ou relat&oacute;rio j&aacute; enviado antes. A IA reproduz a mesma estrutura com os dados novos.</span>
+          </button>
+          <button class="model-btn" id="modelBtnNew" onclick="selectModelMode('new')">
+            <span class="model-btn-kicker">Do zero</span>
+            <span class="model-btn-title">Quer criar um modelo novo?</span>
+            <span class="model-btn-copy">Monte a estrutura escolhendo as se&ccedil;&otilde;es (blocos) que o relat&oacute;rio deve ter.</span>
+          </button>
+        </div>
+
+        <div id="modelDetail"></div>
+
+        <div class="screen-actions">
+          <button class="tbtn" onclick="goToView('source')">Voltar</button>
+          <button class="tbtn tbtn-primary" id="modelContinueBtn" onclick="advanceTo('generate')" disabled>Continuar</button>
+        </div>
+      </section>
+
+      <!-- ═══ TELA 4: GERAR ═══ -->
+      <section id="generateView" class="screen view-hidden">
+        <div id="progressBar4" class="progress"></div>
+        <div>
+          <div class="eyebrow">Passo 4 de 4</div>
+          <h1>Gerar e revisar</h1>
+          <p class="screen-copy">Copie o prompt para a IA externa (Gemini, ChatGPT, Claude ou NotebookLM), cole a resposta e revise o rascunho.</p>
+        </div>
+
+        <div class="flow-box" id="periodoFlowBox">
+          <div class="flow-box-title">Per&iacute;odo/recorte deste alerta</div>
+          <input id="periodoInput" type="text" placeholder="Ex: 20/06 manh&atilde; (08h-12h), ou 01 a 07/07/2026" oninput="periodoAtual=this.value;syncPrompt()"/>
+        </div>
+
+        <div class="flow-box" id="promptFlowBox">
+          <div class="flow-box-title">1. Prompt + publica&ccedil;&otilde;es da base</div>
+          <textarea id="promptBox" readonly></textarea>
+          <button class="tbtn tbtn-primary" id="btnDownloadPrompt" onclick="downloadPromptTxt()">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+            Baixar TXT (publica&ccedil;&otilde;es + prompt)
+          </button>
+        </div>
+
+        <div class="flow-box" id="responseFlowBox">
+          <div class="flow-box-title">2. Cole a resposta da IA</div>
+          <textarea id="externalResponse" placeholder="Cole aqui a resposta completa da IA externa..."></textarea>
+          <button class="tbtn" onclick="importExternalResponse()">Usar resposta no rascunho</button>
+        </div>
+
+        <div class="preview-shell">
+          <div class="preview-title" id="previewTitle">Rascunho</div>
+          <div id="previewBody"></div>
+        </div>
+
+        <div class="screen-actions">
+          <button class="tbtn" onclick="goToView('model')" id="btnGenerateBack">Voltar</button>
+          <button class="tbtn" onclick="backToCatalog()" id="btnBackToCatalog" style="display:none; background:rgba(255,255,255,0.06);">Voltar ao Catálogo</button>
+          <div class="screen-actions-right">
+            <button class="tbtn" id="btnCopyImageGenerate" onclick="copyTrendingImage()" style="display:none;">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              Copiar Print/Imagem
+            </button>
+            <button class="tbtn tbtn-primary" id="btnCopiarRascunhoFinal" onclick="copiarRascunhoFinal()">
+              <svg viewBox="0 0 24 24" width="13" height="13"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Copiar para enviar ao cliente
+            </button>
+            <button class="tbtn" id="btnSalvarAlerta" onclick="salvarAlertaNoHistorico(false)">Salvar alerta</button>
+            <button class="tbtn" id="btnMarcarPadraoEmpresa" onclick="salvarAlertaNoHistorico(true)" title="Os pr&oacute;ximos alertas desta empresa v&atilde;o carregar este automaticamente como modelo">Adicionar como padr&atilde;o da empresa</button>
+          </div>
+        </div>
+      </section>
+
+    </section>
+  </main>
+
+  <img class="help-mascot" src="../assets/logo-sentinela.gif" alt="Sentinela" onclick="toggleChat()"/>
+  <button class="help-fab" onclick="toggleChat()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    Precisa de ajuda?
+  </button>
+  <aside class="chat-drawer" id="chatDrawer">
+    <div class="chat-head">
+      <div class="chat-avatar">
+        <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="22" cy="40" r="10"/>
+          <circle cx="42" cy="40" r="10"/>
+          <path d="M22 30v-4a4 4 0 014-4h12a4 4 0 014 4v4"/>
+          <path d="M32 26v6"/>
+          <circle cx="22" cy="40" r="3" fill="currentColor" stroke="none"/>
+          <circle cx="42" cy="40" r="3" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div>
+        <div class="chat-name">Sentinela</div>
+        <div class="chat-sub">Me diga cliente, urg&ecirc;ncia e formato. Eu monto os m&oacute;dulos.</div>
+      </div>
+      <button class="tbtn chat-close" onclick="toggleChat()">Fechar</button>
+    </div>
+    <div class="chat-msgs" id="chatMsgs">
+      <div class="msg"><div class="bubble">Ol&aacute;! Me diga algo como &ldquo;preciso de um alerta curto para SECOM sobre esse pico de men&ccedil;&otilde;es&rdquo; ou &ldquo;quero um panorama semanal com sentimento, crescimento e links&rdquo;.</div></div>
+    </div>
+    <div class="chat-chips">
+      <button class="chat-chip" onclick="useChip('Quero um alerta curto, com contexto, risco e recomenda&ccedil;&atilde;o.')">Alerta curto</button>
+      <button class="chat-chip" onclick="useChip('Quero um panorama completo com abertura, sentimento, crescimento semanal e links.')">Panorama completo</button>
+      <button class="chat-chip" onclick="useChip('Use um tom executivo e objetivo para cliente p&uacute;blico.')">Tom executivo</button>
+    </div>
+    <div class="chat-input">
+      <div class="chat-input-box">
+        <textarea id="chatInput" rows="1" placeholder="Descreva o que precisa criar..." oninput="autoGrow(this)" onkeydown="handleChatKey(event)"></textarea>
+        <button class="send-btn" onclick="sendChat()" title="Enviar"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="create-modal" id="createClientModal" onclick="if(event.target===this)closeCreateClientModal()">
+    <div class="create-modal-box">
+      <div class="create-modal-title">Criar nova empresa</div>
+      <input id="createClientInput" type="text" placeholder="Nome da empresa..." autocomplete="off" onkeydown="if(event.key==='Enter')confirmCreateClient()"/>
+      <div class="create-modal-actions">
+        <button class="tbtn" onclick="closeCreateClientModal()">Cancelar</button>
+        <button class="tbtn tbtn-primary" onclick="confirmCreateClient()">Criar empresa</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Linkly Encurtador -->
+  <div class="create-modal" id="sentinelaLinklyModal" onclick="if(event.target===this)closeSentinelaLinklyModal()">
+    <div class="create-modal-box" style="width:480px; max-width:100%; gap:10px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+        <div class="create-modal-title">Linkly — Encurtador de Links</div>
+        <button onclick="closeSentinelaLinklyModal()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:16px; padding:0 4px;">✕</button>
+      </div>
+      <div style="height:190px; border-radius:8px; overflow:hidden; background:rgba(0,0,0,0.15); border:1px solid rgba(255,255,255,0.06);">
+        <iframe id="sentinelaLinklyIframe" style="width:100%; height:100%; border:none; background:transparent;"></iframe>
+      </div>
+      <div id="sentinelaLinklyResultContainer" style="display:none; flex-direction:column; gap:8px; margin-top:4px;">
+        <label style="font-size:11px; color:var(--text-muted); font-weight:700;">LINK CURTO GERADO:</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input id="sentinelaLinklyResultInput" type="text" readonly style="flex:1; height:34px; padding:0 10px; border-radius:6px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1); color:#fff; box-sizing:border-box; width:100%; font-size:12px; margin:0;" onclick="this.select();" />
+          <button class="tbtn tbtn-primary" onclick="copySentinelaLinklyResult()" style="height:34px; font-size:12px; font-weight:700; padding:0 14px; border-radius:6px; cursor:pointer; margin:0;">
+            Copiar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="../js/utils.js"></script>
+  <script src="../js/theme.js"></script>
+  <script>
+    if (!['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+      checkAuth();
+    }
+    initMode();
+    if (typeof initTheme === 'function') initTheme();
+    document.getElementById('navbar-container').innerHTML = renderNavbar('alertas-panoramas');
+    setNavLabel('Sentinela');
+
+    const templates = {
+    completo: {
+      nome: 'Completo WhatsApp',
+      titulo: 'Relatorio completo para WhatsApp',
+      pecas: ['topo_whatsapp', 'numeros_gerais', 'redes', 'narrativas', 'trends', 'citacao', 'impacto', 'maior_alcance', 'maior_engajamento'],
+    },
+    alerta: {
+      nome: 'Alerta WhatsApp',
+      titulo: 'Alerta acionavel para WhatsApp',
+      pecas: ['topo_whatsapp', 'numeros_gerais', 'redes', 'narrativas', 'trends', 'citacao', 'impacto', 'maior_alcance', 'maior_engajamento'],
+    },
+    panorama: {
+      nome: 'Panorama WhatsApp',
+      titulo: 'Panorama redes para WhatsApp',
+      pecas: ['topo_whatsapp', 'numeros_gerais', 'redes', 'narrativas', 'trends', 'citacao', 'impacto', 'maior_alcance', 'maior_engajamento'],
+    },
+    temperatura: {
+      nome: 'Temperatura de Redes',
+      titulo: 'Boletim de Temperatura de Redes',
+      pecas: ['topo_whatsapp', 'narrativas', 'maior_engajamento'],
+    },
+    trending: {
+      nome: 'Trending Topic X',
+      titulo: 'Mensagem formatada de Trending Topic do X',
+      pecas: ['trends'],
+    },
+  };
+
+    const pieces = [
+      { id:'cabecalho', nome:'Cabe&ccedil;alho', desc:'Tipo, cliente, tema e urg&ecirc;ncia.' },
+      { id:'abertura', nome:'Abertura curta', desc:'At&eacute; 300 caracteres, direto ao ponto.' },
+      { id:'fonte', nome:'Fonte/canal', desc:'Ve&iacute;culo, perfil, rede, editoria ou canal.' },
+      { id:'resumo', nome:'Resumo do fato', desc:'O que aconteceu, sem an&aacute;lise longa.' },
+      { id:'contexto', nome:'Contexto', desc:'Antecedente, programa, ator ou disputa.' },
+      { id:'metricas', nome:'M&eacute;tricas', desc:'Volume, alcance, intera&ccedil;&otilde;es, sentimento.' },
+      { id:'citacao', nome:'Cita&ccedil;&atilde;o', desc:'Trecho literal relevante, quando existir.' },
+      { id:'impacto', nome:'Impacto potencial', desc:'Risco, p&uacute;blico afetado e escala.' },
+      { id:'recomendacao', nome:'Recomenda&ccedil;&atilde;o', desc:'Pr&oacute;ximo passo ou encaminhamento.' },
+      { id:'links', nome:'Links/evid&ecirc;ncias', desc:'URLs, prints, posts ou clipping.' },
+      { id:'topo_whatsapp', nome:'Topo WhatsApp', desc:'Atualiza&ccedil;&atilde;o, panorama redes, tema em caixa alta, recorte e breve par&aacute;grafo inicial com as m&eacute;tricas de alcance potencial.' },
+      { id:'numeros_gerais', nome:'N&uacute;meros gerais', desc:'Volume, alcance, intera&ccedil;&otilde;es, varia&ccedil;&atilde;o e sentimento logo no in&iacute;cio.' },
+      { id:'narrativas', nome:'Principais narrativas', desc:'Resumo do fato e contexto em bullets executivos.' },
+      { id:'trends', nome:'Trending Topics', desc:'Presen&ccedil;a ou aus&ecirc;ncia do tema entre os principais assuntos do X.' },
+      { id:'maior_alcance', nome:'Publicadores Maior Alcance', desc:'Ranking com at&eacute; 10 links de maior alcance.' },
+      { id:'maior_engajamento', nome:'Publicadores Maior Engajamento', desc:'Ranking com at&eacute; 10 links de maior engajamento.' },
+    ];
+
+    const STEP_KEYS = ['client', 'source', 'model', 'generate'];
+    const STEP_LABELS = ['Empresa', 'Fonte', 'Modelo', 'Gerar'];
+
+    let customPromptPanelOpen = false;
+
+    const DEFAULT_TRENDING_PROMPT_SINGLE = `Você é um analista sênior de inteligência de comunicação da Nexus.
+
+Sua tarefa é pesquisar na internet sobre o assunto/termo do Trending Topic do X: "{termo}" para identificar o contexto/repercussão e dar um resumo curto.
+
+Instruções importantes:
+1. Pesquise na internet o que está acontecendo sobre o termo "{termo}".
+2. Identifique o motivo pelo qual este termo está nos Trending Topics do X hoje.
+3. Escreva um resumo muito curto da repercussão/contexto em apenas uma frase (geralmente começando com um verbo no gerúndio ou indicando o que os usuários estão fazendo, por exemplo: "repercutindo apoio ao presidente Lula", "após declarações sobre a economia", "com críticas à decisão do STF", etc.).
+4. O resumo curto deve se encaixar perfeitamente no final do modelo: "O termo \\"{termo}\\" está{posText} entre os assuntos mais comentados da rede, [RESUMO]."
+5. Responda APENAS com o texto do resumo curto (a repercussão/contexto), sem saudações, sem explicações extras, sem introdução e sem aspas adicionais, para que eu possa colar direto no sistema.`;
+
+    const DEFAULT_TRENDING_PROMPT_MULTI = `Você é um analista sênior de inteligência de comunicação da Nexus.
+
+Sua tarefa é pesquisar na internet sobre o contexto/repercussão dos seguintes termos que estão nos Trending Topics do X hoje:
+{termsListText}
+Instruções importantes:
+1. Para cada termo da lista acima, pesquise na internet o que está acontecendo e identifique o motivo pelo qual ele está nos assuntos mais comentados.
+2. Para cada termo, escreva um resumo muito curto da repercussão/contexto em apenas uma frase (geralmente começando com um verbo no gerúndio ou indicando o que os usuários estão fazendo, por exemplo: "repercutindo apoio ao presidente Lula", "após declarações sobre a economia", "com críticas à decisão do STF", etc.).
+3. Retorne as respostas EXATAMENTE no seguinte formato numerado (uma linha para cada termo, sem pular linhas adicionais e sem introduções ou explicações):
+[1] <resumo do primeiro termo>
+[2] <resumo do segundo termo>
+[3] <resumo do terceiro termo>
+... e assim por diante para todos os termos listados. O formato com colchetes [1], [2] é CRÍTICO para que o sistema consiga ler as respostas individualmente.`;
+
+    /* ─── Estado ─── */
+    let currentView = 'client';
+    let maxReached = 0;
+    let selectedClient = null;
+    let activeSource = null;
+    let hybridTab = 'social';
+    let sourceData = { social:null, press:null, manual:[] };
+    let modelMode = null;
+    let existingModelText = '';
+    let activeTemplate = 'completo';
+    let selectedPieces = new Set();
+    let periodoAtual = '';
+    let alertaAnteriorComparar = null;
+    let trendingImageBlob = null;
+    let trendingTermoVal = '';
+    let trendingPosicaoVal = '';
+    let trendingCategoriaVal = 'Assunto do Momento: Brasil';
+    let trendingAutoGenerateVal = true;
+    let trendingRepercussaoVal = '';
+    let trendsData = null;
+    let expandCatalog = false;
+    let trendingMultiModeVal = false;
+    let trendingListVal = [];
+
+    /* ─── Favoritos / recentes de empresa (mesmo padrao de js/hub-search.js) ─── */
+    const CLIENT_FAV_KEY = 'sentinela-fav-clients';
+    const CLIENT_RECENT_KEY = 'sentinela-recent-clients';
+
+    function getFavoriteClients() {
+      try { return JSON.parse(localStorage.getItem(CLIENT_FAV_KEY) || '[]'); } catch { return []; }
+    }
+    function toggleFavoriteClient(nome) {
+      const favs = getFavoriteClients();
+      const idx = favs.indexOf(nome);
+      if (idx >= 0) favs.splice(idx, 1);
+      else favs.push(nome);
+      localStorage.setItem(CLIENT_FAV_KEY, JSON.stringify(favs));
+      return favs.includes(nome);
+    }
+    function getRecentClients() {
+      try { return JSON.parse(localStorage.getItem(CLIENT_RECENT_KEY) || '[]'); } catch { return []; }
+    }
+    function addRecentClient(nome) {
+      const recents = getRecentClients().filter(n => n !== nome);
+      recents.unshift(nome);
+      localStorage.setItem(CLIENT_RECENT_KEY, JSON.stringify(recents.slice(0, 6)));
+    }
+    function removeClientEntry(nome) {
+      const favs = getFavoriteClients().filter(n => n !== nome);
+      localStorage.setItem(CLIENT_FAV_KEY, JSON.stringify(favs));
+      const recents = getRecentClients().filter(n => n !== nome);
+      localStorage.setItem(CLIENT_RECENT_KEY, JSON.stringify(recents));
+    }
+
+    /* ─── Clientes do Banco D1 e Customização de Prompts ─── */
+    let sentinelaClientsList = [];
+    let saveTimeout = null;
+
+    async function loadDbClients() {
+      try {
+        const res = await fetch('/api/alertas/clientes');
+        if (res.ok) {
+          const list = await res.json();
+          sentinelaClientsList = list || [];
+        }
+      } catch (e) {
+        console.error('Erro ao carregar clientes do banco:', e);
+      }
+      renderClientBlocks(document.getElementById('clientSearchInput')?.value || '');
+    }
+
+    async function saveClientToDb(nome, promptSingle = '', promptMulti = '') {
+      const existing = sentinelaClientsList.find(c => c.nome.toLowerCase() === nome.toLowerCase());
+      const pSingle = promptSingle !== '' ? promptSingle : (existing ? existing.prompt_single : '');
+      const pMulti = promptMulti !== '' ? promptMulti : (existing ? existing.prompt_multi : '');
+
+      try {
+        const res = await fetch('/api/alertas/clientes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome, prompt_single: pSingle, prompt_multi: pMulti })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok && data.cliente) {
+            const idx = sentinelaClientsList.findIndex(c => c.nome.toLowerCase() === nome.toLowerCase());
+            if (idx >= 0) {
+              sentinelaClientsList[idx] = data.cliente;
+            } else {
+              sentinelaClientsList.push(data.cliente);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Erro ao salvar empresa no banco:', e);
+      }
+    }
+
+    function toggleCustomPromptPanel() {
+      const panel = document.getElementById('customPromptPanel');
+      const btn = document.getElementById('btnToggleCustomPrompt');
+      if (!panel) return;
+      
+      customPromptPanelOpen = !customPromptPanelOpen;
+      panel.style.display = customPromptPanelOpen ? 'flex' : 'none';
+      if (btn) btn.textContent = customPromptPanelOpen ? 'Ocultar Prompt' : 'Editar Prompt da IA';
+    }
+
+    async function saveCustomPrompts() {
+      const client = selectedClient?.nome;
+      if (!client) return;
+      
+      const singleVal = document.getElementById('customPromptSingle')?.value || '';
+      const multiVal = document.getElementById('customPromptMulti')?.value || '';
+      
+      await saveClientToDb(client, singleVal, multiVal);
+      syncPrompt();
+    }
+
+    function debouncedSaveCustomPrompts() {
+      if (saveTimeout) clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => {
+        saveCustomPrompts();
+      }, 1000);
+    }
+
+    function loadCustomPrompts() {
+      const client = selectedClient?.nome;
+      const singleEl = document.getElementById('customPromptSingle');
+      const multiEl = document.getElementById('customPromptMulti');
+      
+      if (!singleEl || !multiEl) return;
+      
+      if (!client) {
+        singleEl.value = '';
+        multiEl.value = '';
+        return;
+      }
+      
+      const existing = sentinelaClientsList.find(c => c.nome.toLowerCase() === client.toLowerCase());
+      singleEl.value = existing ? existing.prompt_single : '';
+      multiEl.value = existing ? existing.prompt_multi : '';
+    }
+
+    /* ─── Progresso ─── */
+    function renderProgress(containerId) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      const activeIdx = STEP_KEYS.indexOf(currentView);
+      el.innerHTML = STEP_KEYS.map((key, i) => {
+        const state = i === activeIdx ? 'active' : (i < maxReached ? 'done' : '');
+        const clickable = i <= maxReached && i !== activeIdx;
+        const line = i < STEP_KEYS.length - 1 ? '<span class="progress-line"></span>' : '';
+        return `<button class="progress-step ${state} ${clickable ? 'clickable' : ''}" ${clickable ? `onclick="goToView('${key}')"` : 'disabled'}>
+          <span class="progress-num">${i + 1}</span><span class="progress-label">${STEP_LABELS[i]}</span>
+        </button>${line}`;
+      }).join('');
+    }
+
+    function goToView(key) {
+      const idx = STEP_KEYS.indexOf(key);
+      if (idx > maxReached) return;
+      STEP_KEYS.forEach(k => document.getElementById(k + 'View').classList.add('view-hidden'));
+      currentView = key;
+      document.getElementById(key + 'View').classList.remove('view-hidden');
+      ['progressBar2', 'progressBar3', 'progressBar4'].forEach(id => renderProgress(id));
+      
+      if (key === 'model') {
+        const modelChoice = document.querySelector('.model-choice');
+        if (activeSource === 'trending') {
+          if (modelChoice) modelChoice.style.display = 'none';
+          modelMode = 'new';
+          activeTemplate = 'trending';
+          selectedPieces = new Set(['trends']);
+          renderModelDetail();
+          updateModelContinue();
+        } else {
+          if (modelChoice) modelChoice.style.display = 'grid';
+          renderModelDetail();
+          updateModelContinue();
+        }
+      }
+      
+      if (key === 'generate') {
+        const pfb = document.getElementById('periodoFlowBox');
+        const prfb = document.getElementById('promptFlowBox');
+        const rfb = document.getElementById('responseFlowBox');
+        
+        const promptTitle = document.querySelector('#promptFlowBox .flow-box-title');
+        const promptBtn = document.getElementById('btnDownloadPrompt');
+        
+        const btnSalvar = document.getElementById('btnSalvarAlerta');
+        const btnPadrao = document.getElementById('btnMarcarPadraoEmpresa');
+        const btnCopyFinalDraft = document.getElementById('btnCopiarRascunhoFinal');
+        
+        if (activeSource === 'trending') {
+          if (pfb) pfb.style.display = 'none';
+          if (prfb) prfb.style.display = 'block';
+          if (rfb) rfb.style.display = 'block';
+          
+          if (promptTitle) promptTitle.innerHTML = '1. Prompt da IA (Pesquisa na Internet)';
+          if (promptBtn) promptBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2-2V4a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> Baixar TXT do Prompt';
+          
+          periodoAtual = new Date().toLocaleDateString('pt-BR');
+          syncPrompt();
+          renderPreview();
+          
+          const btnCopyImgGenerate = document.getElementById('btnCopyImageGenerate');
+          if (btnCopyImgGenerate) {
+            btnCopyImgGenerate.style.display = (!trendingMultiModeVal && trendingImageBlob) ? 'inline-flex' : 'none';
+          }
+          if (btnCopyFinalDraft) {
+            btnCopyFinalDraft.style.display = trendingMultiModeVal ? 'none' : 'inline-flex';
+          }
+          const btnBackToCatalog = document.getElementById('btnBackToCatalog');
+          const btnGenerateBack = document.getElementById('btnGenerateBack');
+          if (btnBackToCatalog) btnBackToCatalog.style.display = 'inline-flex';
+          if (btnGenerateBack) btnGenerateBack.style.display = 'none';
+          
+          if (btnSalvar) btnSalvar.style.display = 'none';
+          if (btnPadrao) btnPadrao.style.display = 'none';
+        } else {
+          if (pfb) pfb.style.display = 'block';
+          if (prfb) prfb.style.display = 'block';
+          if (rfb) rfb.style.display = 'block';
+          
+          if (promptTitle) promptTitle.innerHTML = '1. Prompt + publica&ccedil;&otilde;es da base';
+          if (promptBtn) promptBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2-2V4a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> Baixar TXT (publica&ccedil;&otilde;es + prompt)';
+          
+          const btnCopyImgGenerate = document.getElementById('btnCopyImageGenerate');
+          if (btnCopyImgGenerate) btnCopyImgGenerate.style.display = 'none';
+          if (btnCopyFinalDraft) btnCopyFinalDraft.style.display = 'inline-flex';
+          const btnBackToCatalog = document.getElementById('btnBackToCatalog');
+          const btnGenerateBack = document.getElementById('btnGenerateBack');
+          if (btnBackToCatalog) btnBackToCatalog.style.display = 'none';
+          if (btnGenerateBack) btnGenerateBack.style.display = 'inline-flex';
+          
+          if (btnSalvar) btnSalvar.style.display = 'inline-flex';
+          if (btnPadrao) btnPadrao.style.display = 'inline-flex';
+          
+          syncPrompt();
+          renderPreview();
+        }
+      }
+    }
+
+    function advanceTo(key) {
+      const idx = STEP_KEYS.indexOf(key);
+      if (idx > maxReached) maxReached = idx;
+      goToView(key);
+    }
+
+    function restartFlow() {
+      selectedClient = null;
+      activeSource = null;
+      sourceData = { social:null, press:null, manual:[] };
+      modelMode = null;
+      existingModelText = '';
+      activeTemplate = 'completo';
+      selectedPieces = new Set();
+      alertHistoryCache = [];
+      alertHistoryClient = null;
+      alertHistoryError = '';
+      finalDraftText = '';
+      periodoAtual = '';
+      alertaAnteriorComparar = null;
+      maxReached = 0;
+      
+      // Reset trending inputs and image
+      trendingTermoVal = '';
+      trendingPosicaoVal = '';
+      trendingRepercussaoVal = '';
+      trendingMultiModeVal = false;
+      trendingListVal = [];
+      if (document.getElementById('trendingTermo')) document.getElementById('trendingTermo').value = '';
+      if (document.getElementById('trendingPosicao')) document.getElementById('trendingPosicao').value = '';
+      if (document.getElementById('trendingCategoria')) document.getElementById('trendingCategoria').value = 'Assunto do Momento: Brasil';
+      const autoGenCheckbox = document.getElementById('trendingAutoGenerate');
+      if (autoGenCheckbox) autoGenCheckbox.checked = true;
+      const multiModeCheckbox = document.getElementById('trendingMultiMode');
+      if (multiModeCheckbox) multiModeCheckbox.checked = false;
+      if (document.getElementById('trendingRepercussao')) document.getElementById('trendingRepercussao').value = '';
+      clearTrendingImage();
+      // Ensure auto-generate starts active for new flows
+      trendingAutoGenerateVal = true;
+      trendingCategoriaVal = 'Assunto do Momento: Brasil';
+      
+      document.getElementById('sourceDetail').innerHTML = '';
+      document.getElementById('modelDetail').innerHTML = '';
+      document.querySelectorAll('.source-card').forEach(el => el.classList.remove('active'));
+      document.getElementById('modelBtnExisting').classList.remove('active');
+      document.getElementById('modelBtnNew').classList.remove('active');
+      document.getElementById('sourceContinueBtn').disabled = true;
+      document.getElementById('modelContinueBtn').disabled = true;
+      const periodoEl = document.getElementById('periodoInput');
+      if (periodoEl) periodoEl.value = '';
+      goToView('client');
+    }
+
+    /* ═══ TELA 1: EMPRESA ═══ */
+    const CLIENT_ICON_SVG = '<svg viewBox="0 0 24 24"><path d="M6 21V5a1 1 0 011-1h6a1 1 0 011 1v16"/><path d="M14 10h4a1 1 0 011 1v10"/><path d="M9 8h.01M9 12h.01M9 16h.01M18 14h.01M18 18h.01"/><path d="M3 21h18"/></svg>';
+
+    function clientCardHtml(nome) {
+      const isFav = getFavoriteClients().includes(nome);
+      return `<div class="client-card" tabindex="0" role="button" onclick="chooseClient('${escAttr(nome)}')" onkeydown="if(event.key==='Enter')chooseClient('${escAttr(nome)}')">
+        <div class="client-card-head">
+          <div class="client-icon">${CLIENT_ICON_SVG}</div>
+          <div class="client-actions">
+            <button class="client-fav ${isFav ? 'active' : ''}" title="Favoritar" onclick="event.stopPropagation();handleFavClient('${escAttr(nome)}')">
+              <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </button>
+            <button class="client-remove" title="Remover" onclick="event.stopPropagation();handleRemoveClient('${escAttr(nome)}')">
+              <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="client-name">${escHtml(nome)}</div>
+        <div class="client-label">Criar alerta</div>
+      </div>`;
+    }
+
+    function renderClientBlocks(filter) {
+      const q = (filter || '').trim();
+      const qLower = q.toLowerCase();
+      const favs = getFavoriteClients();
+      const recents = getRecentClients().filter(n => !favs.includes(n));
+      const otherDbClients = sentinelaClientsList
+        .map(c => c.nome)
+        .filter(nome => !favs.includes(nome) && !recents.includes(nome));
+
+      const favFiltered = qLower ? favs.filter(n => n.toLowerCase().includes(qLower)) : favs;
+      document.getElementById('favoritesBlock').innerHTML = favFiltered.length ? `
+        <div class="client-section-title">Favoritos</div>
+        <div class="client-grid">${favFiltered.map(clientCardHtml).join('')}</div>` : '';
+
+      const recentFiltered = qLower ? recents.filter(n => n.toLowerCase().includes(qLower)) : recents;
+      document.getElementById('recentBlock').innerHTML = recentFiltered.length ? `
+        <div class="client-section-title">Mais frequentes</div>
+        <div class="client-grid">${recentFiltered.map(clientCardHtml).join('')}</div>` : '';
+
+      const otherFiltered = qLower ? otherDbClients.filter(n => n.toLowerCase().includes(qLower)) : otherDbClients;
+      const dbBlock = document.getElementById('dbClientsBlock');
+      if (dbBlock) {
+        dbBlock.innerHTML = otherFiltered.length ? `
+          <div class="client-section-title">Empresas Cadastradas</div>
+          <div class="client-grid">${otherFiltered.map(clientCardHtml).join('')}</div>` : '';
+      }
+
+      const matchesExisting = qLower && (
+        [...favs, ...recents].some(n => n.toLowerCase() === qLower) ||
+        sentinelaClientsList.some(c => c.nome.toLowerCase() === qLower)
+      );
+      document.getElementById('searchCreateBlock').innerHTML = (q && !matchesExisting) ? `
+        <button class="tbtn tbtn-primary" style="height:44px;" onclick="chooseClient(null)">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          Criar empresa "${escHtml(q)}"
+        </button>` : '';
+
+      document.getElementById('emptyClientsBlock').innerHTML = (!q && !favs.length && !recents.length && !sentinelaClientsList.length) ? `
+        <div class="empty-hint">Nenhuma empresa favoritada, recente ou cadastrada ainda.</div>` : '';
+    }
+
+    function onClientSearch(val) {
+      renderClientBlocks(val);
+    }
+
+    function handleFavClient(nome) {
+      toggleFavoriteClient(nome);
+      renderClientBlocks(document.getElementById('clientSearchInput').value);
+    }
+
+    function handleRemoveClient(nome) {
+      removeClientEntry(nome);
+      renderClientBlocks(document.getElementById('clientSearchInput').value);
+    }
+
+    function openCreateClient() {
+      const modal = document.getElementById('createClientModal');
+      const input = document.getElementById('createClientInput');
+      if (input) input.value = (document.getElementById('clientSearchInput')?.value || '').trim();
+      modal.classList.add('open');
+      setTimeout(() => input?.focus(), 80);
+    }
+
+    function closeCreateClientModal() {
+      document.getElementById('createClientModal')?.classList.remove('open');
+    }
+
+    async function confirmCreateClient() {
+      const nome = (document.getElementById('createClientInput')?.value || '').trim();
+      if (!nome) { showToast('Digite o nome da empresa.'); return; }
+      closeCreateClientModal();
+      await chooseClient(nome);
+    }
+
+    async function chooseClient(nome) {
+      let clientNome = '';
+      if (nome === null) {
+        const novo = (document.getElementById('clientSearchInput').value || '').trim();
+        if (!novo) { showToast('Digite o nome da empresa.'); return; }
+        clientNome = novo;
+      } else {
+        clientNome = nome;
+      }
+      selectedClient = { nome: clientNome };
+
+      // Garante persistência no D1
+      await saveClientToDb(clientNome);
+
+      addRecentClient(selectedClient.nome);
+      document.getElementById('selectedClientLabel2').textContent = selectedClient.nome;
+      advanceTo('source');
+    }
+
+    /* ═══ TELA 2: FONTE ═══ */
+    function selectSource(source) {
+      activeSource = source;
+      document.querySelectorAll('.source-card').forEach(el => el.classList.toggle('active', el.dataset.source === source));
+      if (source === 'trending') {
+        modelMode = 'new';
+        activeTemplate = 'trending';
+        selectedPieces = new Set(['trends']);
+      }
+      renderSourceDetail();
+      updateSourceContinue();
+      
+      if (source === 'trending') {
+        fetchTrendsData();
+      }
+    }
+
+    function renderSourceDetail() {
+      const el = document.getElementById('sourceDetail');
+      if (activeSource === 'social') {
+        el.innerHTML = ekklesiaDetailHtml('social');
+        mountEkklesiaIframe('ekSocialFrame', '/pages/ekklesia?mode=iframe');
+      } else if (activeSource === 'press') {
+        el.innerHTML = ekklesiaDetailHtml('press');
+        mountEkklesiaIframe('ekPressFrame', '/pages/ekklesia-press?mode=iframe');
+      } else if (activeSource === 'hibrido') {
+        el.innerHTML = `
+          <div class="source-detail">
+            <div class="hybrid-tabs">
+              <button class="hybrid-tab ${hybridTab === 'social' ? 'active' : ''}" onclick="setHybridTab('social')">Social</button>
+              <button class="hybrid-tab ${hybridTab === 'press' ? 'active' : ''}" onclick="setHybridTab('press')">Imprensa</button>
+            </div>
+            <div id="hybridStatus"></div>
+            <div id="hybridFrameWrap"></div>
+          </div>`;
+        renderHybridStatus();
+        renderHybridFrame();
+      } else if (activeSource === 'link') {
+        el.innerHTML = `
+          <div class="source-detail">
+            <div class="manual-form">
+              <div class="manual-form-grid">
+                <div style="display:flex; gap:6px; align-items:center; grid-column:span 1; width:100%;">
+                  <input id="manualLink" type="text" placeholder="Link da publica&ccedil;&atilde;o (URL)" style="flex:1; margin:0;"/>
+                  <button class="tbtn tbtn-primary" onclick="openSentinelaLinklyModal()" style="height:38px; font-size:11px; white-space:nowrap; padding:0 8px; flex-shrink:0; margin:0;" type="button" title="Gerar link encurtado">
+                    Gerar Curto
+                  </button>
+                </div>
+                <input id="manualData" type="date" placeholder="Data"/>
+                <input id="manualPublicador" type="text" placeholder="Publicador/perfil"/>
+                <input id="manualPlataforma" type="text" placeholder="Plataforma (Instagram, X, portal...)"/>
+                <input id="manualInteracoes" type="number" min="0" placeholder="Intera&ccedil;&otilde;es (curtidas/coment&aacute;rios)"/>
+                <input id="manualAlcance" type="number" min="0" placeholder="Alcance/seguidores (opcional)"/>
+              </div>
+              <textarea id="manualTexto" placeholder="Texto completo da publica&ccedil;&atilde;o/mat&eacute;ria..."></textarea>
+              <button class="tbtn tbtn-primary" style="align-self:flex-start;" onclick="addManualPublication()">
+                <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                Adicionar publica&ccedil;&atilde;o
+              </button>
+            </div>
+            <div class="manual-list" id="manualList"></div>
+          </div>`;
+        renderManualList();
+      } else if (activeSource === 'trending') {
+        el.innerHTML = `
+          <div class="source-detail">
+            <div class="manual-form">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div style="font-weight:800; font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--accent);">Configuração do Fluxo</div>
+                <div style="display:flex; align-items:center; gap:16px;">
+                  <button class="tbtn" id="btnToggleCustomPrompt" onclick="toggleCustomPromptPanel()" type="button" style="height:28px; padding:0 10px; font-size:11px; margin:0; background:rgba(255,255,255,0.06);">${customPromptPanelOpen ? 'Ocultar Prompt' : 'Editar Prompt da IA'}</button>
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <input type="checkbox" id="trendingMultiMode" ${trendingMultiModeVal ? 'checked' : ''} onchange="toggleTrendingMultiMode(this.checked)" style="cursor:pointer; width:15px; height:15px; margin:0;"/>
+                    <label for="trendingMultiMode" style="font-size:12px; color:#fff; cursor:pointer; user-select:none; font-weight:700;">Escolher mais de um</label>
+                  </div>
+                </div>
+              </div>
+              
+              <div id="customPromptPanel" style="display: ${customPromptPanelOpen ? 'flex' : 'none'}; flex-direction:column; gap:10px; margin-bottom:15px; padding:12px; border:1px solid rgba(255,255,255,0.08); border-radius:var(--r-md); background:rgba(255,255,255,0.02);">
+                <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">
+                  Você pode personalizar o prompt da IA enviado para cada termo da empresa <strong>${escHtml(selectedClient?.nome || 'Cliente')}</strong>. Deixe em branco para usar o padrão.
+                </div>
+                
+                <div style="display:flex; flex-direction:column; gap:5px;">
+                  <label for="customPromptSingle" style="font-size:11px; font-weight:700; color:var(--text-secondary);">Prompt para Termo Único</label>
+                  <textarea id="customPromptSingle" oninput="debouncedSaveCustomPrompts()" onblur="saveCustomPrompts()" placeholder="${escAttr(DEFAULT_TRENDING_PROMPT_SINGLE)}" style="width:100%; min-height:120px; font-family:monospace; font-size:11px; resize:vertical; line-height:1.4; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.08); color:var(--text-primary); border-radius:var(--r-md); padding:8px;"></textarea>
+                </div>
+                
+                <div style="display:flex; flex-direction:column; gap:5px; margin-top:5px;">
+                  <label for="customPromptMulti" style="font-size:11px; font-weight:700; color:var(--text-secondary);">Prompt para Múltiplos Termos</label>
+                  <textarea id="customPromptMulti" oninput="debouncedSaveCustomPrompts()" onblur="saveCustomPrompts()" placeholder="${escAttr(DEFAULT_TRENDING_PROMPT_MULTI)}" style="width:100%; min-height:120px; font-family:monospace; font-size:11px; resize:vertical; line-height:1.4; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.08); color:var(--text-primary); border-radius:var(--r-md); padding:8px;"></textarea>
+                </div>
+              </div>
+              
+              <div id="trendingSingleContainer" style="display: ${trendingMultiModeVal ? 'none' : 'block'};">
+                <div style="font-weight:800; font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--accent); margin-bottom:10px;">Dados do Trending Topic</div>
+                <div class="manual-form-grid" style="margin-bottom: 12px; grid-template-columns: repeat(3, minmax(0, 1fr));">
+                  <input id="trendingTermo" type="text" placeholder="Termo do Trending Topic" value="${escAttr(trendingTermoVal)}" oninput="updateTrendingAlert()" style="height:40px; padding:0 14px; border-radius:var(--r-md); border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); color:var(--text-primary); outline:none;"/>
+                  <input id="trendingPosicao" type="text" placeholder="Posição (ex: 16)" value="${escAttr(trendingPosicaoVal)}" oninput="updateTrendingAlert()" style="height:40px; padding:0 14px; border-radius:var(--r-md); border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); color:var(--text-primary); outline:none;"/>
+                  <input id="trendingCategoria" type="text" placeholder="Categoria (ex: Assunto do Momento: Brasil)" value="${escAttr(trendingCategoriaVal)}" oninput="updateTrendingAlert()" style="height:40px; padding:0 14px; border-radius:var(--r-md); border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); color:var(--text-primary); outline:none;"/>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+                  <input type="checkbox" id="trendingAutoGenerate" ${trendingAutoGenerateVal ? 'checked' : ''} onchange="toggleTrendingAutoGenerate(this.checked)" style="cursor:pointer; width:16px; height:16px; margin:0;"/>
+                  <label for="trendingAutoGenerate" style="font-size:12px; color:var(--text-muted); cursor:pointer; user-select:none;">Gerar print da imagem automaticamente a partir do termo</label>
+                </div>
+                
+                <div style="font-weight:800; font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--accent); margin-bottom:10px;">Imagem do Print</div>
+                <div class="trending-upload-zone" id="trendingDropZone">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="margin-bottom:4px;">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                  <span id="trendingDropZoneText" style="font-size: 11px; color: var(--text-muted);">Arraste o print da imagem aqui, cole com Ctrl+V, ou clique para fazer upload</span>
+                  <input type="file" id="trendingImageInput" accept="image/*" style="display:none;" onchange="handleTrendingImageUpload(this.files[0])" onclick="event.stopPropagation()"/>
+                </div>
+                <div id="trendingImagePreviewContainer" style="display:none; position:relative; margin-top:10px; border-radius: var(--r-md); overflow: hidden; border: 1px solid rgba(255,255,255,0.1); width: fit-content; max-width: 100%;">
+                  <img id="trendingImagePreview" style="max-height: 200px; display: block;"/>
+                  <button type="button" onclick="clearTrendingImage()" class="client-remove" style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.7); color:#fff; border:none; border-radius:50%; width:24px; height:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px; transition:all 0.2s;" title="Remover imagem">✕</button>
+                </div>
+              </div>
+              
+              <div id="trendingMultiContainer" style="display: ${trendingMultiModeVal ? 'block' : 'none'};">
+                <div style="font-weight:800; font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--accent); margin-bottom:10px;">Adicionar Termo Manual</div>
+                <div class="manual-form-grid" style="margin-bottom: 12px; grid-template-columns: 2fr 1fr 2fr auto; gap: 8px; align-items: center;">
+                  <input id="trendingMultiTermo" type="text" placeholder="Termo" style="height:40px; padding:0 14px; border-radius:var(--r-md); border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); color:var(--text-primary); outline:none;"/>
+                  <input id="trendingMultiPosicao" type="text" placeholder="Posição" style="height:40px; padding:0 14px; border-radius:var(--r-md); border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); color:var(--text-primary); outline:none;"/>
+                  <input id="trendingMultiCategoria" type="text" placeholder="Categoria" value="Assunto do Momento: Brasil" style="height:40px; padding:0 14px; border-radius:var(--r-md); border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); color:var(--text-primary); outline:none;"/>
+                  <button class="tbtn tbtn-primary" onclick="addTrendingTermManual()" type="button" style="height:40px; margin:0;">Adicionar</button>
+                </div>
+                
+                <div style="font-weight:800; font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--accent); margin-bottom:10px; margin-top: 15px;">Termos Selecionados</div>
+                <div id="trendingSelectedListContainer" style="margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.08); border-radius: var(--r-md); background: rgba(255,255,255,0.02); padding: 10px; min-height: 50px;">
+                  <!-- Rendered dynamically -->
+                </div>
+              </div>
+
+              <div style="font-weight:800; font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--accent); margin-top: 20px; margin-bottom:10px;">Catálogo de Trending Topics (Trends24)</div>
+              <div style="display:flex; gap:8px; margin-bottom:12px; align-items:center;">
+                <select id="trendsTimeSelect" onchange="expandCatalog=false;renderTrendsCatalog()" style="height:40px; padding:0 14px; border-radius:var(--r-md); border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); color:var(--text-primary); outline:none; flex:1; font-size:12px;">
+                  <option value="">Carregando horários...</option>
+                </select>
+                <button class="tbtn" onclick="fetchTrendsData()" type="button" style="height:40px; font-size:11px; margin:0;">
+                  Atualizar Catálogo
+                </button>
+              </div>
+              <div id="trendsCatalogContainer" style="max-height: 350px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: var(--r-md); background: rgba(255,255,255,0.01); padding: 8px;">
+                <div style="font-size:12px; color:var(--text-muted); padding:10px;">Carregando...</div>
+              </div>
+            </div>
+          </div>`;
+        initTrendingDropZone();
+        loadCustomPrompts();
+        if (trendingMultiModeVal) {
+          renderTrendingSelectedList();
+        } else {
+          // Restore image preview if already uploaded
+          if (trendingImageBlob) {
+            const preview = document.getElementById('trendingImagePreview');
+            const container = document.getElementById('trendingImagePreviewContainer');
+            const dropZoneText = document.getElementById('trendingDropZoneText');
+            
+            if (preview && container && dropZoneText) {
+              preview.src = URL.createObjectURL(trendingImageBlob);
+              container.style.display = 'block';
+              dropZoneText.textContent = 'Imagem carregada: ' + trendingImageBlob.name;
+            }
+          }
+          updateTrendingAlert();
+        }
+        if (trendsData) {
+          populateTrendsTimeSelect();
+          renderTrendsCatalog();
+        }
+      } else {
+        el.innerHTML = '';
+      }
+    }
+
+    function countWithLink(rows) {
+      return (rows || []).filter(r => r && (r.link || r.link_publicacao || r.url)).length;
+    }
+
+    function ekklesiaDetailHtml(tipo) {
+      const label = tipo === 'social' ? 'Ekklesia Social' : 'Ekklesia Press';
+      const ready = !!(sourceData[tipo] && sourceData[tipo].length > 0);
+      const frameId = tipo === 'social' ? 'ekSocialFrame' : 'ekPressFrame';
+      const comLink = ready ? countWithLink(sourceData[tipo]) : 0;
+      return `
+        <div class="source-detail">
+          <div class="iframe-status">
+            <span class="status-dot ${ready ? 'ok' : ''}"></span>
+            <span>${ready ? `Base ${label} carregada (${sourceData[tipo].length} registro(s), ${comLink} com link).` : `Clique em "Processar e unificar" dentro do ${label} abaixo &mdash; a base &eacute; puxada automaticamente.`}</span>
+          </div>
+          ${ready && comLink === 0 ? `<div class="empty-hint">Nenhuma publica&ccedil;&atilde;o desta base trouxe link. Isso vem do pr&oacute;prio ${label} (a exporta&ccedil;&atilde;o usada n&atilde;o tem coluna de link, ou o formato n&atilde;o foi reconhecido) &mdash; n&atilde;o &eacute; algo que a Sentinela descarta.</div>` : ''}
+          <div class="iframe-shell"><iframe id="${frameId}"></iframe></div>
+        </div>`;
+    }
+
+    function mountEkklesiaIframe(frameId, src) {
+      const frame = document.getElementById(frameId);
+      if (frame && !frame.dataset.loaded) {
+        frame.src = src + (src.includes('?') ? '&' : '?') + '_t=' + Date.now();
+        frame.dataset.loaded = '1';
+      }
+    }
+
+    /* ─── Linkly Modal Controller ─── */
+    function openSentinelaLinklyModal() {
+      const modal = document.getElementById('sentinelaLinklyModal');
+      const iframe = document.getElementById('sentinelaLinklyIframe');
+      const resultContainer = document.getElementById('sentinelaLinklyResultContainer');
+      const resultInput = document.getElementById('sentinelaLinklyResultInput');
+      
+      if (resultContainer) resultContainer.style.display = 'none';
+      if (resultInput) resultInput.value = '';
+      if (iframe) iframe.src = '/pages/linkly.html?embed=true&_t=' + Date.now();
+      if (modal) modal.classList.add('open');
+    }
+
+    function closeSentinelaLinklyModal() {
+      document.getElementById('sentinelaLinklyModal')?.classList.remove('open');
+      const iframe = document.getElementById('sentinelaLinklyIframe');
+      if (iframe) iframe.src = '';
+    }
+
+    function copySentinelaLinklyResult() {
+      const input = document.getElementById('sentinelaLinklyResultInput');
+      if (!input || !input.value) return;
+      input.select();
+      navigator.clipboard.writeText(input.value).then(() => {
+        showToast('Link copiado com sucesso!');
+      }).catch(() => {
+        showToast('Erro ao copiar. Copie manualmente.');
+      });
+    }
+
+    window.addEventListener('message', function(ev) {
+      if (!ev.data || typeof ev.data !== 'object') return;
+      
+      // Captura o link curto gerado pelo iframe do Linkly
+      if (ev.data.type === 'linkly:shortened') {
+        const shortUrl = ev.data.shortUrl;
+        
+        // Preenche o campo de input na tela do Sentinela
+        const manualLinkInput = document.getElementById('manualLink');
+        if (manualLinkInput) {
+          manualLinkInput.value = shortUrl;
+        }
+        
+        // Também preenche no modal para caso queiram copiar de lá
+        const resultInput = document.getElementById('sentinelaLinklyResultInput');
+        const resultContainer = document.getElementById('sentinelaLinklyResultContainer');
+        if (resultInput) resultInput.value = shortUrl;
+        if (resultContainer) resultContainer.style.display = 'flex';
+        
+        navigator.clipboard.writeText(shortUrl).then(() => {
+          showToast('Link curto copiado e preenchido no formulário!');
+        }).catch(() => {
+          showToast('Link encurtado com sucesso!');
+        });
+        return;
+      }
+
+      if (ev.data.type === 'embratur:base-pronta') {
+        sourceData.social = ev.data.rows || [];
+        showToast(sourceData.social.length ? `Base Ekklesia Social recebida (${sourceData.social.length} registro(s)).` : 'O Ekklesia Social respondeu, mas a base est&aacute; vazia. Carregue/processe uma base antes de continuar.');
+        renderSourceDetail();
+        renderHybridStatus();
+        updateSourceContinue();
+      } else if (ev.data.type === 'embratur:base-erro') {
+        showToast('N&atilde;o foi poss&iacute;vel puxar a base social.');
+      } else if (ev.data.type === 'ekklesia-unificado') {
+        sourceData.press = ev.data.rows || [];
+        showToast(sourceData.press.length ? `Base Ekklesia Press recebida (${sourceData.press.length} registro(s)).` : 'O Ekklesia Press respondeu, mas a base est&aacute; vazia. Carregue/processe uma base antes de continuar.');
+        renderSourceDetail();
+        renderHybridStatus();
+        updateSourceContinue();
+      }
+    });
+
+    function setHybridTab(tab) {
+      hybridTab = tab;
+      renderSourceDetail();
+    }
+
+    function renderHybridStatus() {
+      const el = document.getElementById('hybridStatus');
+      if (!el) return;
+      const socialOk = !!(sourceData.social && sourceData.social.length > 0);
+      const pressOk = !!(sourceData.press && sourceData.press.length > 0);
+      el.innerHTML = `
+        <div class="iframe-status"><span class="status-dot ${socialOk ? 'ok' : ''}"></span><span>Social: ${socialOk ? `carregada (${sourceData.social.length}, ${countWithLink(sourceData.social)} com link)` : 'pendente'}</span></div>
+        <div class="iframe-status"><span class="status-dot ${pressOk ? 'ok' : ''}"></span><span>Imprensa: ${pressOk ? `carregada (${sourceData.press.length}, ${countWithLink(sourceData.press)} com link)` : 'pendente'}</span></div>
+      `;
+    }
+
+    function renderHybridFrame() {
+      const wrap = document.getElementById('hybridFrameWrap');
+      if (!wrap) return;
+      if (hybridTab === 'social') {
+        wrap.innerHTML = `<div class="iframe-shell"><iframe id="hybridSocialFrame"></iframe></div>`;
+        mountEkklesiaIframe('hybridSocialFrame', '/pages/ekklesia?mode=iframe');
+      } else {
+        wrap.innerHTML = `<div class="iframe-shell"><iframe id="hybridPressFrame"></iframe></div>`;
+        mountEkklesiaIframe('hybridPressFrame', '/pages/ekklesia-press?mode=iframe');
+      }
+    }
+
+    function addManualPublication() {
+      const link = (document.getElementById('manualLink')?.value || '').trim();
+      const data = document.getElementById('manualData')?.value || '';
+      const publicador = (document.getElementById('manualPublicador')?.value || '').trim();
+      const plataforma = (document.getElementById('manualPlataforma')?.value || '').trim();
+      const interacoes = (document.getElementById('manualInteracoes')?.value || '').trim();
+      const alcance = (document.getElementById('manualAlcance')?.value || '').trim();
+      const texto = (document.getElementById('manualTexto')?.value || '').trim();
+      if (!link && !texto) { showToast('Informe pelo menos o link ou o texto da publica&ccedil;&atilde;o.'); return; }
+      sourceData.manual.push({ link, data, publicador, plataforma, interacoes, alcance, texto });
+      ['manualLink', 'manualData', 'manualPublicador', 'manualPlataforma', 'manualInteracoes', 'manualAlcance', 'manualTexto'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      renderManualList();
+      updateSourceContinue();
+      showToast('Publica&ccedil;&atilde;o adicionada.');
+    }
+
+    function removeManualPublication(idx) {
+      sourceData.manual.splice(idx, 1);
+      renderManualList();
+      updateSourceContinue();
+    }
+
+    function renderManualList() {
+      const el = document.getElementById('manualList');
+      if (!el) return;
+      if (!sourceData.manual.length) {
+        el.innerHTML = `<div class="empty-hint">Nenhuma publica&ccedil;&atilde;o adicionada ainda.</div>`;
+        return;
+      }
+      el.innerHTML = sourceData.manual.map((p, i) => `
+        <div class="manual-item">
+          <div class="manual-item-head">
+            <span>${escHtml(p.plataforma || 'Publica&ccedil;&atilde;o')}${p.publicador ? ' &middot; ' + escHtml(p.publicador) : ''}</span>
+            <button class="client-remove" title="Remover" onclick="removeManualPublication(${i})">
+              <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <div class="manual-item-meta">${[p.data, p.interacoes ? p.interacoes + ' intera&ccedil;&otilde;es' : '', p.alcance ? p.alcance + ' alcance' : ''].filter(Boolean).map(escHtml).join(' &middot; ')}</div>
+          ${p.link ? `<div class="manual-item-link">${escHtml(p.link)}</div>` : ''}
+          ${p.texto ? `<div class="manual-item-text">${escHtml(p.texto.length > 180 ? p.texto.slice(0, 180) + '…' : p.texto)}</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    function updateSourceContinue() {
+      const socialReady = sourceData.social && sourceData.social.length > 0;
+      const pressReady = sourceData.press && sourceData.press.length > 0;
+      let ready = false;
+      
+      if (activeSource === 'social') ready = socialReady;
+      else if (activeSource === 'press') ready = pressReady;
+      else if (activeSource === 'hibrido') ready = socialReady || pressReady;
+      else if (activeSource === 'link') ready = sourceData.manual.length > 0;
+      else if (activeSource === 'trending') {
+        if (trendingMultiModeVal) {
+          ready = trendingListVal.length > 0 && trendingListVal.every(item => item.term.trim() !== '');
+        } else {
+          ready = !!(document.getElementById('trendingTermo')?.value.trim() && document.getElementById('trendingPosicao')?.value.trim());
+        }
+      }
+      document.getElementById('sourceContinueBtn').disabled = !ready;
+    }
+
+    /* ═══ TELA 3: MODELO ═══ */
+    function selectModelMode(mode) {
+      modelMode = mode;
+      document.getElementById('modelBtnExisting').classList.toggle('active', mode === 'existing');
+      document.getElementById('modelBtnNew').classList.toggle('active', mode === 'new');
+      renderModelDetail();
+      updateModelContinue();
+    }
+
+    let alertHistoryCache = [];
+    let alertHistoryLoading = false;
+    let alertHistoryClient = null;
+    let alertHistoryError = '';
+
+    async function loadAlertHistory(cliente) {
+      if (!cliente || alertHistoryLoading) return;
+      alertHistoryLoading = true;
+      alertHistoryClient = cliente;
+      alertHistoryError = '';
+      try {
+        const r = await fetch('/api/alertas?cliente=' + encodeURIComponent(cliente));
+        if (r.ok) {
+          alertHistoryCache = await r.json();
+        } else {
+          const data = await r.json().catch(() => ({}));
+          alertHistoryCache = [];
+          alertHistoryError = data.error || `Erro ${r.status} ao buscar hist&oacute;rico.`;
+        }
+      } catch (e) {
+        alertHistoryCache = [];
+        alertHistoryError = 'N&atilde;o foi poss&iacute;vel conectar ao hist&oacute;rico: ' + e.message;
+      }
+      alertHistoryLoading = false;
+      if (modelMode === 'existing' && alertHistoryClient === cliente) {
+        // Carrega o padrao da empresa automaticamente, se existir e nada foi escolhido ainda
+        const padrao = alertHistoryCache.find(h => h.padrao);
+        if (padrao && !existingModelText) {
+          const idx = alertHistoryCache.indexOf(padrao);
+          useAlertFromHistory(idx, true);
+          return;
+        }
+        renderModelDetail();
+      }
+    }
+
+    function renderAlertHistoryBlock() {
+      if (alertHistoryLoading) {
+        return `<div class="flow-box-title">Buscando hist&oacute;rico de alertas deste cliente&hellip;</div>`;
+      }
+      if (alertHistoryError) {
+        return `<div class="empty-hint">N&atilde;o foi poss&iacute;vel carregar o hist&oacute;rico de alertas: ${escHtml(alertHistoryError)}. Confira se a migration da tabela "alertas" j&aacute; foi rodada no banco.</div>`;
+      }
+      if (!alertHistoryCache.length) return '';
+      return `
+        <div class="flow-box-title">Ou atualize um alerta anterior deste cliente</div>
+        <div class="alert-history-list">
+          ${alertHistoryCache.map((h, i) => `
+            <div class="alert-history-item">
+              <div class="alert-history-meta">
+                <span>${h.padrao ? '&#9733; Padr&atilde;o da empresa &middot; ' : ''}${new Date(h.created_at).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' })}${h.periodo ? ' &middot; ' + escHtml(h.periodo) : ''}${h.total_publicacoes ? ' &middot; ' + h.total_publicacoes + ' publica&ccedil;&otilde;es' : ''}</span>
+                <div style="display:flex;gap:6px;">
+                  ${!h.padrao ? `<button class="tbtn" onclick="marcarComoPadrao(${i})">Marcar como padr&atilde;o</button>` : ''}
+                  <button class="tbtn" onclick="useAlertFromHistory(${i})">Usar este e comparar</button>
+                </div>
+              </div>
+              <div class="alert-history-preview">${escHtml((h.texto_gerado || '').replace(/\n/g, ' ').slice(0, 140))}…</div>
+            </div>
+          `).join('')}
+        </div>`;
+    }
+
+    function useAlertFromHistory(idx, auto) {
+      const item = alertHistoryCache[idx];
+      if (!item) return;
+      existingModelText = item.texto_gerado || '';
+      alertaAnteriorComparar = item;
+      renderModelDetail();
+      updateModelContinue();
+      showToast(auto
+        ? 'Padr&atilde;o desta empresa carregado automaticamente &mdash; o relat&oacute;rio vai comparar o volume com ele.'
+        : 'Alerta anterior carregado. O pr&oacute;ximo relat&oacute;rio vai comparar o volume com esse.');
+    }
+
+    function renderModelDetail() {
+      const el = document.getElementById('modelDetail');
+      if (activeSource === 'trending') {
+        el.innerHTML = `
+          <div class="model-panel">
+            <div class="flow-box-title">Modelo Selecionado</div>
+            <div style="font-size:12.5px; color:var(--text-secondary); line-height:1.6; padding:12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px;">
+              Este é um alerta de <strong>Trending Topics X</strong>. O formato padrão de mensagem e print será gerado de forma determinística, sem necessidade de IA externa.
+            </div>
+          </div>`;
+        return;
+      }
+      if (modelMode === 'existing') {
+        if (selectedClient?.nome && alertHistoryClient !== selectedClient.nome) loadAlertHistory(selectedClient.nome);
+        el.innerHTML = `
+          <div class="model-panel">
+            ${renderAlertHistoryBlock()}
+            <div class="flow-box-title">Cole o texto do modelo/alerta anterior</div>
+            <textarea id="existingModelInput" placeholder="Cole aqui o texto de um relat&oacute;rio ou alerta j&aacute; enviado para esse cliente..." oninput="existingModelText=this.value;alertaAnteriorComparar=null;updateModelContinue()">${escHtml(existingModelText)}</textarea>
+          </div>`;
+      } else if (modelMode === 'new') {
+        if (selectedPieces.size === 0) selectedPieces = new Set(templates[activeTemplate].pecas);
+        el.innerHTML = `
+          <div class="model-panel">
+            <div class="template-strip" id="templateStrip"></div>
+            <div class="pieces-grid" id="piecesGrid"></div>
+          </div>`;
+        renderTemplates();
+        renderPieces();
+      } else {
+        el.innerHTML = '';
+      }
+    }
+
+    function renderTemplates() {
+      document.getElementById('templateStrip').innerHTML = Object.entries(templates).map(([key, tpl]) => `
+        <button class="template-pill ${key === activeTemplate ? 'active' : ''}" onclick="setTemplate('${key}')">${tpl.nome}</button>
+      `).join('');
+    }
+
+    function setTemplate(key) {
+      activeTemplate = key;
+      selectedPieces = new Set(templates[key].pecas);
+      renderTemplates();
+      renderPieces();
+    }
+
+    function renderPieces() {
+      document.getElementById('piecesGrid').innerHTML = pieces.map(piece => `
+        <button class="piece-btn ${selectedPieces.has(piece.id) ? 'active' : ''}" onclick="togglePiece('${piece.id}')">
+          <span class="piece-name">${piece.nome}</span>
+          <span class="piece-desc">${piece.desc}</span>
+        </button>
+      `).join('');
+    }
+
+    function togglePiece(id) {
+      if (selectedPieces.has(id)) selectedPieces.delete(id);
+      else selectedPieces.add(id);
+      renderPieces();
+      updateModelContinue();
+    }
+
+    function updateModelContinue() {
+      const ready =
+        (modelMode === 'existing' && existingModelText.trim().length > 0) ||
+        (modelMode === 'new' && selectedPieces.size > 0);
+      document.getElementById('modelContinueBtn').disabled = !ready;
+    }
+
+    /* ═══ TELA 4: GERAR ═══ */
+    function sourceLabel() {
+      if (activeSource === 'social') return 'base Ekklesia Social';
+      if (activeSource === 'press') return 'base Ekklesia Press';
+      if (activeSource === 'hibrido') return 'bases Ekklesia Social + Press (h&iacute;brido)';
+      if (activeSource === 'link') return 'link(s) colado(s) manualmente';
+      if (activeSource === 'trending') return 'Trending Topics X';
+      return 'fonte n&atilde;o definida';
+    }
+
+    function formatPublicationRow(row, idx) {
+      if (!row || typeof row !== 'object') return `${idx + 1}. ${String(row)}`;
+
+      const EXCLUDE = ['_origem'];
+      const LINK_KEYS = ['link', 'link_publicacao', 'url'];
+      const LONG_TEXT_KEYS = ['conteudo', 'texto', 'content', 'texto_completo'];
+      const PRIORITY = ['data', 'veiculo', 'canal', 'plataforma', 'tipo_midia', 'publicador', 'nome_publicador', 'autor', 'titulo', 'sentimento', 'interacoes', 'alcance', 'seguidores'];
+
+      const byKey = {};
+      Object.entries(row).forEach(([k, v]) => {
+        if (EXCLUDE.includes(k) || v === undefined || v === null || String(v).trim() === '') return;
+        byKey[k] = v;
+      });
+
+      const linkKey = LINK_KEYS.find(k => k in byKey);
+      const linkStr = linkKey ? `LINK: ${byKey[linkKey]}` : 'LINK: sem link disponivel';
+      LINK_KEYS.forEach(k => delete byKey[k]);
+
+      const metaParts = [];
+      PRIORITY.forEach(k => { if (k in byKey) { metaParts.push(`${k}: ${byKey[k]}`); delete byKey[k]; } });
+
+      const longParts = [];
+      LONG_TEXT_KEYS.forEach(k => { if (k in byKey) { longParts.push(`${k}: ${byKey[k]}`); delete byKey[k]; } });
+
+      Object.entries(byKey).forEach(([k, v]) => metaParts.push(`${k}: ${v}`));
+
+      let line = `${idx + 1}. ${linkStr}`;
+      if (metaParts.length) line += ' | ' + metaParts.join(' | ');
+      if (longParts.length) line += '\n   ' + longParts.join(' | ');
+      return line;
+    }
+
+    function buildPublicationsBlock() {
+      const blocks = [];
+      if (sourceData.social && sourceData.social.length) {
+        blocks.push(`--- Publicacoes Ekklesia Social (${sourceData.social.length}) ---\n` + sourceData.social.map(formatPublicationRow).join('\n'));
+      }
+      if (sourceData.press && sourceData.press.length) {
+        blocks.push(`--- Publicacoes Ekklesia Press (${sourceData.press.length}) ---\n` + sourceData.press.map(formatPublicationRow).join('\n'));
+      }
+      if (sourceData.manual.length) {
+        blocks.push(`--- Publicacoes adicionadas manualmente (${sourceData.manual.length}) ---\n` + sourceData.manual.map(formatPublicationRow).join('\n'));
+      }
+      return blocks.join('\n\n');
+    }
+
+    function countPublications() {
+      if (activeSource === 'trending') return 1;
+      return (sourceData.social?.length || 0) + (sourceData.press?.length || 0) + (sourceData.manual?.length || 0);
+    }
+
+    function buildPrompt() {
+      const client = selectedClient?.nome || 'cliente ainda nao selecionado';
+      const src = stripHtml(sourceLabel());
+      const pubBlock = buildPublicationsBlock();
+      const totalPubs = countPublications();
+      const periodo = (periodoAtual || '').trim() || 'nao informado';
+
+      if (totalPubs === 0) {
+        return `Voce e um analista senior de inteligencia de comunicacao da Nexus.
+
+Cliente: ${client}.
+Periodo/recorte: ${periodo}.
+Origem dos dados: ${src}.
+
+ATENCAO: nenhuma publicacao foi carregada na base ainda (0 registros).
+
+Instrucao: NAO gere o relatorio completo nem preencha secoes com "dado nao informado".
+Responda apenas com uma frase curta avisando que a base esta vazia e que e preciso
+voltar ao passo 2 (Fonte) e carregar/processar a base antes de gerar o relatorio.`;
+      }
+
+      if (activeTemplate === 'temperatura') {
+        return `Voce e um analista senior de inteligencia de comunicacao da Nexus.
+
+Cliente: ${client}.
+Periodo/recorte deste alerta: ${periodo}.
+Origem dos dados: ${src} (${totalPubs} publicacao(oes)/link(s) no total).
+
+Publicacoes da base fornecidas abaixo. Essa e a UNICA fonte de fatos permitida — nao invente publicacoes, numeros, veiculos, perfis ou links que nao estejam nela:
+${pubBlock}
+
+Sua tarefa e criar um boletim no formato "TEMPERATURA DE REDES" seguindo rigorosamente o seguinte modelo:
+
+📊 TEMPERATURA DE REDES - ${periodo}
+Google News & X & Facebook & Instagram & YouTube
+
+[Para cada grande tema/assunto relevante identificado na base, crie uma secao no seguinte formato:]
+
+◾️[NOME DO TEMA EM LETRAS MAIUSCULAS]
+[Um paragrafo unico, claro, analitico e bem resumido descrevendo o debate sobre este tema, o sentimento geral e o motivo da repercussao baseado nos posts da base.]
+
+* [Rede Social/Fonte]: [Nome do Autor/Perfil]  ([Quantidade de Interacoes, formatada ex: 2,2 mil interações ou 256 interações])
+[URL/Link completo do post]
+* [Rede Social/Fonte]: [Nome do Autor/Perfil]  ([Quantidade de Interacoes])
+[URL/Link completo do post]
+... (liste ate 4 principais posts/evidencias por tema)
+
+Regras do formato:
+- Use exatamente os emojis 📊 e ◾️.
+- Agrupe as publicacoes por temas/assuntos principais.
+- Nao crie saudacoes, conclusoes ou textos introdutorios fora do modelo.
+- Retorne apenas o texto final pronto para envio no WhatsApp.`;
+      }
+
+      let estrutura;
+      if (modelMode === 'existing') {
+        estrutura = `Use como modelo de referencia (formato, tom, ordem das secoes e emojis) o texto abaixo, que e um alerta/relatorio real ja enviado antes. Mantenha a mesma estrutura visual, apenas substituindo o conteudo pelos dados novos fornecidos:\n\n"""\n${existingModelText}\n"""`;
+      } else {
+        const tpl = templates[activeTemplate] || { nome: 'Completo' };
+        estrutura = `Crie um ${tpl.nome} com a estrutura obrigatoria abaixo (cada item vira uma secao curta, com um emoji e um titulo em negrito — NAO inclua numero de item no titulo, essa numeracao aqui e so para sua referencia interna):\n` +
+          pieces.filter(p => selectedPieces.has(p.id)).map((p, i) => `${i + 1}. ${stripHtml(p.nome)}: ${stripHtml(p.desc)}`).join('\n');
+      }
+
+      let comparativo = '';
+      if (alertaAnteriorComparar) {
+        const anteriorTotal = alertaAnteriorComparar.total_publicacoes || 0;
+        const anteriorPeriodo = alertaAnteriorComparar.periodo || 'nao informado';
+        const anteriorData = alertaAnteriorComparar.created_at ? new Date(alertaAnteriorComparar.created_at).toLocaleString('pt-BR') : 'nao informado';
+        const variacao = anteriorTotal > 0 ? Math.round(((totalPubs - anteriorTotal) / anteriorTotal) * 1000) / 10 : null;
+        comparativo = `
+
+ESTE E UM ALERTA DE ATUALIZACAO — compare com o alerta anterior abaixo, nao trate como relatorio isolado:
+- Alerta anterior enviado em: ${anteriorData}.
+- Periodo/recorte do alerta anterior: ${anteriorPeriodo}.
+- Total de publicacoes do alerta anterior: ${anteriorTotal}.
+- Total de publicacoes deste novo recorte: ${totalPubs}.
+${variacao !== null ? `- Variacao de volume calculada: ${variacao > 0 ? '+' : ''}${variacao}% em relacao ao alerta anterior.` : '- Nao foi possivel calcular variacao percentual (alerta anterior sem total de publicacoes registrado).'}
+
+Regra obrigatoria: logo na abertura ou nas metricas, diga explicitamente que este e uma ATUALIZACAO do alerta anterior (cite a data/periodo dele) e informe se o volume de publicacoes SUBIU ou DESCEU e por quanto por cento, usando os numeros acima. Nao invente a variacao — use exatamente o numero calculado.`;
+      }
+
+      return `Voce e um analista senior de inteligencia de comunicacao da Nexus.
+
+Cliente: ${client}.
+Periodo/recorte deste alerta: ${periodo}.
+Origem dos dados: ${src} (${totalPubs} publicacao(oes)/link(s) no total).
+${comparativo}
+
+Publicacoes da base fornecidas abaixo. Essa e a UNICA fonte de fatos permitida — nao invente publicacoes, numeros, veiculos, perfis ou links que nao estejam nela:
+${pubBlock}
+
+${estrutura}
+
+FORMATO DE SAIDA — o texto final sera enviado direto no WhatsApp.
+
+REGRA MAIS IMPORTANTE:
+Mantenha EXATAMENTE as quebras de linha do modelo abaixo.
+Cada titulo deve ficar sozinho em uma linha.
+Cada bullet deve ficar sozinho em uma linha.
+Nunca transforme o texto em paragrafo corrido.
+Nunca remova os asteriscos de negrito do WhatsApp.
+Nunca remova os underlines de italico do WhatsApp.
+Use uma linha em branco entre secoes.
+
+Siga ESTRITAMENTE este modelo:
+
+*[ATUALIZAÇÃO]*
+*📲 PANORAMA REDES*
+*TITULO DO TEMA EM CAIXA ALTA*
+_Recorte atual: [periodo informado]_
+[Breve parágrafo inicial resumindo o fato principal e destacando o alcance potencial do tema, ex: "O tema sob monitoramento atingiu alcance potencial de X perfis/usuários nas redes."]
+
+*📊 Números gerais*
+- O tema acumula *[volume total]* publicações, com alcance potencial de *[alcance potencial]*.
+- Neste recorte, houve *[novas menções]* novas menções que impactam *[alcance do recorte]* usuários em potencial.
+- As publicações somam *[curtidas]* curtidas, *[comentários]* comentários e *[compartilhamentos]* compartilhamentos.
+- Em relação ao período anterior, o volume de postagens [cresceu/caiu/se manteve] *[variação]*, e o alcance [cresceu/caiu/se manteve] *[variação]*.
+- O sentimento predominante é *[positivo/neutro/negativo/misto]*, com [breve explicação].
+
+*🤳 Redes*
+- X ([percentual])
+- Instagram ([percentual])
+- Facebook ([percentual])
+- Outras redes, se houver
+
+*🗓️ Principais narrativas*
+- Liste entre 6 e 10 bullets com as principais narrativas encontradas.
+- Cada bullet deve ser objetivo, em linguagem executiva.
+- Junte nesta seção o antigo “Resumo do fato” e o antigo “Contexto”.
+- Evite parágrafos longos.
+
+*⚠️ Trending Topics*
+- Informe se o assunto aparece ou não entre os principais tópicos do X.
+- Caso essa informação não exista na base, escreva: *Assunto não informado entre os principais tópicos do X.*
+
+*💬 Citação em destaque*
+Inclua apenas uma citação relevante, se houver citação literal nas publicações. Caso não haja citação, omita esta seção.
+
+*⚡ Impacto potencial*
+- *Risco:* baixo, médio ou alto, com justificativa curta.
+- *Público afetado:* principais grupos impactados.
+- *Escala:* local, regional, nacional ou internacional.
+
+*🛜 Publicadores Maior Alcance*
+1. Nome/perfil + link
+2. Nome/perfil + link
+3. Nome/perfil + link
+4. Nome/perfil + link
+5. Nome/perfil + link
+6. Nome/perfil + link
+7. Nome/perfil + link
+8. Nome/perfil + link
+9. Nome/perfil + link
+10. Nome/perfil + link
+
+*🔁 Publicadores Maior Engajamento*
+1. Nome/perfil + link
+2. Nome/perfil + link
+3. Nome/perfil + link
+4. Nome/perfil + link
+5. Nome/perfil + link
+6. Nome/perfil + link
+7. Nome/perfil + link
+8. Nome/perfil + link
+9. Nome/perfil + link
+10. Nome/perfil + link
+
+REGRAS OBRIGATORIAS:
+- Nao use os blocos antigos: “📋 Cabeçalho”, “✨ Abertura curta”, “🌐 Fonte/canal”, “📝 Resumo do fato”, “🔍 Contexto”, “📊 Métricas” ou “🔗 Links/evidências”.
+- Nao despeje lista extensa de links soltos.
+- Use no maximo 10 links em “Publicadores Maior Alcance”.
+- Use no maximo 10 links em “Publicadores Maior Engajamento”.
+- Use negrito do WhatsApp com um asterisco de cada lado: *texto*.
+- Use italico do WhatsApp com underline: _texto_.
+- Nunca use titulos markdown como #, ## ou ###.
+- Nunca use tabelas.
+- Priorize frases curtas e legiveis no celular.
+- Nunca invente metricas.
+- Quando faltar dado, escreva: *não informado na base analisada*.
+- O texto deve começar diretamente em *[ATUALIZAÇÃO]*.
+- Nao escreva introducao, explicacao ou conclusao fora do modelo.`;
+    }
+
+    function syncPrompt() {
+      const box = document.getElementById('promptBox');
+      if (box) box.value = activeSource === 'trending' ? buildTrendingPrompt() : buildPrompt();
+    }
+
+    function downloadPromptTxt() {
+      const content = activeSource === 'trending' ? buildTrendingPrompt() : buildPrompt();
+      const nomeArq = activeSource === 'trending'
+        ? (document.getElementById('trendingTermo')?.value || 'trending').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+        : (selectedClient?.nome || 'cliente').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'cliente';
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = activeSource === 'trending' ? `sentinela-prompt-trending-${nomeArq}.txt` : `sentinela-${nomeArq}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast(activeSource === 'trending' ? 'TXT com prompt do Trending Topic baixado.' : 'TXT com publica&ccedil;&otilde;es e prompt baixado.');
+    }
+
+    let finalDraftText = '';
+
+    function forceLineBreaks(text) {
+      let t = String(text || '');
+
+      // 1) Garante quebra antes de cada seção conhecida (nomes das pecas), mesmo
+      // quando a IA colou tudo junto sem quebra de linha (ex: "CabeçalhoTipo:").
+      const nomesSecoes = pieces.map(p => stripHtml(p.nome)).sort((a, b) => b.length - a.length);
+      const secoesAlt = nomesSecoes.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+      if (secoesAlt) {
+        const reSecao = new RegExp('([\\p{Extended_Pictographic}\\u200d\\ufe0f]?\\s*\\*?)(' + secoesAlt + ')(\\*?)', 'gu');
+        t = t.replace(reSecao, (m, pre, nome, post, offset, str) => {
+          const jaComQuebra = offset === 0 || /\n\s*$/.test(str.slice(Math.max(0, offset - 4), offset));
+          const proximo = str[offset + m.length] || '';
+          const coladoNoConteudo = proximo && !/[\s\n]/.test(proximo);
+          return (jaComQuebra ? '' : '\n') + pre + nome + post + (coladoNoConteudo ? '\n' : '');
+        });
+      }
+
+      // 2) Garante quebra antes de rotulos tipo "Campo:" quando vierem colados
+      // ou só separados por espaço no meio da linha (ex: "Teste Tema: Monitoramento").
+      // Exige espaco explicito entre palavras do rotulo, pra nao juntar duas
+      // palavras coladas sem separador (ex: "CabeçalhoTipo") como se fosse um rotulo so.
+      t = t.replace(/([^\n\s])[ \t]*([A-ZÀ-Ý][\wÀ-ÿ]*(?:\/[A-ZÀ-Ýa-zà-ÿ]+)?(?: [a-zà-ÿA-ZÀ-Ý][\wÀ-ÿ]*){0,2}:)[ \t]+(?=[A-ZÀ-Ý0-9"“(])/g, '$1\n$2 ');
+
+      return t;
+    }
+
+    function whatsappify(text) {
+  let t = forceLineBreaks(text);
+
+  // Normaliza espaços, variações de emoji e quebras
+  t = String(t || '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\uFE0F/g, '')
+    .replace(/[ \t]{2,}/g, '\n')
+    .trim();
+
+  // Força o topo no padrão WhatsApp
+  t = t.replace(/\*?\[ATUALIZAÇÃO\]\*?/gi, '\n*[ATUALIZAÇÃO]*\n');
+  t = t.replace(/\*?📲\s*PANORAMA\s+REDES\*?/gi, '\n*📲 PANORAMA REDES*\n');
+  t = t.replace(/\bRecorte atual:\s*/gi, '\n_Recorte atual: ');
+
+  // Força títulos de seção no padrão WhatsApp
+  const headingMap = [
+    { re: /📊\s*Números gerais/gi, label: '*📊 Números gerais*', key: 'bullets' },
+    { re: /🤳\s*Redes/gi, label: '*🤳 Redes*', key: 'bullets' },
+    { re: /🗓\s*Principais narrativas/gi, label: '*🗓️ Principais narrativas*', key: 'bullets' },
+    { re: /⚠\s*Trending Topics/gi, label: '*⚠️ Trending Topics*', key: 'bullets' },
+    { re: /💬\s*Citação em destaque/gi, label: '*💬 Citação em destaque*', key: 'quote' },
+    { re: /⚡\s*Impacto potencial/gi, label: '*⚡ Impacto potencial*', key: 'bullets' },
+    { re: /🛜\s*Publicadores Maior Alcance/gi, label: '*🛜 Publicadores Maior Alcance*', key: 'ranking_alcance' },
+    { re: /🔁\s*Publicadores Maior Engajamento/gi, label: '*🔁 Publicadores Maior Engajamento*', key: 'ranking_engajamento' },
+  ];
+
+  headingMap.forEach(h => {
+    t = t.replace(h.re, '\n\n' + h.label + '\n');
+  });
+
+  // Fecha o itálico do recorte antes da próxima seção
+  t = t.replace(/(_Recorte atual:[^\n]*?)(?=\n\s*\*)/i, '$1_');
+
+  // Quebra frases muito coladas dentro dos blocos
+  t = t.replace(/([.!?])\s+(Neste recorte|As publicações|Em relação|O sentimento|Foi identificada|A postagem|O registro|O conteúdo|A publicação|Não há|A narrativa|Risco:|Público afetado:|Escala:)/g, '$1\n$2');
+
+  const lines = t
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  const out = [];
+  let section = '';
+  const rankingCount = {
+    ranking_alcance: 1,
+    ranking_engajamento: 1,
+  };
+
+  function isHeading(line) {
+    return /^\*(📊|🤳|🗓|⚠|💬|⚡|🛜|🔁)/.test(line);
+  }
+
+  function cleanHeading(line) {
+    const found = headingMap.find(h => line.includes(h.label.replace(/\*/g, '').replace('️', '')));
+    if (found) {
+      section = found.key;
+      return found.label;
+    }
+
+    if (line.includes('📊')) { section = 'bullets'; return '*📊 Números gerais*'; }
+    if (line.includes('🤳')) { section = 'bullets'; return '*🤳 Redes*'; }
+    if (line.includes('🗓')) { section = 'bullets'; return '*🗓️ Principais narrativas*'; }
+    if (line.includes('⚠')) { section = 'bullets'; return '*⚠️ Trending Topics*'; }
+    if (line.includes('💬')) { section = 'quote'; return '*💬 Citação em destaque*'; }
+    if (line.includes('⚡')) { section = 'bullets'; return '*⚡ Impacto potencial*'; }
+    if (line.includes('🛜')) { section = 'ranking_alcance'; return '*🛜 Publicadores Maior Alcance*'; }
+    if (line.includes('🔁')) { section = 'ranking_engajamento'; return '*🔁 Publicadores Maior Engajamento*'; }
+
+    return line;
+  }
+
+  lines.forEach((rawLine) => {
+    let line = rawLine;
+
+    if (/^\*?\[ATUALIZAÇÃO\]\*?$/i.test(line)) {
+      section = '';
+      out.push('*[ATUALIZAÇÃO]*');
+      return;
+    }
+
+    if (/📲\s*PANORAMA\s+REDES/i.test(line)) {
+      section = '';
+      out.push('*📲 PANORAMA REDES*');
+      return;
+    }
+
+    if (/^_?Recorte atual:/i.test(line)) {
+      section = '';
+      line = line.replace(/^_?/, '').replace(/_?$/, '');
+      out.push('_' + line + '_');
+      return;
+    }
+
+    if (isHeading(line) || /Números gerais|Principais narrativas|Trending Topics|Citação em destaque|Impacto potencial|Publicadores Maior Alcance|Publicadores Maior Engajamento/.test(line)) {
+      out.push('');
+      out.push(cleanHeading(line));
+      return;
+    }
+
+    // Título do tema: linha entre PANORAMA REDES e Recorte
+    if (out[out.length - 1] === '*📲 PANORAMA REDES*' && !/^_?Recorte atual:/i.test(line)) {
+      out.push('*' + line.replace(/\*/g, '').toUpperCase() + '*');
+      return;
+    }
+
+    // Negrita rótulos do impacto
+    line = line
+      .replace(/^Risco:/i, '*Risco:*')
+      .replace(/^Público afetado:/i, '*Público afetado:*')
+      .replace(/^Escala:/i, '*Escala:*');
+
+    if (section === 'ranking_alcance' || section === 'ranking_engajamento') {
+      if (!/^\d+\./.test(line)) {
+        line = rankingCount[section] + '. ' + line;
+        rankingCount[section] += 1;
+      }
+      out.push(line);
+      return;
+    }
+
+    if (section === 'bullets') {
+      if (!/^[-*•]/.test(line)) {
+        line = '- ' + line;
+      }
+      out.push(line);
+      return;
+    }
+
+    out.push(line);
+  });
+
+  return out
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  }
+
+    function importExternalResponse() {
+      const text = (document.getElementById('externalResponse')?.value || '').trim();
+      if (!text) { showToast('Cole a resposta da IA externa primeiro.'); return; }
+      
+      if (activeSource === 'trending') {
+        if (trendingMultiModeVal) {
+          const parsedSummaries = parseMultipleTrendingResponse(text, trendingListVal.length);
+          trendingListVal.forEach((item, idx) => {
+            item.repercussao = parsedSummaries[idx] || '';
+          });
+          showToast('Respostas importadas e divididas entre os cards.');
+        } else {
+          const cleaned = cleanTrendingAIResponse(text);
+          trendingRepercussaoVal = cleaned;
+          
+          const repEl = document.getElementById('trendingRepercussao');
+          if (repEl) repEl.value = cleaned;
+          
+          finalDraftText = buildTrendingMessageText();
+          showToast('Resposta importada e formatada.');
+        }
+      } else {
+        finalDraftText = whatsappify(text);
+        showToast('Resposta importada e formatada para WhatsApp.');
+      }
+      
+      renderPreview();
+    }
+
+    function renderPreview() {
+      if (activeSource === 'trending') {
+        if (trendingMultiModeVal) {
+          const hasAnyRepercussao = trendingListVal.some(item => item.repercussao);
+          if (hasAnyRepercussao) {
+            document.getElementById('previewTitle').textContent = `Rascunho Múltiplo - ${selectedClient?.nome || 'cliente'}`;
+            
+            let html = '<div style="display:flex; flex-direction:column; gap:16px; margin-top: 10px;">';
+            trendingListVal.forEach((item, idx) => {
+              const msgText = buildTrendingMessageTextForItem(item);
+              const imgUrl = item.imageBlob ? URL.createObjectURL(item.imageBlob) : '';
+              
+              html += `
+                <div class="multiple-trend-card" style="border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: rgba(255,255,255,0.02); overflow: hidden;">
+                  <div style="padding: 10px 14px; background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center;">
+                    <div style="font-weight: 700; font-size: 12px; color: var(--accent);">Alerta #${idx + 1}: ${escHtml(item.term)}</div>
+                    <div style="display:flex; gap:6px;">
+                      <button class="tbtn" onclick="copyTrendingImageForItem(${idx})" style="height:26px; font-size:10px; padding:0 8px; margin:0;" ${item.imageBlob ? '' : 'disabled'}>
+                        <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:2px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                        Copiar Print
+                      </button>
+                      <button class="tbtn tbtn-primary" onclick="copyTrendingTextForItem(${idx})" style="height:26px; font-size:10px; padding:0 8px; margin:0;" ${item.repercussao ? '' : 'disabled'}>
+                        Copiar Texto
+                      </button>
+                    </div>
+                  </div>
+                  <div style="padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+                    <div class="preview-block" style="margin: 0; font-size: 13px; font-family: inherit; line-height: 1.4;">${escHtml(msgText).replace(/\n/g, '<br>')}</div>
+                    ${imgUrl ? `<div style="text-align: center;"><img src="${imgUrl}" style="max-width:100%; max-height:160px; border-radius:6px; border:1px solid rgba(255,255,255,0.1);"/></div>` : ''}
+                  </div>
+                </div>
+              `;
+            });
+            html += '</div>';
+            document.getElementById('previewBody').innerHTML = html;
+          } else {
+            document.getElementById('previewTitle').textContent = `Rascunho Múltiplo - ${selectedClient?.nome || 'cliente'}`;
+            document.getElementById('previewBody').innerHTML = `<div class="preview-block">Cole a resposta da IA externa acima contendo as narrativas numeradas e clique em "Usar resposta no rascunho" para ver a prévia de cada card aqui.</div>`;
+          }
+        } else {
+          if (trendingRepercussaoVal) {
+            finalDraftText = buildTrendingMessageText();
+            document.getElementById('previewTitle').textContent = `Rascunho - ${selectedClient?.nome || 'cliente'}`;
+            document.getElementById('previewBody').innerHTML = `<div class="preview-block">${escHtml(finalDraftText).replace(/\n/g, '<br>')}</div>`;
+            if (trendingImageBlob) {
+              const imgUrl = URL.createObjectURL(trendingImageBlob);
+              const imgPreviewHtml = `<div style="margin-top: 10px;"><img src="${imgUrl}" style="max-width:100%; max-height:250px; border-radius:6px; border:1px solid rgba(255,255,255,0.1);"/></div>`;
+              document.getElementById('previewBody').innerHTML += imgPreviewHtml;
+            }
+          } else {
+            document.getElementById('previewTitle').textContent = `Rascunho - ${selectedClient?.nome || 'cliente'}`;
+            document.getElementById('previewBody').innerHTML = `<div class="preview-block">Cole a resposta da IA externa acima e clique em "Usar resposta no rascunho" para ver a pr&eacute;via aqui.</div>`;
+          }
+        }
+      } else {
+        if (finalDraftText) {
+          document.getElementById('previewTitle').textContent = `Rascunho - ${selectedClient?.nome || 'cliente'}`;
+          document.getElementById('previewBody').innerHTML = `<div class="preview-block">${escHtml(finalDraftText).replace(/\n/g, '<br>')}</div>`;
+        } else {
+          document.getElementById('previewTitle').textContent = `Rascunho - ${selectedClient?.nome || 'cliente'}`;
+          document.getElementById('previewBody').innerHTML = `<div class="preview-block">Cole a resposta da IA externa acima e clique em "Usar resposta no rascunho" para ver a pr&eacute;via aqui.</div>`;
+        }
+      }
+    }
+
+    function copiarRascunhoFinal() {
+      if (!finalDraftText) { showToast('Importe a resposta da IA no rascunho antes de copiar.'); return; }
+      navigator.clipboard?.writeText(finalDraftText);
+      showToast('Rascunho copiado &mdash; pronto para colar no WhatsApp do cliente.');
+    }
+
+    async function salvarAlertaNoHistorico(comoPadrao) {
+      if (activeSource === 'trending') {
+        showToast('Não é permitido salvar histórico de trending topics.');
+        return;
+      }
+      if (!finalDraftText) { 
+        showToast(activeSource === 'trending' ? 'Preencha os dados do trending topic antes de salvar.' : 'Importe a resposta da IA no rascunho antes de salvar.'); 
+        return; 
+      }
+      if (!selectedClient?.nome) { showToast('Selecione uma empresa primeiro.'); return; }
+      try {
+        const r = await fetch('/api/alertas/salvar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cliente: selectedClient.nome,
+            texto_gerado: finalDraftText,
+            fonte: stripHtml(sourceLabel()),
+            modelo: modelMode === 'existing' ? 'modelo existente' : (templates[activeTemplate]?.nome || 'completo'),
+            periodo: (periodoAtual || '').trim(),
+            total_publicacoes: countPublications(),
+            padrao: !!comoPadrao,
+          }),
+        });
+        const data = await r.json();
+        if (!r.ok || data.error) throw new Error(data.error || 'erro ao salvar');
+        alertHistoryClient = null;
+        showToast(comoPadrao ? 'Alerta salvo como padr&atilde;o desta empresa.' : 'Alerta salvo no hist&oacute;rico do cliente.');
+      } catch (e) {
+        showToast('N&atilde;o foi poss&iacute;vel salvar: ' + e.message);
+      }
+    }
+
+    /* ─── Funções Auxiliares do Trending Topics X ─── */
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    function initTrendingDropZone() {
+      const dropZone = document.getElementById('trendingDropZone');
+      if (dropZone) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+          dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+          dropZone.addEventListener(eventName, () => dropZone.style.borderColor = 'var(--accent)', false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+          dropZone.addEventListener(eventName, () => dropZone.style.borderColor = 'rgba(255,255,255,0.15)', false);
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+          const dt = e.dataTransfer;
+          const files = dt.files;
+          if (files && files.length > 0) {
+            handleTrendingImageUpload(files[0]);
+          }
+        }, false);
+        
+        dropZone.addEventListener('click', () => {
+          document.getElementById('trendingImageInput').click();
+        });
+      }
+    }
+
+    function handleTrendingImageUpload(file) {
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        showToast('Por favor, selecione apenas arquivos de imagem.');
+        return;
+      }
+      // Turn off auto-generate since user is manually uploading/pasting an image
+      trendingAutoGenerateVal = false;
+      const autoGenCheckbox = document.getElementById('trendingAutoGenerate');
+      if (autoGenCheckbox) autoGenCheckbox.checked = false;
+
+      handleTrendingImageFile(file);
+    }
+
+    function handleTrendingImageFile(file) {
+      trendingImageBlob = file;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const preview = document.getElementById('trendingImagePreview');
+        const container = document.getElementById('trendingImagePreviewContainer');
+        if (preview) preview.src = e.target.result;
+        if (container) container.style.display = 'block';
+        
+        const dropZoneText = document.getElementById('trendingDropZoneText');
+        if (dropZoneText) dropZoneText.textContent = 'Imagem carregada: ' + file.name;
+        
+        const btnCopyImg = document.getElementById('btnCopyTrendingImage');
+        if (btnCopyImg) btnCopyImg.disabled = false;
+        
+        updateTrendingAlert();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearTrendingImage() {
+      // Turn off auto-generate when clearing the image manually
+      const autoGenCheckbox = document.getElementById('trendingAutoGenerate');
+      if (autoGenCheckbox) autoGenCheckbox.checked = false;
+      trendingAutoGenerateVal = false;
+
+      trendingImageBlob = null;
+      
+      const input = document.getElementById('trendingImageInput');
+      if (input) input.value = '';
+      
+      const preview = document.getElementById('trendingImagePreview');
+      if (preview) preview.src = '';
+      
+      const container = document.getElementById('trendingImagePreviewContainer');
+      if (container) container.style.display = 'none';
+      
+      const dropZoneText = document.getElementById('trendingDropZoneText');
+      if (dropZoneText) dropZoneText.textContent = 'Arraste o print da imagem aqui, cole com Ctrl+V, ou clique para fazer upload';
+      
+      const btnCopyImg = document.getElementById('btnCopyTrendingImage');
+      if (btnCopyImg) btnCopyImg.disabled = true;
+      
+      updateTrendingAlert();
+    }
+
+    function clearTrendingImageSilently() {
+      trendingImageBlob = null;
+      
+      const input = document.getElementById('trendingImageInput');
+      if (input) input.value = '';
+      
+      const preview = document.getElementById('trendingImagePreview');
+      if (preview) preview.src = '';
+      
+      const container = document.getElementById('trendingImagePreviewContainer');
+      if (container) container.style.display = 'none';
+      
+      const dropZoneText = document.getElementById('trendingDropZoneText');
+      if (dropZoneText) {
+        dropZoneText.textContent = 'Arraste o print da imagem aqui, cole com Ctrl+V, ou clique para fazer upload';
+      }
+      
+      const btnCopyImg = document.getElementById('btnCopyTrendingImage');
+      if (btnCopyImg) btnCopyImg.disabled = true;
+      
+      const btnCopyImgGenerate = document.getElementById('btnCopyImageGenerate');
+      if (btnCopyImgGenerate) btnCopyImgGenerate.style.display = 'none';
+    }
+
+    function toggleTrendingAutoGenerate(checked) {
+      trendingAutoGenerateVal = checked;
+      if (checked) {
+        generateTrendingPrintImage();
+      } else {
+        clearTrendingImage();
+      }
+    }
+
+    function generateTrendingPrintImage() {
+      if (!trendingAutoGenerateVal) return;
+      
+      const term = (document.getElementById('trendingTermo')?.value || '').trim();
+      const pos = (document.getElementById('trendingPosicao')?.value || '').trim();
+      const category = (document.getElementById('trendingCategoria')?.value || 'Assunto do Momento: Brasil').trim();
+      
+      if (!term) {
+        clearTrendingImageSilently();
+        return;
+      }
+      
+      const topText = pos ? `${pos} · ${category}` : category;
+      
+      // Dynamic width calculation based on text measurements
+      const tempCanvas = document.createElement('canvas');
+      const tempCtx = tempCanvas.getContext('2d');
+      const fontStack = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+      
+      tempCtx.font = `13px ${fontStack}`;
+      const topTextWidth = tempCtx.measureText(topText).width;
+      
+      tempCtx.font = `bold 15px ${fontStack}`;
+      const termWidth = tempCtx.measureText(term).width;
+      
+      const contentWidth = Math.max(topTextWidth, termWidth);
+      const width = Math.max(380, Math.ceil(contentWidth) + 36);
+      const height = 78;
+      
+      const canvas = document.createElement('canvas');
+      const scale = 2; // high-dpi crispness
+      
+      canvas.width = width * scale;
+      canvas.height = height * scale;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.scale(scale, scale);
+      
+      // Black background
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Left vertical border (re-creates sidebar crop look)
+      ctx.strokeStyle = '#2f3336';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0.5, 0);
+      ctx.lineTo(0.5, height);
+      ctx.stroke();
+      
+      // Top Text
+      ctx.fillStyle = '#536471';
+      ctx.font = `13px ${fontStack}`;
+      ctx.fillText(topText, 16, 28);
+      
+      // Term/Hashtag Text
+      ctx.fillStyle = '#eff3f4';
+      ctx.font = `bold 15px ${fontStack}`;
+      ctx.fillText(term, 16, 53);
+      
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        
+        const file = new File([blob], 'trending-topic-auto.png', { type: 'image/png' });
+        trendingImageBlob = file;
+        
+        const preview = document.getElementById('trendingImagePreview');
+        const container = document.getElementById('trendingImagePreviewContainer');
+        if (preview) preview.src = URL.createObjectURL(blob);
+        if (container) container.style.display = 'block';
+        
+        const dropZoneText = document.getElementById('trendingDropZoneText');
+        if (dropZoneText) dropZoneText.textContent = 'Imagem gerada automaticamente';
+        
+        const btnCopyImg = document.getElementById('btnCopyTrendingImage');
+        if (btnCopyImg) btnCopyImg.disabled = false;
+        
+        const btnCopyImgGenerate = document.getElementById('btnCopyImageGenerate');
+        if (btnCopyImgGenerate) btnCopyImgGenerate.style.display = 'inline-flex';
+        
+        renderPreview();
+        updateSourceContinue();
+      }, 'image/png');
+    }
+
+    function buildTrendingPrompt() {
+      const client = selectedClient?.nome || '';
+      const existing = client ? sentinelaClientsList.find(c => c.nome.toLowerCase() === client.toLowerCase()) : null;
+
+      if (trendingMultiModeVal) {
+        let termsListText = '';
+        trendingListVal.forEach((item, idx) => {
+          let posText = '';
+          if (item.pos) {
+            let pos = item.pos;
+            if (/^\d+$/.test(pos)) pos += 'ª';
+            posText = ` (na ${pos} posição)`;
+          }
+          termsListText += `${idx + 1}. "${item.term}"${posText}\n`;
+        });
+        
+        let template = DEFAULT_TRENDING_PROMPT_MULTI;
+        if (existing && existing.prompt_multi && existing.prompt_multi.trim()) {
+          template = existing.prompt_multi;
+        }
+        
+        return template.replace(/{termsListText}/g, termsListText);
+      } else {
+        const termo = (document.getElementById('trendingTermo')?.value || '').trim();
+        const posicao = (document.getElementById('trendingPosicao')?.value || '').trim();
+        
+        let posText = '';
+        if (posicao) {
+          let pos = posicao;
+          if (/^\d+$/.test(pos)) {
+            pos = pos + 'ª';
+          }
+          posText = ` na ${pos} posição`;
+        }
+
+        let template = DEFAULT_TRENDING_PROMPT_SINGLE;
+        if (existing && existing.prompt_single && existing.prompt_single.trim()) {
+          template = existing.prompt_single;
+        }
+
+        return template
+          .replace(/{termo}/g, termo)
+          .replace(/{posText}/g, posText);
+      }
+    }
+
+    function copyTrendingPrompt() {
+      if (trendingMultiModeVal && trendingListVal.length === 0) {
+        showToast('Adicione pelo menos um termo primeiro.');
+        return;
+      }
+      if (!trendingMultiModeVal && !(document.getElementById('trendingTermo')?.value || '').trim()) {
+        showToast('Escreva o termo do Trending Topic primeiro.');
+        return;
+      }
+      const promptText = buildTrendingPrompt();
+      navigator.clipboard?.writeText(promptText).then(() => {
+        showToast('Prompt copiado para a área de transferência!');
+      }).catch(err => {
+        showToast('Erro ao copiar prompt: ' + err.message);
+      });
+    }
+
+    function downloadTrendingPromptTxt() {
+      if (trendingMultiModeVal && trendingListVal.length === 0) {
+        showToast('Adicione pelo menos um termo primeiro.');
+        return;
+      }
+      if (!trendingMultiModeVal && !(document.getElementById('trendingTermo')?.value || '').trim()) {
+        showToast('Escreva o termo do Trending Topic primeiro.');
+        return;
+      }
+      const content = buildTrendingPrompt();
+      let nomeArq = 'trending-multi';
+      if (!trendingMultiModeVal) {
+        const termo = (document.getElementById('trendingTermo')?.value || '').trim();
+        nomeArq = termo.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'trending';
+      }
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `sentinela-prompt-trending-${nomeArq}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast('TXT com prompt do Trending Topic baixado.');
+    }
+
+    function cleanTrendingAIResponse(text) {
+      let cleaned = String(text || '').trim();
+      // Remove leading and trailing quotes (both single, double, and curly quotes)
+      cleaned = cleaned.replace(/^["'“`]+|["'”`]+$/g, '');
+      
+      // If the AI returned the full sentence like "O termo ... está na ... posição ..., repercutindo..."
+      // Let's try to extract the part after "assuntos mais comentados da rede, " or similar.
+      const pattern = /assuntos mais comentados da rede,\s*(.*)/i;
+      const match = cleaned.match(pattern);
+      if (match && match[1]) {
+        cleaned = match[1].trim();
+      }
+      
+      // Also remove trailing period if present
+      if (cleaned.endsWith('.')) {
+        cleaned = cleaned.slice(0, -1);
+      }
+      
+      return cleaned.trim();
+    }
+
+    function handleTrendingAIResponseInput(value) {
+      const cleaned = cleanTrendingAIResponse(value);
+      const repEl = document.getElementById('trendingRepercussao');
+      if (repEl) {
+        repEl.value = cleaned;
+        trendingRepercussaoVal = cleaned;
+      }
+      updateTrendingAlert();
+    }
+
+    function buildTrendingMessageText() {
+      const termo = (document.getElementById('trendingTermo')?.value || '').trim();
+      const posicao = (document.getElementById('trendingPosicao')?.value || '').trim();
+      let repercussao = (trendingRepercussaoVal || '').trim();
+      
+      if (repercussao.endsWith('.')) {
+        repercussao = repercussao.slice(0, -1);
+      }
+      
+      let pos = posicao;
+      if (/^\d+$/.test(pos)) {
+        pos = pos + 'ª';
+      }
+      
+      return `📲 Trending Topics X - O termo "${termo}" está na ${pos} posição entre os assuntos mais comentados da rede, ${repercussao}. https://x.com/search?q=%22${encodeURIComponent(termo)}%22&src=trend_click&vertical=trends`;
+    }
+
+    function updateTrendingAlert() {
+      const termo = (document.getElementById('trendingTermo')?.value || '').trim();
+      const posicao = (document.getElementById('trendingPosicao')?.value || '').trim();
+      const categoria = (document.getElementById('trendingCategoria')?.value || 'Assunto do Momento: Brasil').trim();
+      
+      trendingTermoVal = termo;
+      trendingPosicaoVal = posicao;
+      trendingCategoriaVal = categoria;
+      
+      const repEl = document.getElementById('trendingRepercussao');
+      if (repEl) {
+        trendingRepercussaoVal = repEl.value.trim();
+      }
+      
+      if (trendingAutoGenerateVal) {
+        generateTrendingPrintImage();
+      } else {
+        updateSourceContinue();
+      }
+    }
+
+    async function fetchTrendsData() {
+      const select = document.getElementById('trendsTimeSelect');
+      const container = document.getElementById('trendsCatalogContainer');
+      if (select) select.innerHTML = '<option value="">Carregando horários...</option>';
+      if (container) container.innerHTML = '<div style="font-size:12px; color:var(--text-muted); padding:10px;">Carregando Trending Topics do Trends24...</div>';
+      
+      try {
+        const res = await fetch('/api/trends');
+        if (!res.ok) throw new Error('Não foi possível obter dados do Trends24');
+        const data = await res.json();
+        trendsData = data;
+        
+        populateTrendsTimeSelect();
+        renderTrendsCatalog();
+      } catch (err) {
+        showToast('Erro ao carregar Trending Topics: ' + err.message);
+        if (select) select.innerHTML = '<option value="">Erro ao carregar</option>';
+        if (container) container.innerHTML = '<div style="font-size:12px; color:#ff4d4d; padding:10px;">Falha ao carregar os Trending Topics.</div>';
+      }
+    }
+
+    function populateTrendsTimeSelect() {
+      const select = document.getElementById('trendsTimeSelect');
+      if (!select || !trendsData || !trendsData.timeBlocks) return;
+      
+      select.innerHTML = '';
+      trendsData.timeBlocks.forEach((block, idx) => {
+        let label = '';
+        if (idx === 0) {
+          label = 'Mais recente (Agora)';
+        } else {
+          label = `${idx}h atrás`;
+        }
+        
+        try {
+          const date = new Date(block.time);
+          const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+          label += ` (${timeStr})`;
+        } catch(e) {
+          label += ` (${block.time})`;
+        }
+        
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = label;
+        select.appendChild(opt);
+      });
+    }
+
+    function renderTrendsCatalog() {
+      const select = document.getElementById('trendsTimeSelect');
+      const container = document.getElementById('trendsCatalogContainer');
+      if (!container || !trendsData || !trendsData.timeBlocks) return;
+      
+      const selectedIndex = select ? parseInt(select.value, 10) || 0 : 0;
+      const block = trendsData.timeBlocks[selectedIndex];
+      if (!block) {
+        container.innerHTML = '<div style="font-size:12px; color:var(--text-muted); padding:10px;">Nenhum bloco encontrado.</div>';
+        return;
+      }
+      
+      const limit = expandCatalog ? block.trends.length : 10;
+      
+      let html = `
+        <table style="width:100%; border-collapse:collapse; font-size:12px;">
+          <thead>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.1); text-align:left; color:var(--accent); font-weight:700;">
+              <th style="padding:6px 4px; width:60px;">Posição</th>
+              <th style="padding:6px 4px;">Trending Topic (Termo)</th>
+              <th style="padding:6px 4px; text-align:right; width:90px;">Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      
+      const trendsToShow = block.trends.slice(0, limit);
+      trendsToShow.forEach(trend => {
+        const isSelected = trendingMultiModeVal 
+          ? trendingListVal.some(item => item.term.toLowerCase() === trend.name.toLowerCase())
+          : (trendingTermoVal.toLowerCase() === trend.name.toLowerCase());
+          
+        const btnText = isSelected ? 'Selecionado' : 'Selecionar';
+        const btnClass = isSelected ? 'tbtn' : 'tbtn tbtn-primary';
+        const btnStyle = isSelected ? 'height:26px; padding:0 8px; font-size:10px; margin:0; background:rgba(76,175,80,0.15); color:#4caf50; border:1px solid rgba(76,175,80,0.3);' : 'height:26px; padding:0 8px; font-size:10px; margin:0;';
+        
+        html += `
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+            <td style="padding:6px 4px; font-weight:700; color:var(--text-muted);">${trend.rank}º</td>
+            <td style="padding:6px 4px; font-weight:600; color:var(--text-primary);">${escHtml(trend.name)}</td>
+            <td style="padding:6px 4px; text-align:right;">
+              <button class="${btnClass}" onclick="selectTrendFromCatalog('${escAttr(trend.name)}', ${trend.rank})" type="button" style="${btnStyle}">
+                ${btnText}
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      
+      html += `
+          </tbody>
+        </table>
+      `;
+      
+      if (!expandCatalog && block.trends.length > 10) {
+        html += `
+          <div style="text-align:center; margin-top:8px;">
+            <button class="tbtn" onclick="expandCatalog=true;renderTrendsCatalog()" type="button" style="height:28px; padding:0 12px; font-size:11px; margin:0; background:rgba(255,255,255,0.04);">
+              Mostrar mais termos
+            </button>
+          </div>
+        `;
+      }
+      
+      container.innerHTML = html;
+    }
+
+    function selectTrendFromCatalog(name, rank) {
+      if (trendingMultiModeVal) {
+        addTrendingTerm(name, rank, 'Assunto do Momento: Brasil');
+        showToast(`Adicionado ao grupo: "${name}"`);
+        renderTrendsCatalog(); // Refresh catalog to show green "Selecionado" style
+      } else {
+        const termoInput = document.getElementById('trendingTermo');
+        const posInput = document.getElementById('trendingPosicao');
+        
+        if (termoInput) {
+          termoInput.value = name;
+          trendingTermoVal = name;
+        }
+        if (posInput) {
+          posInput.value = rank;
+          trendingPosicaoVal = rank;
+        }
+        
+        updateTrendingAlert();
+        showToast(`Selecionado: "${name}" na ${rank}ª posição`);
+        renderTrendsCatalog(); // Refresh to show green "Selecionado" style
+        document.getElementById('trendingTermo')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    /* ─── Funções Auxiliares de Trending Topics Múltiplos ─── */
+    function addTrendingTerm(term, pos, category) {
+      term = term.trim();
+      pos = String(pos).trim();
+      category = category.trim();
+      if (!term) return;
+      
+      if (trendingListVal.some(item => item.term.toLowerCase() === term.toLowerCase())) {
+        showToast('Este termo já foi selecionado.');
+        return;
+      }
+      
+      const newItem = {
+        term: term,
+        pos: pos,
+        category: category || 'Assunto do Momento: Brasil',
+        imageBlob: null,
+        repercussao: ''
+      };
+      
+      trendingListVal.push(newItem);
+      renderTrendingSelectedList();
+      generateTrendingPrintImageForListItem(trendingListVal.length - 1);
+      updateSourceContinue();
+    }
+
+    function removeTrendingTerm(idx) {
+      trendingListVal.splice(idx, 1);
+      renderTrendingSelectedList();
+      renderTrendsCatalog(); // Refresh catalog selected style
+      updateSourceContinue();
+    }
+
+    function renderTrendingSelectedList() {
+      const container = document.getElementById('trendingSelectedListContainer');
+      if (!container) return;
+      
+      if (trendingListVal.length === 0) {
+        container.innerHTML = '<div style="font-size:12px; color:var(--text-muted); padding:5px 0;">Nenhum termo selecionado ainda. Clique nos termos do catálogo abaixo ou adicione manualmente.</div>';
+        return;
+      }
+      
+      let html = '<div style="display:flex; flex-direction:column; gap:6px;">';
+      trendingListVal.forEach((item, idx) => {
+        const displayRank = item.pos ? `${item.pos}º` : '-';
+        html += `
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:6px; font-size:12px;">
+            <div style="display:flex; flex-direction:column; gap:2px;">
+              <div style="font-weight:700; color:#fff;">${escHtml(item.term)}</div>
+              <div style="font-size:10px; color:var(--text-muted);">${displayRank} · ${escHtml(item.category)}</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              ${item.imageBlob ? '<span style="font-size:10px; color:#4caf50; font-weight:700;">✓ Print OK</span>' : '<span style="font-size:10px; color:var(--text-muted);">Gerando print...</span>'}
+              <button onclick="removeTrendingTerm(${idx})" type="button" style="background:none; border:none; color:#ff4d4d; cursor:pointer; font-size:14px; padding:0 4px; line-height:1;" title="Remover">&times;</button>
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    function addTrendingTermManual() {
+      const termEl = document.getElementById('trendingMultiTermo');
+      const posEl = document.getElementById('trendingMultiPosicao');
+      const catEl = document.getElementById('trendingMultiCategoria');
+      
+      if (!termEl) return;
+      const term = termEl.value.trim();
+      const pos = posEl ? posEl.value.trim() : '';
+      const cat = catEl ? catEl.value.trim() : 'Assunto do Momento: Brasil';
+      
+      if (!term) {
+        showToast('Digite o termo do Trending Topic.');
+        return;
+      }
+      
+      addTrendingTerm(term, pos, cat);
+      renderTrendsCatalog();
+      
+      termEl.value = '';
+      if (posEl) posEl.value = '';
+      if (catEl) catEl.value = 'Assunto do Momento: Brasil';
+    }
+
+    function toggleTrendingMultiMode(checked) {
+      trendingMultiModeVal = checked;
+      
+      const singleContainer = document.getElementById('trendingSingleContainer');
+      const multiContainer = document.getElementById('trendingMultiContainer');
+      
+      if (singleContainer) singleContainer.style.display = checked ? 'none' : 'block';
+      if (multiContainer) multiContainer.style.display = checked ? 'block' : 'none';
+      
+      if (checked) {
+        if (trendingTermoVal.trim() && trendingListVal.length === 0) {
+          addTrendingTerm(trendingTermoVal, trendingPosicaoVal, trendingCategoriaVal);
+        }
+        renderTrendingSelectedList();
+      } else {
+        if (trendingListVal.length > 0) {
+          const item = trendingListVal[0];
+          trendingTermoVal = item.term;
+          trendingPosicaoVal = item.pos;
+          trendingCategoriaVal = item.category;
+          trendingImageBlob = item.imageBlob;
+          
+          const tEl = document.getElementById('trendingTermo');
+          const pEl = document.getElementById('trendingPosicao');
+          const cEl = document.getElementById('trendingCategoria');
+          if (tEl) tEl.value = item.term;
+          if (pEl) pEl.value = item.pos;
+          if (cEl) cEl.value = item.category;
+          
+          if (trendingImageBlob) {
+            const preview = document.getElementById('trendingImagePreview');
+            const container = document.getElementById('trendingImagePreviewContainer');
+            if (preview) preview.src = URL.createObjectURL(trendingImageBlob);
+            if (container) container.style.display = 'block';
+            
+            const dropZoneText = document.getElementById('trendingDropZoneText');
+            if (dropZoneText) dropZoneText.textContent = 'Imagem carregada';
+          }
+        }
+      }
+      renderTrendsCatalog();
+      updateSourceContinue();
+    }
+
+    function generateTrendingPrintImageForListItem(idx) {
+      const item = trendingListVal[idx];
+      if (!item) return;
+      
+      const term = item.term;
+      const pos = item.pos;
+      const category = item.category;
+      
+      const topText = pos ? `${pos} · ${category}` : category;
+      
+      const tempCanvas = document.createElement('canvas');
+      const tempCtx = tempCanvas.getContext('2d');
+      const fontStack = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+      
+      tempCtx.font = `13px ${fontStack}`;
+      const topTextWidth = tempCtx.measureText(topText).width;
+      
+      tempCtx.font = `bold 15px ${fontStack}`;
+      const termWidth = tempCtx.measureText(term).width;
+      
+      const contentWidth = Math.max(topTextWidth, termWidth);
+      const width = Math.max(380, Math.ceil(contentWidth) + 36);
+      const height = 78;
+      
+      const canvas = document.createElement('canvas');
+      const scale = 2;
+      
+      canvas.width = width * scale;
+      canvas.height = height * scale;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.scale(scale, scale);
+      
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, width, height);
+      
+      ctx.strokeStyle = '#2f3336';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0.5, 0);
+      ctx.lineTo(0.5, height);
+      ctx.stroke();
+      
+      ctx.fillStyle = '#536471';
+      ctx.font = `13px ${fontStack}`;
+      ctx.fillText(topText, 16, 28);
+      
+      ctx.fillStyle = '#eff3f4';
+      ctx.font = `bold 15px ${fontStack}`;
+      ctx.fillText(term, 16, 53);
+      
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const file = new File([blob], `trending-${idx}.png`, { type: 'image/png' });
+        item.imageBlob = file;
+        renderTrendingSelectedList();
+      }, 'image/png');
+    }
+
+    function buildTrendingMessageTextForItem(item) {
+      const term = item.term;
+      const posicao = item.pos;
+      let repercussao = item.repercussao || '';
+      
+      if (repercussao.endsWith('.')) {
+        repercussao = repercussao.slice(0, -1);
+      }
+      
+      let pos = posicao;
+      if (/^\d+$/.test(pos)) {
+        pos = pos + 'ª';
+      }
+      
+      const posSegment = pos ? ` na ${pos} posição` : '';
+      return `📲 Trending Topics X - O termo "${term}" está${posSegment} entre os assuntos mais comentados da rede, ${repercussao}. https://x.com/search?q=%22${encodeURIComponent(term)}%22&src=trend_click&vertical=trends`;
+    }
+
+    function copyTrendingTextForItem(idx) {
+      const item = trendingListVal[idx];
+      if (!item) return;
+      
+      const text = buildTrendingMessageTextForItem(item);
+      navigator.clipboard?.writeText(text).then(() => {
+        showToast('Texto copiado com sucesso!');
+      }).catch(err => {
+        showToast('Erro ao copiar texto: ' + err.message);
+      });
+    }
+
+    async function copyTrendingImageForItem(idx) {
+      const item = trendingListVal[idx];
+      if (!item || !item.imageBlob) {
+        showToast('Nenhuma imagem gerada para copiar.');
+        return;
+      }
+      try {
+        let blobToCopy = item.imageBlob;
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'image/png': blobToCopy
+          })
+        ]);
+        showToast('✅ Imagem copiada para a área de transferência! Cole no WhatsApp.');
+      } catch (err) {
+        console.error(err);
+        showToast('❌ Erro ao copiar imagem: ' + err.message);
+      }
+    }
+
+    function parseMultipleTrendingResponse(text, expectedCount) {
+      const lines = text.split('\n');
+      const results = new Array(expectedCount).fill('');
+      let currentIdx = -1;
+      
+      for (let line of lines) {
+        line = line.trim();
+        if (!line) continue;
+        
+        const match = line.match(/^\[?(\d+)\]?[\s\.:)-]+(.*)/);
+        if (match) {
+          const idx = parseInt(match[1], 10) - 1;
+          if (idx >= 0 && idx < expectedCount) {
+            currentIdx = idx;
+            results[currentIdx] = match[2].trim();
+            continue;
+          }
+        }
+        
+        if (currentIdx !== -1) {
+          results[currentIdx] += ' ' + line;
+        }
+      }
+      
+      return results.map(r => cleanTrendingAIResponse(r));
+    }
+
+    function backToCatalog() {
+      trendingTermoVal = '';
+      trendingPosicaoVal = '';
+      trendingRepercussaoVal = '';
+      finalDraftText = '';
+      
+      const termoInput = document.getElementById('trendingTermo');
+      const posInput = document.getElementById('trendingPosicao');
+      if (termoInput) termoInput.value = '';
+      if (posInput) posInput.value = '';
+      
+      const extResponse = document.getElementById('externalResponse');
+      if (extResponse) extResponse.value = '';
+      
+      const previewTitle = document.getElementById('previewTitle');
+      const previewBody = document.getElementById('previewBody');
+      if (previewTitle) previewTitle.textContent = 'Rascunho';
+      if (previewBody) previewBody.innerHTML = '';
+      
+      clearTrendingImage();
+      // Restore auto-generate default state for the catalog selection
+      trendingAutoGenerateVal = true;
+      trendingCategoriaVal = 'Assunto do Momento: Brasil';
+      const catInput = document.getElementById('trendingCategoria');
+      if (catInput) catInput.value = 'Assunto do Momento: Brasil';
+      const autoGenCheckbox = document.getElementById('trendingAutoGenerate');
+      if (autoGenCheckbox) autoGenCheckbox.checked = true;
+
+      goToView('source');
+      updateSourceContinue();
+    }
+
+    function copyTrendingText() {
+      const msg = buildTrendingMessageText();
+      navigator.clipboard?.writeText(msg).then(() => {
+        showToast('Texto copiado com sucesso!');
+      }).catch(err => {
+        showToast('Erro ao copiar texto: ' + err.message);
+      });
+    }
+
+    async function copyTrendingImage() {
+      if (!trendingImageBlob) {
+        showToast('Nenhuma imagem carregada para copiar.');
+        return;
+      }
+      try {
+        let blobToCopy = trendingImageBlob;
+        if (trendingImageBlob.type !== 'image/png') {
+          showToast('Convertendo imagem para formato compatível...');
+          blobToCopy = await convertBlobToPng(trendingImageBlob);
+        }
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'image/png': blobToCopy
+          })
+        ]);
+        showToast('✅ Imagem copiada para a área de transferência! Cole no WhatsApp.');
+      } catch (err) {
+        console.error(err);
+        showToast('❌ Erro ao copiar imagem: ' + err.message);
+      }
+    }
+
+    function convertBlobToPng(blob) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = URL.createObjectURL(blob);
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob((pngBlob) => {
+            if (pngBlob) resolve(pngBlob);
+            else reject(new Error('Falha na conversão'));
+          }, 'image/png');
+        };
+        img.onerror = () => reject(new Error('Erro ao carregar imagem para conversão'));
+      });
+    }
+
+    async function saveTrendingAlertDirect() {
+      const msg = buildTrendingMessageText();
+      if (!selectedClient?.nome) {
+        showToast('Selecione uma empresa primeiro.');
+        return;
+      }
+      try {
+        const r = await fetch('/api/alertas/salvar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cliente: selectedClient.nome,
+            texto_gerado: msg,
+            fonte: 'Trending Topics X',
+            modelo: 'Trending Topics X',
+            periodo: new Date().toLocaleDateString('pt-BR'),
+            total_publicacoes: 1,
+            padrao: false,
+          }),
+        });
+        const data = await r.json();
+        if (!r.ok || data.error) throw new Error(data.error || 'erro ao salvar');
+        showToast('Alerta salvo com sucesso no histórico do cliente.');
+      } catch (e) {
+        showToast('Não foi possível salvar: ' + e.message);
+      }
+    }
+
+    // Listener global de colagem de imagem para Trending Topics X
+    window.addEventListener('paste', function(e) {
+      if (activeSource !== 'trending' || currentView !== 'source') return;
+      const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') === 0) {
+          const blob = items[i].getAsFile();
+          handleTrendingImageUpload(blob);
+          e.preventDefault();
+          break;
+        }
+      }
+    });
+
+    async function marcarComoPadrao(idx) {
+      const item = alertHistoryCache[idx];
+      if (!item || !selectedClient?.nome) return;
+      try {
+        const r = await fetch('/api/alertas/marcar-padrao', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: item.id, cliente: selectedClient.nome }),
+        });
+        const data = await r.json();
+        if (!r.ok || data.error) throw new Error(data.error || 'erro ao marcar padr&atilde;o');
+        alertHistoryClient = null;
+        loadAlertHistory(selectedClient.nome);
+        showToast('Definido como padr&atilde;o desta empresa.');
+      } catch (e) {
+        showToast('N&atilde;o foi poss&iacute;vel marcar como padr&atilde;o: ' + e.message);
+      }
+    }
+
+    /* ═══ Assistente flutuante ═══ */
+    function toggleChat() {
+      document.getElementById('chatDrawer').classList.toggle('open');
+    }
+
+    function addMsg(role, html) {
+      const wrap = document.getElementById('chatMsgs');
+      const div = document.createElement('div');
+      div.className = 'msg ' + (role === 'user' ? 'user' : '');
+      div.innerHTML = `<div class="bubble">${html}</div>`;
+      wrap.appendChild(div);
+      wrap.scrollTop = wrap.scrollHeight;
+    }
+
+    function useChip(text) {
+      const input = document.getElementById('chatInput');
+      input.value = text;
+      input.focus();
+      autoGrow(input);
+    }
+
+    function sendChat() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      addMsg('user', escHtml(text));
+      input.value = '';
+      autoGrow(input);
+      if (modelMode === 'new') {
+        if (/alerta/i.test(text)) setTemplate('alerta');
+        if (/panorama/i.test(text)) setTemplate('panorama');
+        suggestPiecesFromText(text);
+      }
+      addMsg('assistant', 'Entendi. Ajustei os m&oacute;dulos com base no que voc&ecirc; descreveu. Continue o fluxo e copie o prompt quando estiver pronto.');
+    }
+
+    function suggestPiecesFromText(text) {
+      const t = text.toLowerCase();
+      const add = [];
+      if (/imprensa|ve[ií]culo|jornal|clipping|mat[eé]ria|portal/.test(t)) add.push('fonte', 'compilado', 'links');
+      if (/rede|instagram|facebook|twitter|x |tiktok|perfil|seguidores|post/.test(t)) add.push('redes', 'metricas', 'links');
+      if (/cita|fala|declara|aspas|trecho/.test(t)) add.push('citacao');
+      if (/m[eé]trica|volume|alcance|curtida|coment[aá]rio|compartilhamento|sentimento/.test(t)) add.push('metricas');
+      if (/risco|crise|sens[ií]vel|aten[cç][aã]o|negativo/.test(t)) add.push('risco', 'impacto', 'recomendacao');
+      add.forEach(id => selectedPieces.add(id));
+      renderPieces();
+      updateModelContinue();
+    }
+
+    function handleChatKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendChat();
+      }
+    }
+
+    function autoGrow(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 92) + 'px';
+    }
+
+    /* ─── Helpers ─── */
+    function stripHtml(s) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = String(s || '');
+      return tmp.textContent || '';
+    }
+
+    function escHtml(s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function escAttr(s) {
+      return escHtml(s).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+    }
+
+    loadDbClients();
+  </script>
+</body>
+</html>

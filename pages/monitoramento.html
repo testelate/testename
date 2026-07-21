@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HUB.nexus — Monitoramento</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/global.css"/>
+  <style>
+    body { display: flex; flex-direction: column; overflow:hidden; height:100vh; background:var(--bg); }
+    .main { flex:1; display:flex; flex-direction:column; overflow:hidden; position:relative; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; padding:0 20px; height:52px; flex-shrink:0; backdrop-filter:blur(30px); background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.07); z-index:5; }
+    .topbar-left { display:flex; align-items:center; gap:10px; }
+    .topbar-badge { font-size:10px; padding:3px 9px; background:hsla(var(--theme-h),90%,50%,0.10); border:1px solid hsla(var(--theme-h),90%,50%,0.22); border-radius:var(--r-pill); color:var(--orange-2); display:flex; align-items:center; gap:5px; }
+    .topbar-title { font-size:13px; font-weight:500; color:var(--text-primary); letter-spacing:-0.2px; }
+    .topbar-right { display:flex; align-items:center; gap:8px; }
+    .tbtn { display:inline-flex; align-items:center; gap:5px; padding:6px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); border-radius:var(--r-sm); font-size:11px; color:var(--text-secondary); cursor:pointer; font-family:'Inter',sans-serif; transition:all var(--t-normal); }
+    .tbtn:hover { background:rgba(255,255,255,0.09); }
+    .tbtn svg { width:11px; height:11px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+    .filtros-bar { display:flex; align-items:center; gap:8px; padding:10px 20px; border-bottom:1px solid rgba(255,255,255,0.06); flex-shrink:0; flex-wrap:wrap; background:rgba(255,255,255,0.02); }
+    .filtro-sel { padding:5px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); border-radius:4px; font-size:11px; color:var(--text-secondary); cursor:pointer; font-family:'Inter',sans-serif; outline:none; color-scheme:dark; }
+    .filtro-sel option { background:#1a0a04; color:#eee; }
+    .filtro-busca { padding:5px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); border-radius:4px; font-size:11px; color:var(--text-secondary); font-family:'Inter',sans-serif; outline:none; width:200px; }
+    .filtro-busca::placeholder { color:var(--text-muted); }
+    .filtro-busca:focus { border-color:hsla(var(--theme-h),90%,50%,0.30); }
+
+    .stats-bar { display:flex; gap:8px; padding:8px 20px; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,0.06); flex-wrap:wrap; }
+    .stat-pill { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:var(--r-pill); border:1px solid; font-size:10px; font-weight:500; }
+    .stat-total { background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.10); color:var(--text-secondary); }
+    .stat-pend  { background:rgba(255,180,50,0.08); border-color:rgba(255,180,50,0.22); color:#ffb432; }
+    .stat-prod  { background:rgba(101,182,255,0.08); border-color:rgba(101,182,255,0.22); color:#65b6ff; }
+    .stat-rev   { background:rgba(168,101,255,0.08); border-color:rgba(168,101,255,0.22); color:#a865ff; }
+    .stat-disp  { background:hsla(var(--theme-h),90%,50%,0.08); border-color:hsla(var(--theme-h),90%,50%,0.22); color:var(--orange-2); }
+    .stat-env   { background:rgba(102,221,136,0.08); border-color:rgba(102,221,136,0.22); color:var(--green); }
+    .stat-atr   { background:rgba(255,96,96,0.08); border-color:rgba(255,96,96,0.22); color:#ff6060; }
+
+    .content { flex:1; overflow-y:auto; overflow-x:auto; }
+    .section-header { display:flex; align-items:center; gap:10px; padding:10px 20px 8px; background:rgba(255,255,255,0.02); border-bottom:1px solid rgba(255,255,255,0.05); position:sticky; top:0; z-index:3; backdrop-filter:blur(8px); }
+    .section-icon { width:22px; height:22px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0; }
+    .section-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; }
+    .section-count { font-size:10px; color:var(--text-muted); }
+    .section-toggle { margin-left:auto; cursor:pointer; font-size:10px; color:var(--text-muted); padding:2px 8px; border-radius:var(--r-pill); border:1px solid rgba(255,255,255,0.08); background:transparent; font-family:'Inter',sans-serif; }
+
+    table { width:100%; border-collapse:collapse; font-size:11px; }
+    thead th { padding:8px 14px; text-align:left; font-size:10px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid rgba(255,255,255,0.07); background:rgba(255,255,255,0.03); position:sticky; top:44px; z-index:2; white-space:nowrap; }
+    tbody td { padding:9px 14px; color:var(--text-secondary); border-bottom:1px solid rgba(255,255,255,0.04); vertical-align:middle; }
+    tbody tr:hover td { background:hsla(var(--theme-h),90%,50%,0.04); }
+    tbody tr.atrasado td { background:rgba(255,96,96,0.03); }
+    tbody tr.atrasado td:first-child { border-left:2px solid rgba(255,96,96,0.50); padding-left:12px; }
+
+    .hora-badge { font-size:11px; font-weight:600; color:var(--text-primary); font-variant-numeric:tabular-nums; }
+    .hora-empty { font-size:10px; color:var(--text-muted); font-style:italic; }
+    .cliente-nome { font-size:12px; font-weight:500; color:var(--text-primary); }
+    .entregavel-nome { font-size:11px; color:var(--text-secondary); }
+    .resp-tag { font-size:10px; padding:2px 7px; background:rgba(255,255,255,0.06); border-radius:var(--r-pill); color:var(--text-muted); }
+    .resp-cell { display:flex; align-items:center; gap:5px; }
+    .resp-avatar { width:22px; height:22px; border-radius:50%; background:hsla(var(--theme-h),90%,50%,0.18); border:1px solid hsla(var(--theme-h),90%,50%,0.30); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:var(--orange-2); flex-shrink:0; }
+    .resp-nome { font-size:10px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:90px; }
+    .resp-btn { cursor:pointer; display:flex; align-items:center; gap:4px; padding:3px 7px; border-radius:var(--r-pill); border:1px dashed hsla(var(--theme-h),90%,50%,0.25); background:transparent; transition:all .15s; font-family:'Inter',sans-serif; }
+    .resp-btn:hover { background:hsla(var(--theme-h),90%,50%,0.08); border-color:hsla(var(--theme-h),90%,50%,0.45); }
+    .resp-btn svg { width:10px; height:10px; fill:none; stroke:var(--orange-2); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .resp-btn span { font-size:10px; color:var(--orange-2); opacity:.8; }
+
+    /* ── MODAL ── */
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); backdrop-filter:blur(6px); z-index:1000; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .2s; }
+    .modal-overlay.open { opacity:1; pointer-events:all; }
+    .modal-box { width:420px; max-width:92vw; background:#160c04; border:1px solid hsla(var(--theme-h),90%,50%,0.22); border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.04); overflow:hidden; transform:translateY(12px) scale(.97); transition:transform .2s; }
+    .modal-overlay.open .modal-box { transform:translateY(0) scale(1); }
+    .modal-head { padding:16px 18px 14px; border-bottom:1px solid rgba(255,255,255,.07); display:flex; align-items:flex-start; gap:12px; }
+    .modal-head-info { flex:1; min-width:0; }
+    .modal-head-chip { display:inline-flex; align-items:center; gap:5px; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--orange-2); background:hsla(var(--theme-h),90%,50%,0.10); border:1px solid hsla(var(--theme-h),90%,50%,0.22); border-radius:var(--r-pill); padding:2px 8px; margin-bottom:6px; }
+    .modal-head-title { font-size:13px; font-weight:600; color:var(--text-primary); line-height:1.35; }
+    .modal-head-meta { font-size:10px; color:var(--text-muted); margin-top:4px; display:flex; gap:8px; flex-wrap:wrap; }
+    .modal-head-meta span { display:flex; align-items:center; gap:3px; }
+    .modal-close { width:26px; height:26px; border-radius:7px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); cursor:pointer; font-size:15px; color:var(--text-muted); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .15s; line-height:1; }
+    .modal-close:hover { background:rgba(255,255,255,.12); color:var(--text-primary); }
+    .modal-body { padding:16px 18px; }
+    .modal-sec-label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--text-muted); margin-bottom:8px; }
+    .modal-users-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; max-height:200px; overflow-y:auto; padding-right:2px; }
+    .modal-users-grid::-webkit-scrollbar { width:3px; } .modal-users-grid::-webkit-scrollbar-thumb { background:hsla(var(--theme-h),90%,50%,0.25); border-radius:4px; }
+    .modal-user { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:9px; border:1px solid rgba(255,255,255,.07); cursor:pointer; transition:all .15s; }
+    .modal-user:hover { background:hsla(var(--theme-h),90%,50%,0.07); border-color:hsla(var(--theme-h),90%,50%,0.22); }
+    .modal-user.sel { background:hsla(var(--theme-h),90%,50%,0.14); border-color:hsla(var(--theme-h),90%,50%,0.45); }
+    .modal-user-av { width:28px; height:28px; border-radius:50%; background:hsla(var(--theme-h),90%,50%,0.15); border:1px solid hsla(var(--theme-h),90%,50%,0.25); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:var(--orange-2); flex-shrink:0; }
+    .modal-user-info { flex:1; min-width:0; }
+    .modal-user-nome { font-size:11px; font-weight:500; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .modal-user-email { font-size:9px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .modal-check { width:14px; height:14px; border-radius:50%; border:1.5px solid rgba(255,255,255,.15); flex-shrink:0; transition:all .15s; }
+    .modal-user.sel .modal-check { background:var(--orange-2); border-color:var(--orange-2); }
+    .modal-loading { text-align:center; padding:24px; font-size:11px; color:var(--text-muted); }
+    .modal-footer { padding:12px 18px; border-top:1px solid rgba(255,255,255,.07); display:flex; justify-content:space-between; align-items:center; gap:8px; }
+    .mbtn { padding:7px 16px; border-radius:var(--r-sm); font-size:11px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:all .15s; border:1px solid; }
+    .mbtn-cancel { background:transparent; border-color:rgba(255,255,255,.10); color:var(--text-muted); }
+    .mbtn-cancel:hover { background:rgba(255,255,255,.06); }
+    .mbtn-confirm { background:hsla(var(--theme-h),90%,50%,0.15); border-color:hsla(var(--theme-h),90%,50%,0.40); color:var(--orange-2); }
+    .mbtn-confirm:hover { background:hsla(var(--theme-h),90%,50%,0.28); }
+    .mbtn-clear { background:transparent; border-color:rgba(255,96,96,.20); color:#ff7070; font-size:10px; padding:5px 10px; }
+    .mbtn-clear:hover { background:rgba(255,96,96,.08); }
+
+    body.light .resp-nome { color:#5a3020; }
+    body.light .modal-box { background:#fdf4ec; border-color:rgba(180,100,40,.22); }
+    body.light .modal-head { border-bottom-color:rgba(180,100,40,.12); }
+    body.light .modal-footer { border-top-color:rgba(180,100,40,.12); }
+    body.light .modal-user { border-color:rgba(180,100,40,.12); }
+    body.light .modal-user-nome { color:#3a1200; }
+    body.light .modal-head-title { color:#1a0800; }
+
+    .status-wrap { display:flex; align-items:center; gap:4px; }
+    .status-btn { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:var(--r-pill); border:1px solid; font-size:10px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:all .15s; white-space:nowrap; background:transparent; }
+    .status-btn:hover { filter:brightness(1.25); transform:scale(1.02); }
+    .s-pendente { color:#ffb432; border-color:rgba(255,180,50,0.30); }
+    .s-produzido{ color:#65b6ff; border-color:rgba(101,182,255,0.30); }
+    .s-revisando{ color:#a865ff; border-color:rgba(168,101,255,0.30); }
+    .s-pronto   { color:var(--orange-2); border-color:hsla(var(--theme-h),90%,50%,0.30); }
+    .s-enviado  { color:var(--green); border-color:rgba(102,221,136,0.30); }
+    .s-imprensa { color:#88aaff; border-color:rgba(136,170,255,0.30); }
+
+    .status-mini-sel { background:transparent; border:none; font-size:10px; color:var(--text-muted); cursor:pointer; outline:none; font-family:'Inter',sans-serif; padding:0 2px; }
+    .zerar-btn { padding:5px 14px; background:rgba(255,96,96,0.08); border:1px solid rgba(255,96,96,0.22); border-radius:var(--r-md); font-size:11px; font-weight:500; color:#ff6060; cursor:pointer; font-family:'Inter',sans-serif; transition:all .2s; }
+    .zerar-btn:hover { background:rgba(255,96,96,0.18); }
+    .empty-section { padding:18px 20px; font-size:11px; color:var(--text-muted); font-style:italic; }
+
+    body.light .filtro-sel, body.light .filtro-busca { background:rgba(255,255,255,.70); border-color:rgba(180,100,40,.18); color:#7a4a30; color-scheme:light; }
+    body.light .filtro-sel option { background:#f5ece0; color:#3a1200; }
+    body.light thead th { background:rgba(255,255,255,.65); color:#a07050; border-bottom-color:rgba(180,100,40,.10); }
+    body.light tbody td { color:#5a3020; border-bottom-color:rgba(180,100,40,.06); }
+    body.light tbody tr:hover td { background:hsla(var(--theme-h),90%,50%,0.04); }
+    body.light .resp-tag { background:rgba(0,0,0,.06); color:#a07050; }
+    body.light .stat-total { background:rgba(0,0,0,.04); border-color:rgba(0,0,0,.10); color:#7a4a30; }
+    body.light .tbtn { background:rgba(255,255,255,.70); border-color:rgba(180,100,40,.18); color:#7a4a30; }
+    body.light .section-header { background:rgba(255,255,255,0.55); }
+    body.light .hora-badge { color:#3a1200; }
+    .bg-orbs { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+  
+    /* Hub navbar: hide only the logo/title part of old topbar */
+    #navbar-container:not(:empty) ~ .main > .topbar .topbar-left { display: none !important; }
+    #navbar-container:not(:empty) ~ .main > .topbar {
+      justify-content: flex-end;
+      padding-left: 8px;
+      height: 46px;
+    }
+    .page-navbar { width: 100%; }
+
+  </style>
+</head>
+<body>
+  <div class="bg-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+  <div id="navbar-container"></div>
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <img src="../assets/logo.png" alt="HUB.nexus" style="height:32px;width:auto;object-fit:contain;filter:drop-shadow(0 0 4px hsla(var(--theme-h),90%,50%,0.2));flex-shrink:0;"/>
+        <span class="topbar-title">Monitoramento</span>
+        <div class="topbar-badge"><span class="pulse-dot"></span> Acompanhamento de Entregas</div>
+      </div>
+      <div class="topbar-right">
+        <button class="zerar-btn" onclick="zerarDia()">↺ Zerar dia</button>
+        <button class="tbtn" onclick="toggleMode()">
+          <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="filtros-bar">
+      <select class="filtro-sel" id="filtroTurno" onchange="renderTabela()">
+        <option value="todos">Todos os turnos</option>
+        <option value="Manha">☀️ Manhã</option>
+        <option value="Tarde">🌤️ Tarde</option>
+        <option value="Noite">🌙 Noite</option>
+        <option value="SEMANAL">📅 Semanal</option>
+        <option value="MENSAL">📆 Mensal</option>
+        <option value="ANUAL">🗓️ Anual</option>
+      </select>
+      <select class="filtro-sel" id="filtroCliente" onchange="renderTabela()">
+        <option value="todos">Todos os clientes</option>
+      </select>
+      <select class="filtro-sel" id="filtroStatus" onchange="renderTabela()">
+        <option value="todos">Todos os status</option>
+        <option value="Pendente">Pendente</option>
+        <option value="Produzido">Produzido</option>
+        <option value="Revisando">Revisando</option>
+        <option value="Pronto p/ disparo">Pronto p/ disparo</option>
+        <option value="Enviado">Enviado</option>
+        <option value="Imprensa">Imprensa</option>
+      </select>
+      <input class="filtro-busca" id="filtroBusca" placeholder="Buscar entregável…" oninput="renderTabela()"/>
+      <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:pointer;margin-left:auto;">
+        <input type="checkbox" id="soMeus" onchange="renderTabela()" style="accent-color:var(--orange);"/>
+        Só os meus
+      </label>
+    </div>
+
+    <div class="stats-bar" id="statsBar"></div>
+    <div class="content" id="content"></div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- Modal: Atribuir Responsável -->
+  <div class="modal-overlay" id="modalResp" onclick="if(event.target===this)fecharModal()">
+    <div class="modal-box">
+      <div class="modal-head">
+        <div class="modal-head-info">
+          <div class="modal-head-chip">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Atribuir Responsável
+          </div>
+          <div class="modal-head-title" id="modal-tarefa-titulo">—</div>
+          <div class="modal-head-meta" id="modal-tarefa-meta"></div>
+        </div>
+        <button class="modal-close" onclick="fecharModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-sec-label">Selecionar membro da equipe</div>
+        <div class="modal-users-grid" id="modal-users-grid">
+          <div class="modal-loading">Carregando usuários…</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="mbtn mbtn-clear" onclick="atribuirResp(null)">✕ Remover responsável</button>
+        <div style="display:flex;gap:6px;">
+          <button class="mbtn mbtn-cancel" onclick="fecharModal()">Cancelar</button>
+          <button class="mbtn mbtn-confirm" onclick="confirmarResp()">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="../js/utils.js"></script>
+  <script src="../js/theme.js"></script>
+  <script src="../js/roadmap.js"></script>
+  <script>
+    checkAuth();
+    initMode();
+    document.getElementById('navbar-container').innerHTML = renderNavbar('monitoramento');
+    if(typeof initTheme==='function'){initTheme();updateModeButtons();}
+
+    const HOJE = new Date().toISOString().slice(0,10);
+    const STORAGE_KEY     = 'mon_status_'   + HOJE;
+    const STORAGE_RESP    = 'mon_resp_'     + HOJE;
+    const STORAGE_ALERTS  = 'mon_alerts_'  + HOJE;
+
+    // ── Dados das tarefas (hardcoded) ──────────────────────────────
+    const TAREFAS = [
+      {id:'d01',tipo:'DIÁRIO',turno:'Manha',hora:'07:00',entregavel:'ABDI - Gabriella Alexandre',cliente:'ABDI',responsavel:'matheus.araujo'},
+      {id:'d02',tipo:'DIÁRIO',turno:'Manha',hora:'07:00',entregavel:'CAIXA 01 - Gabriella Alexandre',cliente:'CAIXA',responsavel:'matheus.araujo'},
+      {id:'d03',tipo:'DIÁRIO',turno:'Manha',hora:'07:00',entregavel:'Embratur - Victor Melquiades',cliente:'Embratur',responsavel:'matheus.araujo'},
+      {id:'d04',tipo:'DIÁRIO',turno:'Manha',hora:'07:00',entregavel:'Esporte - Caroline Andrezo',cliente:'Ministério do Esporte',responsavel:'pedro.leitao'},
+      {id:'d05',tipo:'DIÁRIO',turno:'Manha',hora:'07:00',entregavel:'MDS - Gabriella Alexandre',cliente:'MDS',responsavel:'carla.leite'},
+      {id:'d06',tipo:'DIÁRIO',turno:'Manha',hora:'07:00',entregavel:'MPor - Carol Curvello',cliente:'MPor',responsavel:'matheus.araujo'},
+      {id:'d07',tipo:'DIÁRIO',turno:'Manha',hora:'08:00',entregavel:'Embratur - Victor Melquiades (2)',cliente:'Embratur',responsavel:'carla.leite'},
+      {id:'d08',tipo:'DIÁRIO',turno:'Manha',hora:'08:00',entregavel:'Radar ABDI',cliente:'ABDI',responsavel:'pedro.leitao'},
+      {id:'d09',tipo:'DIÁRIO',turno:'Manha',hora:'09:00',entregavel:'Dash Sebrae - Galbi',cliente:'Sebrae',responsavel:'brena.alves'},
+      {id:'d10',tipo:'DIÁRIO',turno:'Tarde',hora:'14:00',entregavel:'Diário SESI / SENAI - Paulo Henrique',cliente:'Sesi',responsavel:'khalil.zaghetto'},
+      {id:'d11',tipo:'DIÁRIO',turno:'Tarde',hora:'14:00',entregavel:'Embratur - Laura De Biase',cliente:'Embratur',responsavel:'carla.leite'},
+      {id:'d12',tipo:'DIÁRIO',turno:'Tarde',hora:'14:00',entregavel:'Esporte - Caroline Andrezo',cliente:'Ministério do Esporte',responsavel:'carla.leite'},
+      {id:'d13',tipo:'DIÁRIO',turno:'Tarde',hora:'14:00',entregavel:'MAPA - Vitor Hugo',cliente:'MAPA',responsavel:'sofia.fernandes'},
+      {id:'d14',tipo:'DIÁRIO',turno:'Tarde',hora:'14:00',entregavel:'MDS - Gabriella Alexandre',cliente:'MDS',responsavel:'carla.leite'},
+      {id:'d15',tipo:'DIÁRIO',turno:'Tarde',hora:'14:00',entregavel:'MPor - Ana Carolina Curvello',cliente:'MPor',responsavel:'sofia.fernandes'},
+      {id:'d16',tipo:'DIÁRIO',turno:'Noite',hora:'16:00',entregavel:'Embratur - Laura De Biase',cliente:'Embratur',responsavel:'luiz.machado'},
+      {id:'d17',tipo:'DIÁRIO',turno:'Noite',hora:'16:00',entregavel:'Radar ABDI',cliente:'ABDI',responsavel:'jessica.ferraz'},
+      {id:'d18',tipo:'DIÁRIO',turno:'Noite',hora:'17:00',entregavel:'BRB - Fábio Barreto',cliente:'BRB',responsavel:'jose.resende'},
+      {id:'d19',tipo:'DIÁRIO',turno:'Noite',hora:'17:00',entregavel:'Sensíveis CNI',cliente:'CNI',responsavel:'khalil.zaghetto'},
+      {id:'d20',tipo:'DIÁRIO',turno:'Noite',hora:'18:00',entregavel:'Caixa - Mariana Mendes',cliente:'CAIXA',responsavel:'isabela.caldana'},
+      {id:'d21',tipo:'DIÁRIO',turno:'Noite',hora:'18:00',entregavel:'CNI - Lucas Pinheiro',cliente:'CNI',responsavel:'khalil.zaghetto'},
+      {id:'d22',tipo:'DIÁRIO',turno:'Noite',hora:'18:00',entregavel:'Cultura - Rebeca Nóbrega',cliente:'MinC',responsavel:'luiz.machado'},
+      {id:'d23',tipo:'DIÁRIO',turno:'Noite',hora:'18:00',entregavel:'Dash ATE - Andrey Chagas',cliente:'Agora Tem Especialistas',responsavel:'isabelly.soares'},
+      {id:'d24',tipo:'DIÁRIO',turno:'Noite',hora:'18:00',entregavel:'Gov Goiás - Karla Menezes',cliente:'Gov. Goiás',responsavel:'isabela.caldana'},
+      {id:'d25',tipo:'DIÁRIO',turno:'Noite',hora:'18:00',entregavel:'Gov Pará - Tamila Pignato',cliente:'Gov. Pará',responsavel:'patricia.souza'},
+      {id:'d26',tipo:'DIÁRIO',turno:'Noite',hora:'18:00',entregavel:'MTur - Laura De Biase',cliente:'MTUR',responsavel:'brena.alves'},
+      {id:'d27',tipo:'DIÁRIO',turno:'Noite',hora:'18:00',entregavel:'Saúde',cliente:'Ministério da Saúde',responsavel:'jose.resende'},
+      {id:'d28',tipo:'DIÁRIO',turno:'Noite',hora:'18:00',entregavel:'STF - Guilherme Magalhães',cliente:'STF',responsavel:'khalil.zaghetto'},
+      {id:'d29',tipo:'DIÁRIO',turno:'Noite',hora:'18:30',entregavel:'Bússola CEF - Mariana Mendes',cliente:'CAIXA',responsavel:''},
+      {id:'s01',tipo:'SEMANAL',turno:'SEMANAL',hora:'',entregavel:'Sebrae - Galbi Júnior',cliente:'Sebrae',responsavel:'brena.alves'},
+      {id:'s02',tipo:'SEMANAL',turno:'SEMANAL',hora:'',entregavel:'Saúde com Ciência',cliente:'Saúde Com Ciência',responsavel:'isabelly.soares'},
+      {id:'s03',tipo:'SEMANAL',turno:'SEMANAL',hora:'',entregavel:'Saúde',cliente:'Ministério da Saúde',responsavel:'jose.resende'},
+      {id:'s04',tipo:'SEMANAL',turno:'SEMANAL',hora:'',entregavel:'MTur',cliente:'MTUR',responsavel:'carla.leite'},
+      {id:'s05',tipo:'SEMANAL',turno:'SEMANAL',hora:'',entregavel:'MPor CENA - Eduardo Passos',cliente:'MPor',responsavel:'sofia.fernandes'},
+      {id:'s06',tipo:'SEMANAL',turno:'SEMANAL',hora:'',entregavel:'MinC Performance',cliente:'MinC',responsavel:'luiz.machado'},
+      {id:'s07',tipo:'SEMANAL',turno:'SEMANAL',hora:'',entregavel:'MDS',cliente:'MDS',responsavel:'brena.alves'},
+      {id:'s08',tipo:'SEMANAL',turno:'SEMANAL',hora:'',entregavel:'Mapa - Weyni',cliente:'MAPA',responsavel:'sofia.fernandes'},
+      {id:'s09',tipo:'SEMANAL',turno:'SEMANAL',hora:'',entregavel:'Gov Pará Performance',cliente:'Gov. Pará',responsavel:'patricia.souza'},
+      {id:'s10',tipo:'SEMANAL',turno:'SEMANAL',hora:'',entregavel:'Gov Pará - Eduardo Passos',cliente:'Gov. Pará',responsavel:'patricia.souza'},
+      {id:'s11',tipo:'SEMANAL',turno:'SEMANAL',hora:'',entregavel:'Gov Goiás',cliente:'Gov. Goiás',responsavel:'isabela.caldana'},
+      {id:'s12',tipo:'SEMANAL',turno:'SEMANAL',hora:'',entregavel:'Esporte - Eduardo Passos',cliente:'Ministério do Esporte',responsavel:'matheus.araujo'},
+      {id:'s13',tipo:'SEMANAL',turno:'SEMANAL',hora:'',entregavel:'Embratur - Diana Corvello',cliente:'Embratur',responsavel:'carla.leite'},
+      {id:'s14',tipo:'SEMANAL',turno:'SEMANAL',hora:'',entregavel:'EAF 14h',cliente:'EAF',responsavel:'luiz.machado'},
+      {id:'s15',tipo:'SEMANAL',turno:'SEMANAL',hora:'',entregavel:'Cultura - Rebeca Nóbrega',cliente:'MinC',responsavel:'luiz.machado'},
+      {id:'s16',tipo:'SEMANAL',turno:'SEMANAL',hora:'',entregavel:'CNI - Natália Falcão',cliente:'CNI',responsavel:'khalil.zaghetto'},
+      {id:'s17',tipo:'SEMANAL',turno:'SEMANAL',hora:'',entregavel:'CEF',cliente:'CAIXA',responsavel:'matheus.araujo'},
+      {id:'s18',tipo:'SEMANAL',turno:'SEMANAL',hora:'',entregavel:'Caixa (Áudio)',cliente:'CAIXA',responsavel:'matheus.araujo'},
+      {id:'s19',tipo:'SEMANAL',turno:'SEMANAL',hora:'',entregavel:'ATE',cliente:'Agora Tem Especialistas',responsavel:'pedro.leitao'},
+      {id:'m01',tipo:'MENSAL',turno:'MENSAL',hora:'5º dia útil',entregavel:'CENA MAPA',cliente:'MAPA',responsavel:'sofia.fernandes'},
+      {id:'m02',tipo:'MENSAL',turno:'MENSAL',hora:'5º dia útil',entregavel:'CENA MPor',cliente:'MPor',responsavel:'sofia.fernandes'},
+      {id:'m03',tipo:'MENSAL',turno:'MENSAL',hora:'5º dia útil',entregavel:'CENA ABDI',cliente:'ABDI',responsavel:'matheus.araujo'},
+      {id:'m04',tipo:'MENSAL',turno:'MENSAL',hora:'5º dia útil',entregavel:'Performance ABDI',cliente:'ABDI',responsavel:'brena.alves'},
+      {id:'m05',tipo:'MENSAL',turno:'MENSAL',hora:'5º dia útil',entregavel:'CENA Saúde',cliente:'Ministério da Saúde',responsavel:'jose.resende'},
+      {id:'m06',tipo:'MENSAL',turno:'MENSAL',hora:'5º dia útil',entregavel:'Saúde com Ciência',cliente:'Saúde Com Ciência',responsavel:'isabelly.soares'},
+      {id:'m07',tipo:'MENSAL',turno:'MENSAL',hora:'5º dia útil',entregavel:'IMS Caixa',cliente:'CAIXA',responsavel:'matheus.araujo'},
+      {id:'m08',tipo:'MENSAL',turno:'MENSAL',hora:'5º dia útil',entregavel:'Embratur',cliente:'Embratur',responsavel:'carla.leite'},
+      {id:'m09',tipo:'MENSAL',turno:'MENSAL',hora:'5º dia útil',entregavel:'ATE',cliente:'Agora Tem Especialistas',responsavel:'pedro.leitao'},
+      {id:'m10',tipo:'MENSAL',turno:'MENSAL',hora:'7º dia útil',entregavel:'Sebrae [Monitoramento]',cliente:'Sebrae',responsavel:'brena.alves'},
+    ];
+
+    const STATUS_LIST = ['Pendente','Produzido','Revisando','Pronto p/ disparo','Enviado','Imprensa'];
+    const STATUS_CLS  = {'Pendente':'s-pendente','Produzido':'s-produzido','Revisando':'s-revisando','Pronto p/ disparo':'s-pronto','Enviado':'s-enviado','Imprensa':'s-imprensa'};
+    const STATUS_NEXT = {'Pendente':'Produzido','Produzido':'Revisando','Revisando':'Pronto p/ disparo','Pronto p/ disparo':'Enviado','Enviado':'Enviado','Imprensa':'Imprensa'};
+
+    const SECOES = [
+      {key:'Manha', label:'Manhã',   emoji:'☀️', cor:'#ffb432', turnos:['Manha']},
+      {key:'Tarde', label:'Tarde',   emoji:'🌤️', cor:'#ff9f45', turnos:['Tarde']},
+      {key:'Noite', label:'Noite',   emoji:'🌙', cor:'#88aaff', turnos:['Noite']},
+      {key:'SEMANAL',label:'Semanal',emoji:'📅', cor:'#a865ff', turnos:['SEMANAL']},
+      {key:'MENSAL', label:'Mensal', emoji:'📆', cor:'#2ec4b6', turnos:['MENSAL']},
+      {key:'ANUAL',  label:'Anual',  emoji:'🗓️', cor:'#ff9040', turnos:['ANUAL']},
+    ];
+
+    let estado    = {};
+    let respState = {}; // responsavel sobreposto (por id de tarefa)
+    let colapsados = {};
+
+    // ── Estado ──────────────────────────────────────────────────────
+    function carregarEstado() {
+      try { estado    = JSON.parse(localStorage.getItem(STORAGE_KEY)  || '{}'); } catch { estado={}; }
+      try { respState = JSON.parse(localStorage.getItem(STORAGE_RESP) || '{}'); } catch { respState={}; }
+      TAREFAS.forEach(t => { if (!estado[t.id]) estado[t.id] = 'Pendente'; });
+    }
+    function salvar() {
+      try { localStorage.setItem(STORAGE_KEY,  JSON.stringify(estado));    } catch {}
+      try { localStorage.setItem(STORAGE_RESP, JSON.stringify(respState)); } catch {}
+    }
+
+    function getRespAtual(t) {
+      return respState[t.id] !== undefined ? respState[t.id] : t.responsavel;
+    }
+
+    // ── Avanço de status ─────────────────────────────────────────────
+    function avancar(id) {
+      const at = estado[id] || 'Pendente';
+      if (at === 'Enviado' || at === 'Imprensa') return;
+      estado[id] = STATUS_NEXT[at];
+      salvar(); renderTabela();
+      showToast('✓ ' + estado[id]);
+      // Persiste no banco se possível
+      fetch('/api/monitoramento', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id, status: estado[id] }) }).catch(()=>{});
+    }
+    function definir(id, s) {
+      estado[id] = s; salvar(); renderTabela();
+      fetch('/api/monitoramento', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id, status: s }) }).catch(()=>{});
+    }
+
+    function zerarDia() {
+      if (!confirm('Zerar status de todos os diários para Pendente?')) return;
+      TAREFAS.filter(t => t.tipo === 'DIÁRIO').forEach(t => { estado[t.id] = 'Pendente'; });
+      salvar(); renderTabela();
+      showToast('✅ Diários zerados!');
+    }
+
+    function ehAtrasado(hora) {
+      if (!hora || hora.includes('dia') || hora.includes('/')) return false;
+      const [h, m] = hora.split(':').map(Number);
+      const limite = new Date(); limite.setHours(h, m, 0, 0);
+      return new Date() > limite;
+    }
+
+    // ── Modal de responsável ─────────────────────────────────────────
+    let _modalTarefaId   = null;
+    let _modalRespSel    = null;
+    let _usuariosCached  = null;
+
+    function nomeAbrev(nome) {
+      if (!nome) return '?';
+      const pts = nome.trim().split(/\s+/).filter(Boolean);
+      if (pts.length >= 2) return (pts[0][0] + pts[pts.length-1][0]).toUpperCase();
+      return pts[0]?.slice(0,2).toUpperCase() || '?';
+    }
+
+    function formatarNomeExibicao(login) {
+      if (!login) return '—';
+      return login.split('@')[0].split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+    }
+
+    async function abrirModal(tarefaId) {
+      const t = TAREFAS.find(x => x.id === tarefaId);
+      if (!t) return;
+      _modalTarefaId = tarefaId;
+      _modalRespSel  = getRespAtual(t) || null;
+
+      document.getElementById('modal-tarefa-titulo').textContent = t.entregavel;
+      document.getElementById('modal-tarefa-meta').innerHTML =
+        `<span>🏢 ${t.cliente}</span>${t.hora ? `<span>🕐 ${t.hora}</span>` : ''}`;
+      document.getElementById('modalResp').classList.add('open');
+
+      const grid = document.getElementById('modal-users-grid');
+      grid.innerHTML = '<div class="modal-loading">Carregando equipe…</div>';
+
+      if (!_usuariosCached) {
+        try {
+          const r = await fetch('/api/usuarios');
+          _usuariosCached = r.ok ? await r.json() : [];
+        } catch { _usuariosCached = []; }
+      }
+      renderModalUsers();
+    }
+
+    function renderModalUsers() {
+      const grid = document.getElementById('modal-users-grid');
+      const users = _usuariosCached || [];
+      if (!users.length) { grid.innerHTML = '<div class="modal-loading">Nenhum usuário cadastrado.</div>'; return; }
+      grid.innerHTML = users.map(u => {
+        const iniciais = nomeAbrev(u.nome || u.email);
+        const nome     = u.nome || u.email.split('@')[0];
+        const login    = u.email.split('@')[0];
+        const sel      = _modalRespSel && (_modalRespSel === login || _modalRespSel === u.email);
+        return `<div class="modal-user ${sel ? 'sel' : ''}" onclick="selecionarUser('${login}', this)">
+          <div class="modal-user-av">${iniciais}</div>
+          <div class="modal-user-info">
+            <div class="modal-user-nome">${nome}</div>
+            <div class="modal-user-email">${u.email}</div>
+          </div>
+          <div class="modal-check"></div>
+        </div>`;
+      }).join('');
+    }
+
+    function selecionarUser(login, el) {
+      _modalRespSel = login;
+      document.querySelectorAll('.modal-user').forEach(x => x.classList.remove('sel'));
+      el.classList.add('sel');
+    }
+
+    function fecharModal() {
+      document.getElementById('modalResp').classList.remove('open');
+      _modalTarefaId = null;
+    }
+
+    function confirmarResp() {
+      atribuirResp(_modalRespSel);
+    }
+
+    function atribuirResp(login) {
+      if (!_modalTarefaId) return;
+      const id = _modalTarefaId;
+      respState[id] = login || '';
+      salvar();
+      // Persiste no banco
+      fetch('/api/monitoramento', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id, responsavel: login || '' }) }).catch(()=>{});
+      fecharModal();
+      renderTabela();
+      showToast(login ? '👤 Responsável atribuído' : '✓ Responsável removido');
+    }
+
+    // ── Alertas 60min e 30min antes ──────────────────────────────────
+    let _alertasDisparados = {};
+
+    function iniciarAlertas() {
+      try { _alertasDisparados = JSON.parse(localStorage.getItem(STORAGE_ALERTS) || '{}'); } catch { _alertasDisparados = {}; }
+      verificarAlertas();
+      setInterval(verificarAlertas, 60 * 1000); // checa a cada minuto
+    }
+
+    function verificarAlertas() {
+      const agora = new Date();
+      TAREFAS.filter(t => t.tipo === 'DIÁRIO' && t.hora && t.hora.includes(':')).forEach(t => {
+        const st = estado[t.id] || 'Pendente';
+        if (st === 'Enviado' || st === 'Imprensa') return;
+
+        const [h, m] = t.hora.split(':').map(Number);
+        const horario = new Date(); horario.setHours(h, m, 0, 0);
+        const diffMin = (horario - agora) / 60000;
+
+        [60, 30].forEach(ante => {
+          const key = `${t.id}_${ante}`;
+          if (!_alertasDisparados[key] && diffMin > 0 && diffMin <= ante && diffMin > ante - 2) {
+            _alertasDisparados[key] = true;
+            localStorage.setItem(STORAGE_ALERTS, JSON.stringify(_alertasDisparados));
+            dispararAlerta(t, ante);
+          }
+        });
+      });
+    }
+
+    function dispararAlerta(t, minutosAntes) {
+      const resp = getRespAtual(t);
+      const titulo = minutosAntes === 60
+        ? `⏰ 1 hora para a entrega`
+        : `🚨 30 minutos para a entrega!`;
+      const corpo = `${t.entregavel} (${t.cliente}) — ${t.hora}`;
+
+      // Toast local
+      showToast(`${titulo}: ${t.entregavel}`, 6000);
+
+      // Notificação do browser (se permitido)
+      if (Notification.permission === 'granted') {
+        new Notification(titulo, { body: corpo, icon: '../assets/logo.png', tag: `mon_${t.id}_${minutosAntes}` });
+      }
+
+      // Push via API para o responsável (se logado e for o responsável)
+      if (resp) {
+        const respEmail = resp.includes('@') ? resp : resp + '@fsb.com.br';
+        fetch('/api/notificar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email_responsavel: respEmail, titulo, corpo, tag: `mon_${t.id}_${minutosAntes}` })
+        }).catch(() => {});
+      }
+    }
+
+    function pedirPermissaoNotificacao() {
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
+
+    // ── Filtro + Render ──────────────────────────────────────────────
+    function filtrar() {
+      const turno   = document.getElementById('filtroTurno').value;
+      const cliente = document.getElementById('filtroCliente').value;
+      const status  = document.getElementById('filtroStatus').value;
+      const busca   = (document.getElementById('filtroBusca').value || '').toLowerCase();
+      const soMeus  = document.getElementById('soMeus').checked;
+      const eu      = (() => { try { return (JSON.parse(localStorage.getItem('hubnexus-auth')||'{}').email||'').split('@')[0].toLowerCase(); } catch { return ''; } })();
+      return TAREFAS.filter(t => {
+        if (turno   !== 'todos' && t.turno   !== turno)   return false;
+        if (cliente !== 'todos' && t.cliente !== cliente) return false;
+        const st = estado[t.id] || 'Pendente';
+        if (status !== 'todos' && st !== status) return false;
+        if (busca && !t.entregavel.toLowerCase().includes(busca) && !t.cliente.toLowerCase().includes(busca)) return false;
+        if (soMeus && eu) {
+          const resp = getRespAtual(t).toLowerCase();
+          if (!resp.includes(eu)) return false;
+        }
+        return true;
+      });
+    }
+
+    function renderTabela() {
+      const filtrado = filtrar();
+      renderStats(filtrado);
+      const turnoFiltro = document.getElementById('filtroTurno').value;
+      const secoesVis = turnoFiltro === 'todos' ? SECOES : SECOES.filter(s => s.key === turnoFiltro || s.turnos.includes(turnoFiltro));
+      let html = '';
+      secoesVis.forEach(sec => {
+        const items = filtrado.filter(t => sec.turnos.includes(t.turno));
+        if (!items.length) return;
+        const col = colapsados[sec.key];
+        html += `<div class="section-header">
+          <div class="section-icon" style="background:${sec.cor}18;color:${sec.cor};">${sec.emoji}</div>
+          <span class="section-title" style="color:${sec.cor}">${sec.label}</span>
+          <span class="section-count">${items.length} entregável${items.length>1?'s':''}</span>
+          <button class="section-toggle" onclick="colapsados['${sec.key}']=!colapsados['${sec.key}'];renderTabela()">${col?'▶ expandir':'▼ recolher'}</button>
+        </div>`;
+        if (!col) {
+          const sorted = [...items].sort((a,b) => (a.hora||'').localeCompare(b.hora||''));
+          html += `<table><thead><tr>
+            <th style="width:80px">Horário</th>
+            <th style="width:150px">Cliente</th>
+            <th>Entregável</th>
+            <th style="width:140px">Responsável</th>
+            <th style="width:200px">Status</th>
+          </tr></thead><tbody>`;
+          sorted.forEach(t => {
+            const st   = estado[t.id] || 'Pendente';
+            const cls  = STATUS_CLS[st] || 's-pendente';
+            const atr  = st === 'Pendente' && t.tipo === 'DIÁRIO' && ehAtrasado(t.hora);
+            const horaHtml = t.hora ? `<span class="hora-badge">${t.hora}</span>` : `<span class="hora-empty">—</span>`;
+
+            // Responsável
+            const respLogin = getRespAtual(t);
+            let respHtml;
+            if (respLogin) {
+              const nome = formatarNomeExibicao(respLogin);
+              const user = _usuariosCached ? _usuariosCached.find(u => u.email.startsWith(respLogin) || u.email.split('@')[0] === respLogin) : null;
+              const iniciais = user ? nomeAbrev(user.nome || user.email) : nomeAbrev(nome);
+              respHtml = `<div class="resp-cell resp-btn" onclick="abrirModal('${t.id}')" title="Alterar responsável">
+                <div class="resp-avatar">${iniciais}</div>
+                <span class="resp-nome">${nome.split(' ')[0]}</span>
+              </div>`;
+            } else {
+              respHtml = `<button class="resp-btn" onclick="abrirModal('${t.id}')" title="Atribuir responsável">
+                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>Atribuir</span>
+              </button>`;
+            }
+
+            html += `<tr class="${atr ? 'atrasado' : ''}">
+              <td>${horaHtml}</td>
+              <td><span class="cliente-nome">${t.cliente}</span></td>
+              <td><span class="entregavel-nome">${t.entregavel}</span></td>
+              <td>${respHtml}</td>
+              <td><div class="status-wrap">
+                <button class="status-btn ${cls}" onclick="avancar('${t.id}')" title="Clique para avançar">
+                  ${st}${st!=='Enviado'&&st!=='Imprensa'?' →':' ✓'}
+                </button>
+                <select class="status-mini-sel" onchange="definir('${t.id}',this.value)" title="Definir manualmente">
+                  ${STATUS_LIST.map(s=>`<option value="${s}"${s===st?' selected':''}>${s}</option>`).join('')}
+                </select>
+              </div></td>
+            </tr>`;
+          });
+          html += `</tbody></table>`;
+        }
+      });
+      if (!html) html = `<div class="empty-section">Nenhum entregável encontrado com os filtros selecionados.</div>`;
+      document.getElementById('content').innerHTML = html;
+    }
+
+    function renderStats(items) {
+      const c = {Pendente:0,Produzido:0,Revisando:0,'Pronto p/ disparo':0,Enviado:0,Imprensa:0,atr:0};
+      items.forEach(t => {
+        const st = estado[t.id] || 'Pendente';
+        if (c[st] !== undefined) c[st]++;
+        if (st === 'Pendente' && t.tipo === 'DIÁRIO' && ehAtrasado(t.hora)) c.atr++;
+      });
+      document.getElementById('statsBar').innerHTML = `
+        <span class="stat-pill stat-total">📋 ${items.length} total</span>
+        ${c.Pendente?`<span class="stat-pill stat-pend">⏳ ${c.Pendente} pendente${c.Pendente>1?'s':''}</span>`:''}
+        ${c.Produzido?`<span class="stat-pill stat-prod">✏️ ${c.Produzido} produzido${c.Produzido>1?'s':''}</span>`:''}
+        ${c.Revisando?`<span class="stat-pill stat-rev">🔍 ${c.Revisando} revisando</span>`:''}
+        ${c['Pronto p/ disparo']?`<span class="stat-pill stat-disp">🚀 ${c['Pronto p/ disparo']} pronto${c['Pronto p/ disparo']>1?'s':''}</span>`:''}
+        ${c.Enviado?`<span class="stat-pill stat-env">✅ ${c.Enviado} enviado${c.Enviado>1?'s':''}</span>`:''}
+        ${c.atr?`<span class="stat-pill stat-atr">🔴 ${c.atr} atrasado${c.atr>1?'s':''}</span>`:''}
+      `;
+    }
+
+    function popularClientes() {
+      const clientes = [...new Set(TAREFAS.map(t => t.cliente))].sort();
+      const sel = document.getElementById('filtroCliente');
+      clientes.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+    }
+
+    carregarEstado();
+    popularClientes();
+    renderTabela();
+    pedirPermissaoNotificacao();
+    iniciarAlertas();
+    setInterval(renderTabela, 5 * 60 * 1000);
+
+      </script>
+</body>
+</html>

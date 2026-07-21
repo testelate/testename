@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HUB.nexus — StoryDesk</title>
+  <script>
+    (function(){
+      try{
+        var h=localStorage.getItem('hubnexus-theme-color')||'#FF6500';
+        var hex=h.replace('#','');
+        var r=parseInt(hex.slice(0,2),16)/255,g=parseInt(hex.slice(2,4),16)/255,b=parseInt(hex.slice(4,6),16)/255;
+        var max=Math.max(r,g,b),min=Math.min(r,g,b),hh=0,s=0,l=(max+min)/2;
+        if(max!==min){var d=max-min;s=l>.5?d/(2-max-min):d/(max+min);switch(max){case r:hh=((g-b)/d+(g<b?6:0))/6;break;case g:hh=((b-r)/d+2)/6;break;case b:hh=((r-g)/d+4)/6;break;}}
+        var root=document.documentElement;
+        root.style.setProperty('--theme-h',Math.round(hh*360));
+        root.style.setProperty('--theme-s',Math.round(s*100)+'%');
+        root.style.setProperty('--theme-l',Math.round(l*100)+'%');
+      }catch(e){}
+    })();
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/theme.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/global.css"/>
+  <style>
+    body{display:flex;flex-direction:column;overflow:hidden;height:100vh;background:var(--bg);font-family:'Inter',sans-serif;}
+    .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+    /* TOPBAR */
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:52px;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--bg-2);z-index:10;box-shadow:var(--clay-shadow-sm);}
+    .topbar-left{display:flex;align-items:center;gap:6px;}
+    .topbar-back{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);text-decoration:none;padding:5px 8px;border-radius:var(--r-sm);transition:all .18s;}
+    .topbar-back:hover{background:var(--bg-2);color:var(--text-secondary);}
+    .topbar-back svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+    /* Quando navbar global carregar, esconde o back-link local */
+    #navbar-container:not(:empty) ~ .topbar .topbar-left { display:none!important; }
+    .topbar-div{width:1px;height:22px;background:var(--bg-2);margin:0 2px;}
+    .topbar-right{display:flex;align-items:center;gap:8px;}
+    .tbtn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:var(--surface-2);border:1px solid var(--bg-2);border-radius:var(--r-sm);font-size:11px;color:var(--text-secondary);cursor:pointer;font-family:'Inter',sans-serif;transition:all .18s;box-shadow:var(--clay-shadow-sm);}
+    .tbtn:hover{background:var(--bg-2);color:var(--text-primary);}
+    .tbtn svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+    .tbtn-accent{background:var(--accent);border-color:var(--accent-dark);color:#fff;box-shadow:var(--clay-shadow-accent);}
+    .tbtn-accent:hover{background:var(--accent-dark);color:#fff;}
+    .tbtn-green{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3);color:#22c55e;}
+    .tbtn-green:hover{background:rgba(34,197,94,.2);}
+
+    /* PROJETO BAR */
+    .projeto-bar{display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--bg-2);flex-shrink:0;}
+    .projeto-bar label{font-size:11px;color:var(--text-muted);font-weight:500;white-space:nowrap;}
+    .sel{padding:6px 10px;background:var(--surface-2);border:1px solid var(--bg-2);border-radius:var(--r-sm);font-size:12px;color:var(--text-primary);font-family:'Inter',sans-serif;cursor:pointer;box-shadow:var(--clay-shadow-sm);}
+    .sel:focus{outline:none;border-color:var(--accent);}
+    .pstats{display:flex;align-items:center;gap:14px;margin-left:auto;}
+    .pstat{font-size:11px;color:var(--text-muted);}
+    .pstat strong{color:var(--text-primary);font-weight:600;}
+
+    /* TABS */
+    .tabs-bar{display:flex;gap:2px;padding:0 20px;border-bottom:1px solid var(--bg-2);flex-shrink:0;background:var(--surface);overflow-x:auto;scrollbar-width:thin;}
+    .tab-btn{padding:10px 16px;font-size:12px;font-weight:400;color:var(--text-muted);cursor:pointer;border:none;background:transparent;font-family:'Inter',sans-serif;transition:all .18s;border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;align-items:center;gap:6px;flex-shrink:0;white-space:nowrap;}
+    .tab-btn svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+    .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500;}
+    .tab-btn:hover:not(.active){color:var(--text-secondary);}
+    .tab-body{flex:1;overflow-y:auto;padding:20px;}
+
+    /* CARDS */
+    .card{background:var(--surface);border:1px solid var(--bg-2);border-radius:var(--r-xl);padding:20px;box-shadow:var(--clay-shadow);}
+    .card-title{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+
+    /* FORMS */
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .form-full{grid-column:1/-1;}
+    .form-group{display:flex;flex-direction:column;gap:5px;}
+    .form-label{font-size:11px;font-weight:500;color:var(--text-muted);}
+    .form-label span{color:var(--accent);}
+    .finput,.fsel,.ftextarea{padding:8px 12px;background:var(--surface-2);border:1px solid var(--bg-2);border-radius:var(--r-sm);font-size:12px;color:var(--text-primary);font-family:'Inter',sans-serif;transition:border-color .15s;box-shadow:var(--clay-shadow-sm);}
+    .finput:focus,.fsel:focus,.ftextarea:focus{outline:none;border-color:var(--accent);}
+    .ftextarea{min-height:80px;resize:vertical;line-height:1.5;}
+    .ftextarea.big{min-height:160px;}
+    .fhint{font-size:10px;color:var(--text-muted);line-height:1.4;}
+
+    /* TABLE */
+    .tbl-wrap{overflow-x:auto;border-radius:var(--r-lg);border:1px solid var(--bg-2);}
+    table{width:100%;border-collapse:collapse;font-size:12px;}
+    th{padding:8px 12px;text-align:left;font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--bg-2);background:var(--surface-2);white-space:nowrap;}
+    td{padding:10px 12px;border-bottom:1px solid var(--bg-2);color:var(--text-secondary);vertical-align:middle;}
+    tr:last-child td{border-bottom:none;}
+    tr.clickable{cursor:pointer;}
+    tr.clickable:hover td{background:var(--surface-2);}
+    .td-nome{font-weight:600;color:var(--text-primary);white-space:nowrap;}
+    .td-at{font-size:10px;color:var(--accent);}
+    .td-trunc{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+    /* CHIPS */
+    .chip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:var(--r-pill);font-size:10px;font-weight:500;border:1px solid;white-space:nowrap;}
+    .chip-pos{background:rgba(34,197,94,.1);color:#22c55e;border-color:rgba(34,197,94,.25);}
+    .chip-neu{background:rgba(245,158,11,.1);color:#f59e0b;border-color:rgba(245,158,11,.25);}
+    .chip-neg{background:rgba(239,68,68,.1);color:#ef4444;border-color:rgba(239,68,68,.25);}
+    .chip-nn{background:hsla(var(--theme-h),90%,50%,.1);color:var(--accent);border-color:hsla(var(--theme-h),90%,50%,.25);}
+    .chip-comp{background:rgba(168,85,247,.1);color:#a855f7;border-color:rgba(168,85,247,.25);}
+    .chip-gray{background:var(--bg-2);color:var(--text-muted);border-color:var(--bg-2);}
+    .chip-blue{background:rgba(59,130,246,.1);color:#3b82f6;border-color:rgba(59,130,246,.25);}
+
+    /* MODAL */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s;}
+    .overlay.open{opacity:1;pointer-events:all;}
+    .modal{background:var(--surface);border-radius:var(--r-xl);padding:24px;width:100%;max-width:560px;box-shadow:var(--clay-shadow-lg);transform:translateY(8px);transition:transform .2s;max-height:88vh;overflow-y:auto;}
+    .overlay.open .modal{transform:translateY(0);}
+    .modal-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+    .modal-title{font-size:15px;font-weight:700;color:var(--text-primary);}
+    .modal-close{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:none;background:var(--bg-2);border-radius:var(--r-sm);cursor:pointer;color:var(--text-muted);font-size:16px;transition:all .15s;flex-shrink:0;}
+    .modal-close:hover{background:var(--bg);color:var(--text-primary);}
+    .modal-ft{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;}
+
+    /* DRAWER */
+    .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(3px);z-index:200;opacity:0;pointer-events:none;transition:opacity .22s;}
+    .drawer-overlay.open{opacity:1;pointer-events:all;}
+    .drawer{position:fixed;top:0;right:0;width:540px;max-width:95vw;height:100vh;background:var(--surface);box-shadow:-4px 0 32px rgba(0,0,0,.15);z-index:201;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;}
+    .drawer-overlay.open .drawer{transform:translateX(0);}
+    .drawer-hd{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bg-2);flex-shrink:0;}
+    .drawer-title{font-size:14px;font-weight:700;color:var(--text-primary);}
+    .drawer-body{flex:1;overflow-y:auto;padding:20px;}
+    .dsec{margin-bottom:18px;}
+    .dsec-title{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--bg-2);}
+    .drow{display:flex;gap:10px;margin-bottom:7px;align-items:flex-start;}
+    .dkey{font-size:11px;color:var(--text-muted);width:130px;flex-shrink:0;padding-top:1px;}
+    .dval{font-size:12px;color:var(--text-primary);flex:1;line-height:1.5;}
+    .dval a{color:var(--accent);text-decoration:none;}
+    .dval a:hover{text-decoration:underline;}
+    .transc-box{background:var(--surface-2);border:1px solid var(--bg-2);border-radius:var(--r-md);padding:12px;font-size:11px;color:var(--text-secondary);line-height:1.7;white-space:pre-wrap;max-height:200px;overflow-y:auto;}
+
+    /* DASHBOARD */
+    .metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+    .metric{background:var(--surface);border:1px solid var(--bg-2);border-radius:var(--r-lg);padding:16px;box-shadow:var(--clay-shadow-sm);transition:all .2s;}
+    .metric:hover{border-color:hsla(var(--theme-h),90%,50%,.25);}
+    .metric-lbl{font-size:10px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;}
+    .metric-val{font-size:26px;font-weight:700;color:var(--text-primary);letter-spacing:-1px;line-height:1;}
+    .metric-sub{font-size:10px;color:var(--text-muted);margin-top:4px;}
+
+    /* INFLU GRID */
+    .influ-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;}
+    .influ-card{background:var(--surface);border:1px solid var(--bg-2);border-radius:var(--r-lg);padding:14px;cursor:default;transition:all .18s;box-shadow:var(--clay-shadow-sm);}
+    .influ-card:hover{border-color:hsla(var(--theme-h),90%,50%,.3);box-shadow:var(--clay-shadow);}
+    .influ-av{width:34px;height:34px;border-radius:50%;background:hsla(var(--theme-h),90%,50%,.15);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--accent);flex-shrink:0;}
+    .influ-nome{font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:2px;}
+    .influ-at{font-size:10px;color:var(--accent);margin-bottom:3px;}
+    .influ-esp{font-size:10px;color:var(--text-muted);}
+    .act-btn{padding:3px 9px;border:1px solid var(--bg-2);background:var(--surface-2);border-radius:var(--r-sm);font-size:10px;color:var(--text-secondary);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;}
+    .act-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+    /* ANALISAR - WIZARD */
+    .wizard-steps{display:flex;align-items:center;gap:0;margin-bottom:20px;}
+    .wstep{display:flex;align-items:center;gap:8px;flex:1;}
+    .wstep-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;transition:all .2s;}
+    .wstep-num.done{background:#22c55e;color:#fff;}
+    .wstep-num.active{background:var(--accent);color:#fff;}
+    .wstep-num.idle{background:var(--bg-2);color:var(--text-muted);}
+    .wstep-label{font-size:11px;color:var(--text-muted);white-space:nowrap;}
+    .wstep-label.active{color:var(--text-primary);font-weight:500;}
+    .wline{flex:1;height:1px;background:var(--bg-2);margin:0 8px;}
+    .wline.done{background:#22c55e;}
+
+    /* PROMPT BOX */
+    .prompt-box{background:hsla(var(--theme-h),90%,50%,.06);border:1px solid hsla(var(--theme-h),90%,50%,.2);border-radius:var(--r-lg);padding:16px;position:relative;margin-bottom:12px;}
+    .prompt-box pre{font-size:11px;color:var(--text-secondary);line-height:1.7;white-space:pre-wrap;font-family:'Inter',monospace;margin:0;}
+    .copy-btn{position:absolute;top:10px;right:10px;padding:4px 10px;background:var(--accent);border:none;border-radius:var(--r-sm);font-size:10px;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;}
+    .copy-btn:hover{background:var(--accent-dark);}
+    .copy-btn.ok{background:#22c55e;}
+
+    /* DRIVE LINK */
+    .drive-box{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--surface-2);border:1px solid var(--bg-2);border-radius:var(--r-md);margin-bottom:12px;}
+    .drive-box svg{width:16px;height:16px;fill:none;stroke:var(--accent);stroke-width:1.8;flex-shrink:0;}
+    .drive-box a{font-size:12px;color:var(--accent);text-decoration:none;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .drive-box a:hover{text-decoration:underline;}
+
+    /* BUSCA */
+    .search-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+    .search-input{flex:1;min-width:200px;padding:7px 12px;background:var(--surface);border:1px solid var(--bg-2);border-radius:var(--r-sm);font-size:12px;color:var(--text-primary);font-family:'Inter',sans-serif;box-shadow:var(--clay-shadow-sm);}
+    .search-input:focus{outline:none;border-color:var(--accent);}
+
+    /* EMPTY */
+    .empty{text-align:center;padding:48px 20px;color:var(--text-muted);}
+    .empty-icon{font-size:36px;margin-bottom:10px;opacity:.5;}
+    .empty-title{font-size:14px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;}
+    .empty-sub{font-size:12px;line-height:1.5;}
+
+    /* STATUS COLETA */
+    .status-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:var(--r-pill);font-size:10px;font-weight:500;}
+    .status-pendente{background:rgba(245,158,11,.1);color:#f59e0b;border:1px solid rgba(245,158,11,.25);}
+    .status-coletado{background:rgba(59,130,246,.1);color:#3b82f6;border:1px solid rgba(59,130,246,.25);}
+    .status-analisado{background:rgba(34,197,94,.1);color:#22c55e;border:1px solid rgba(34,197,94,.25);}
+
+    /* TOAST */
+    #toast{position:fixed;bottom:20px;right:20px;padding:10px 16px;background:var(--text-primary);color:var(--surface);border-radius:var(--r-md);font-size:12px;font-weight:500;box-shadow:var(--clay-shadow-lg);z-index:999;opacity:0;transform:translateY(6px);transition:all .22s;pointer-events:none;}
+    #toast.show{opacity:1;transform:translateY(0);}
+
+
+    @keyframes logoFloat {
+      0%,100% { transform: translateY(0px) scale(1); }
+      50% { transform: translateY(-3px) scale(1.04); }
+    }
+    .story-logo {
+      height:46px; width:auto; display:block;
+      animation: logoFloat 3s ease-in-out infinite;
+      filter: drop-shadow(0 2px 6px hsla(var(--theme-h),80%,50%,.25));
+      transition: filter .3s;
+    }
+    .story-logo:hover {
+      animation-play-state: paused;
+      filter: drop-shadow(0 3px 10px hsla(var(--theme-h),90%,50%,.45));
+    }
+    ::-webkit-scrollbar{width:5px;height:5px;}
+    ::-webkit-scrollbar-track{background:transparent;}
+    ::-webkit-scrollbar-thumb{background:var(--bg-2);border-radius:3px;}
+  </style>
+</head>
+<body>
+  <div id="navbar-container"></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="../index.html" class="topbar-back">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>HUB
+    </a>
+    <div class="topbar-div"></div>
+    <img src="../assets/logostory.gif" class="story-logo" alt="" onerror="this.style.display='none'">
+  </div>
+  <div class="topbar-right">
+    <button class="tbtn" onclick="openModal('modalProjeto')">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo Projeto
+    </button>
+    <button class="tbtn" onclick="openModalInflu()">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Novo Influ
+    </button>
+    <button class="tbtn tbtn-accent" onclick="openModalColeta()">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nova Coleta
+    </button>
+  </div>
+</div>
+
+<!-- PROJETO BAR -->
+<div class="projeto-bar">
+  <label>Projeto:</label>
+  <select class="sel" id="projetoSel" style="min-width:220px" onchange="onProjeto()">
+    <option value="">— selecione —</option>
+  </select>
+  <button class="tbtn" id="btnEditProj" style="display:none" onclick="openModalEditProjeto()">✏️ Editar</button>
+  <div class="pstats" id="pstats" style="display:none">
+    <span class="pstat">Influs: <strong id="stInflus">0</strong></span>
+    <span class="pstat">Coletas: <strong id="stColetas">0</strong></span>
+    <span class="pstat">Analisados: <strong id="stAnalisados">0</strong></span>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-bar">
+  <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard
+  </button>
+  <button class="tab-btn" data-tab="influs" onclick="switchTab('influs')">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Influs
+  </button>
+  <button class="tab-btn" data-tab="coletas" onclick="switchTab('coletas')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Coletas
+  </button>
+  <button class="tab-btn" data-tab="registros" onclick="switchTab('registros')">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Registros
+  </button>
+  <button class="tab-btn" data-tab="analisar" onclick="switchTab('analisar')">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Analisar
+  </button>
+</div>
+
+<!-- TAB BODIES -->
+<div class="tab-body" id="tab-dashboard">
+  <div id="dashContent"><div class="empty"><div class="empty-icon">📊</div><div class="empty-title">Selecione um projeto</div></div></div>
+</div>
+<div class="tab-body" id="tab-influs" style="display:none">
+  <div id="influContent"><div class="empty"><div class="empty-icon">👤</div><div class="empty-title">Selecione um projeto</div></div></div>
+</div>
+<div class="tab-body" id="tab-coletas" style="display:none">
+  <div id="coletaContent"><div class="empty"><div class="empty-icon">📅</div><div class="empty-title">Selecione um projeto</div></div></div>
+</div>
+<div class="tab-body" id="tab-registros" style="display:none">
+  <div id="regContent"><div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Selecione um projeto</div></div></div>
+</div>
+<div class="tab-body" id="tab-analisar" style="display:none">
+  <div id="analisarContent"><div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">Selecione uma coleta para analisar</div><div class="empty-sub">Vá para Coletas e clique em "Analisar"</div></div></div>
+</div>
+
+<!-- ═══════ MODAIS ═══════ -->
+
+<!-- Modal Projeto -->
+<div class="overlay" id="modalProjeto">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title" id="mProjetoTitle">Novo Projeto</div><button class="modal-close" onclick="closeModal('modalProjeto')">×</button></div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Nome <span>*</span></label><input class="finput" id="pNome" placeholder="Ex: Novo Nordisk DOLs"/></div>
+      <div class="form-group"><label class="form-label">Cliente</label><input class="finput" id="pCliente" placeholder="Ex: Novo Nordisk"/></div>
+      <div class="form-group form-full"><label class="form-label">Descrição</label><input class="finput" id="pDesc" placeholder="Breve descrição"/></div>
+    </div>
+    <div class="modal-ft"><button class="tbtn" onclick="closeModal('modalProjeto')">Cancelar</button><button class="tbtn tbtn-accent" onclick="salvarProjeto()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Modal Influ -->
+<div class="overlay" id="modalInflu">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title" id="mInfluTitle">Novo Influenciador</div><button class="modal-close" onclick="closeModal('modalInflu')">×</button></div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Nome completo <span>*</span></label><input class="finput" id="iNome" placeholder="Dr. Nome Sobrenome"/></div>
+      <div class="form-group"><label class="form-label">CRM</label><input class="finput" id="iCRM" placeholder="UF0000000"/></div>
+      <div class="form-group"><label class="form-label">@ Instagram</label><input class="finput" id="iIG" placeholder="sem o @"/></div>
+      <div class="form-group"><label class="form-label">Grupo / Time</label><input class="finput" id="iGrupo" placeholder="Ex: KGAK, VMDT"/></div>
+      <div class="form-group"><label class="form-label">Especialidade</label><input class="finput" id="iEsp" placeholder="Ex: Endocrinologista"/></div>
+      <div class="form-group"><label class="form-label">Projeto</label><select class="fsel" id="iProjId"></select></div>
+      <div class="form-group form-full"><label class="form-label">URL do perfil</label><input class="finput" id="iURL" placeholder="https://www.instagram.com/..."/></div>
+      <div class="form-group form-full"><label class="form-label">Observações</label><textarea class="ftextarea" id="iObs" placeholder="Notas sobre o perfil..."></textarea></div>
+    </div>
+    <div class="modal-ft"><button class="tbtn" onclick="closeModal('modalInflu')">Cancelar</button><button class="tbtn tbtn-accent" onclick="salvarInflu()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Modal Nova Coleta (só Influ + data + link Drive) -->
+<div class="overlay" id="modalColeta">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-hd"><div class="modal-title" id="mColetaTitle">Nova Coleta de Stories</div><button class="modal-close" onclick="closeModal('modalColeta')">×</button></div>
+    <div class="fhint" style="margin-bottom:14px;padding:10px;background:hsla(var(--theme-h),90%,50%,.06);border-radius:var(--r-md);border:1px solid hsla(var(--theme-h),90%,50%,.15);">
+      📁 Registre o influenciador, data e link da pasta no Drive. A análise do conteúdo é feita na aba <strong>Analisar</strong>.
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Influenciador <span>*</span></label><select class="fsel" id="cInfluId"></select></div>
+      <div class="form-group"><label class="form-label">Data da coleta <span>*</span></label><input class="finput" id="cData" type="date"/></div>
+      <div class="form-group form-full">
+        <label class="form-label">Link da pasta no Google Drive <span>*</span></label>
+        <input class="finput" id="cDriveLink" placeholder="https://drive.google.com/drive/folders/..."/>
+        <div class="fhint">Cole o link da pasta com os stories deste influ/dia</div>
+      </div>
+      <div class="form-group"><label class="form-label">Nº de stories baixados</label><input class="finput" id="cNumStories" type="number" min="0" placeholder="0"/></div>
+      <div class="form-group"><label class="form-label">Status</label>
+        <select class="fsel" id="cStatus">
+          <option value="pendente">Pendente — não baixado ainda</option>
+          <option value="coletado">Coletado — pronto para analisar</option>
+          <option value="analisado">Analisado — concluído</option>
+        </select>
+      </div>
+      <div class="form-group form-full"><label class="form-label">Observações</label><textarea class="ftextarea" id="cObs" placeholder="Notas sobre esta coleta..."></textarea></div>
+    </div>
+    <div class="modal-ft"><button class="tbtn" onclick="closeModal('modalColeta')">Cancelar</button><button class="tbtn tbtn-accent" onclick="salvarColeta()">Registrar Coleta</button></div>
+  </div>
+</div>
+
+<!-- Drawer detalhe do registro -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()">
+  <div class="drawer" onclick="event.stopPropagation()">
+    <div class="drawer-hd">
+      <div class="drawer-title" id="drawerTitle">Detalhe</div>
+      <div style="display:flex;gap:6px">
+        <button class="tbtn tbtn-accent" onclick="irAnalisarReg()">🔍 Analisar</button>
+        <button class="tbtn" style="color:#e05252;border-color:#e05252;background:transparent" onclick="confirmarApagarRegistro()" title="Apagar este registro">🗑️</button>
+        <button class="modal-close" onclick="closeDrawer()">×</button>
+      </div>
+    </div>
+    <div class="drawer-body" id="drawerBody"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════
+   STATE
+══════════════════════════════════════════ */
+const S = {
+  projetos:[], influs:[], coletas:[], registros:[],
+  projetoId:null,
+  editProjetoId:null, editInfluId:null, editColetaId:null,
+  drawerRegId:null, analisarColetaId:null,
+};
+
+/* ══════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════ */
+const api = {
+  async get(p){ const r=await fetch(p); return r.ok?r.json():null; },
+  async post(p,b){ const r=await fetch(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}); return r.ok?r.json():null; },
+  async put(p,b){ const r=await fetch(p,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}); return r.ok?r.json():null; },
+  async del(p){ const r=await fetch(p,{method:'DELETE'}); return r.ok; }
+};
+const H = s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const J = (s,fb={})=>{ try{return JSON.parse(s);}catch{return fb;} };
+function toast(msg,dur=2800){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),dur); }
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function fmtDate(d){ if(!d)return'—'; const v=new Date(d+'T12:00:00'); return isNaN(v)?d:v.toLocaleDateString('pt-BR'); }
+function chipSent(s){
+  const sl=(s||'').toLowerCase();
+  if(sl==='positivo') return `<span class="chip chip-pos">✓ Positivo</span>`;
+  if(sl==='negativo') return `<span class="chip chip-neg">✕ Negativo</span>`;
+  if(sl==='neutro')   return `<span class="chip chip-neu">~ Neutro</span>`;
+  return `<span class="chip chip-gray">${H(s||'—')}</span>`;
+}
+function chipStatus(s){
+  if(s==='analisado') return `<span class="status-chip status-analisado">✓ Analisado</span>`;
+  if(s==='coletado')  return `<span class="status-chip status-coletado">⬇ Coletado</span>`;
+  return `<span class="status-chip status-pendente">○ Pendente</span>`;
+}
+function av(nome){ return (nome||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+
+/* ══════════════════════════════════════════
+   TABS
+══════════════════════════════════════════ */
+function switchTab(name){
+  document.querySelectorAll('.tab-btn').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  ['dashboard','influs','coletas','registros','analisar'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display=t===name?'':'none';
+  });
+  if(name==='dashboard') renderDashboard();
+  if(name==='influs')    renderInflus();
+  if(name==='coletas')   renderColetas();
+  if(name==='registros') renderRegistros();
+}
+
+/* ══════════════════════════════════════════
+   PROJETOS
+══════════════════════════════════════════ */
+async function loadProjetos(){
+  const d=await api.get('/api/storydesk/projetos');
+  S.projetos=d?.projetos||[];
+  renderProjetoSel();
+}
+function renderProjetoSel(){
+  const sel=document.getElementById('projetoSel');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— selecione —</option>';
+  S.projetos.forEach(p=>{ const o=document.createElement('option'); o.value=p.id; o.textContent=p.nome+(p.cliente?` (${p.cliente})`:''); sel.appendChild(o); });
+  if(cur) sel.value=cur;
+  const dp=document.getElementById('iProjId');
+  dp.innerHTML='';
+  S.projetos.forEach(p=>{ const o=document.createElement('option'); o.value=p.id; o.textContent=p.nome; dp.appendChild(o); });
+  if(S.projetoId) dp.value=S.projetoId;
+}
+async function onProjeto(){
+  const v=document.getElementById('projetoSel').value;
+  S.projetoId=v?parseInt(v):null;
+  document.getElementById('btnEditProj').style.display=S.projetoId?'':'none';
+  document.getElementById('pstats').style.display=S.projetoId?'':'none';
+  if(S.projetoId){ await loadInflus(); await loadColetas(); await loadRegistros(); }
+  else{ S.influs=[]; S.coletas=[]; S.registros=[]; updateStats(); }
+  renderCurrentTab();
+}
+function openModalEditProjeto(){
+  const p=S.projetos.find(x=>x.id===S.projetoId); if(!p)return;
+  S.editProjetoId=p.id;
+  document.getElementById('mProjetoTitle').textContent='Editar Projeto';
+  document.getElementById('pNome').value=p.nome;
+  document.getElementById('pCliente').value=p.cliente||'';
+  document.getElementById('pDesc').value=p.descricao||'';
+  openModal('modalProjeto');
+}
+async function salvarProjeto(){
+  const nome=document.getElementById('pNome').value.trim();
+  if(!nome){toast('Informe o nome');return;}
+  const body={nome,cliente:document.getElementById('pCliente').value.trim(),descricao:document.getElementById('pDesc').value.trim()};
+  if(S.editProjetoId){ await api.put('/api/storydesk/projetos',{...body,id:S.editProjetoId}); toast('Projeto atualizado ✓'); S.editProjetoId=null; }
+  else{ const r=await api.post('/api/storydesk/projetos',body); if(r?.id)S.projetoId=r.id; toast('Projeto criado ✓'); }
+  document.getElementById('mProjetoTitle').textContent='Novo Projeto';
+  closeModal('modalProjeto');
+  await loadProjetos();
+  if(S.projetoId){ document.getElementById('projetoSel').value=S.projetoId; onProjeto(); }
+}
+
+/* ══════════════════════════════════════════
+   INFLUS
+══════════════════════════════════════════ */
+async function loadInflus(){
+  if(!S.projetoId)return;
+  const d=await api.get(`/api/storydesk/dols?projeto_id=${S.projetoId}`);
+  S.influs=d?.dols||[];
+  populateInfluSel();
+  updateStats();
+}
+function populateInfluSel(){
+  const sel=document.getElementById('cInfluId');
+  sel.innerHTML='<option value="">— selecione —</option>';
+  S.influs.forEach(i=>{ const o=document.createElement('option'); o.value=i.id; o.textContent=i.nome+(i.instagram?` (@${i.instagram})`:''); sel.appendChild(o); });
+}
+function updateStats(){
+  document.getElementById('stInflus').textContent=S.influs.length;
+  document.getElementById('stColetas').textContent=S.coletas.length;
+  document.getElementById('stAnalisados').textContent=S.coletas.filter(c=>c.status==='analisado').length;
+}
+function renderInflus(){
+  const el=document.getElementById('influContent');
+  if(!S.projetoId){el.innerHTML='<div class="empty"><div class="empty-icon">👤</div><div class="empty-title">Selecione um projeto</div></div>';return;}
+  if(!S.influs.length){el.innerHTML='<div class="empty"><div class="empty-icon">👤</div><div class="empty-title">Nenhum influenciador cadastrado</div><div class="empty-sub">Clique em "Novo Influ" para adicionar</div></div>';return;}
+  el.innerHTML=`
+    <div class="search-row">
+      <input class="search-input" placeholder="Buscar por nome, @, grupo..." oninput="filtrarInflus(this.value)"/>
+      <span style="font-size:11px;color:var(--text-muted)">${S.influs.length} influ(s)</span>
+    </div>
+    <div class="influ-grid" id="influGrid">${S.influs.map(i=>influCardHTML(i)).join('')}</div>`;
+}
+function influCardHTML(i){
+  const regs=S.registros.filter(r=>r.dol_id===i.id).length;
+  return `<div class="influ-card" data-q="${(i.nome+' '+i.instagram+' '+i.grupo).toLowerCase()}">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div class="influ-av">${av(i.nome)}</div>
+      <div><div class="influ-nome">${H(i.nome)}</div>${i.instagram?`<div class="influ-at">@${H(i.instagram)}</div>`:''}</div>
+    </div>
+    ${i.especialidade?`<div class="influ-esp">${H(i.especialidade)}</div>`:''}
+    ${i.grupo?`<div style="margin-top:4px"><span class="chip chip-gray">${H(i.grupo)}</span></div>`:''}
+    <div style="margin-top:6px;font-size:10px;color:var(--text-muted)">${regs} registro(s)</div>
+    <div style="display:flex;gap:5px;margin-top:10px">
+      <button class="act-btn" onclick="openModalEditInflu(${i.id})">✏️ Editar</button>
+      <button class="act-btn" onclick="novaColetaPara(${i.id})">📅 Coleta</button>
+    </div>
+  </div>`;
+}
+function filtrarInflus(q){
+  q=q.toLowerCase();
+  document.querySelectorAll('#influGrid .influ-card').forEach(c=>{c.style.display=c.dataset.q.includes(q)?'':'none';});
+}
+function openModalInflu(){
+  if(!S.projetoId){toast('Selecione um projeto primeiro');return;}
+  S.editInfluId=null;
+  document.getElementById('mInfluTitle').textContent='Novo Influenciador';
+  ['iNome','iCRM','iIG','iGrupo','iEsp','iURL','iObs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('iProjId').value=S.projetoId;
+  openModal('modalInflu');
+}
+function openModalEditInflu(id){
+  const i=S.influs.find(x=>x.id===id); if(!i)return;
+  S.editInfluId=id;
+  document.getElementById('mInfluTitle').textContent='Editar Influenciador';
+  document.getElementById('iNome').value=i.nome||'';
+  document.getElementById('iCRM').value=i.crm||'';
+  document.getElementById('iIG').value=i.instagram||'';
+  document.getElementById('iGrupo').value=i.grupo||'';
+  document.getElementById('iEsp').value=i.especialidade||'';
+  document.getElementById('iURL').value=i.url_perfil||'';
+  document.getElementById('iObs').value=i.observacoes||'';
+  document.getElementById('iProjId').value=i.projeto_id;
+  openModal('modalInflu');
+}
+async function salvarInflu(){
+  const nome=document.getElementById('iNome').value.trim();
+  if(!nome){toast('Informe o nome');return;}
+  const body={nome,crm:document.getElementById('iCRM').value.trim(),instagram:document.getElementById('iIG').value.trim().replace('@',''),grupo:document.getElementById('iGrupo').value.trim(),especialidade:document.getElementById('iEsp').value.trim(),url_perfil:document.getElementById('iURL').value.trim(),observacoes:document.getElementById('iObs').value.trim(),projeto_id:parseInt(document.getElementById('iProjId').value)};
+  if(S.editInfluId){ await api.put('/api/storydesk/dols',{...body,id:S.editInfluId}); toast('Influ atualizado ✓'); S.editInfluId=null; }
+  else{ await api.post('/api/storydesk/dols',body); toast('Influ cadastrado ✓'); }
+  closeModal('modalInflu');
+  await loadInflus();
+  renderInflus();
+}
+
+/* ══════════════════════════════════════════
+   COLETAS
+══════════════════════════════════════════ */
+async function loadColetas(){
+  if(!S.projetoId)return;
+  const d=await api.get(`/api/storydesk/coletas?projeto_id=${S.projetoId}`);
+  S.coletas=d?.coletas||[];
+  updateStats();
+}
+function renderColetas(){
+  const el=document.getElementById('coletaContent');
+  if(!S.projetoId){el.innerHTML='<div class="empty"><div class="empty-icon">📅</div><div class="empty-title">Selecione um projeto</div></div>';return;}
+  if(!S.coletas.length){el.innerHTML='<div class="empty"><div class="empty-icon">📅</div><div class="empty-title">Nenhuma coleta registrada</div><div class="empty-sub">Clique em "Nova Coleta" para registrar</div></div>';return;}
+  const grupos=[...new Set(S.influs.map(i=>i.grupo).filter(Boolean))];
+  el.innerHTML=`
+    <div class="search-row">
+      <input class="search-input" id="searchColeta" placeholder="Buscar por influ..." oninput="filtrarColetas()"/>
+      <select class="sel" id="filtColetaStatus" onchange="filtrarColetas()">
+        <option value="">Todo status</option>
+        <option value="pendente">Pendente</option>
+        <option value="coletado">Coletado</option>
+        <option value="analisado">Analisado</option>
+      </select>
+      <select class="sel" id="filtColetaGrupo" onchange="filtrarColetas()">
+        <option value="">Todos os grupos</option>
+        ${grupos.map(g=>`<option value="${g}">${H(g)}</option>`).join('')}
+      </select>
+      <span style="font-size:11px;color:var(--text-muted)" id="coletaCount">${S.coletas.length} coleta(s)</span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Data</th><th>Influenciador</th><th>Grupo</th><th>Stories</th><th>Status</th><th>Drive</th><th>Ações</th></tr></thead>
+        <tbody id="coletaTbody">${renderColetaRows(S.coletas)}</tbody>
+      </table>
+    </div>`;
+}
+function renderColetaRows(cols){
+  if(!cols.length) return `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">Nenhuma coleta encontrada</td></tr>`;
+  return cols.map(c=>{
+    const influ=S.influs.find(i=>i.id===c.influ_id)||{nome:'—',instagram:'',grupo:''};
+    return `<tr>
+      <td style="white-space:nowrap">${fmtDate(c.data)}</td>
+      <td><div class="td-nome">${H(influ.nome)}</div>${influ.instagram?`<div class="td-at">@${H(influ.instagram)}</div>`:''}</td>
+      <td><span class="chip chip-gray">${H(influ.grupo||'—')}</span></td>
+      <td>${c.num_stories||'—'}</td>
+      <td>${chipStatus(c.status)}</td>
+      <td>${c.drive_link?`<a href="${H(c.drive_link)}" target="_blank" class="chip chip-blue" style="text-decoration:none">↗ Drive</a>`:'—'}</td>
+      <td style="display:flex;gap:5px;align-items:center">
+        <button class="act-btn" onclick="openModalEditColeta(${c.id})">✏️</button>
+        <button class="act-btn" style="color:var(--accent);border-color:var(--accent)" onclick="irAnalisar(${c.id})">🔍 Analisar</button>
+        <button class="act-btn" style="color:#e05252;border-color:#e05252" onclick="confirmarApagarColeta(${c.id},event)" title="Apagar coleta e registros vinculados">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function filtrarColetas(){
+  const q=(document.getElementById('searchColeta')?.value||'').toLowerCase();
+  const fs=document.getElementById('filtColetaStatus')?.value||'';
+  const fg=document.getElementById('filtColetaGrupo')?.value||'';
+  let res=S.coletas;
+  if(fs) res=res.filter(c=>c.status===fs);
+  if(fg){ const ids=S.influs.filter(i=>i.grupo===fg).map(i=>i.id); res=res.filter(c=>ids.includes(c.influ_id)); }
+  if(q){ res=res.filter(c=>{ const influ=S.influs.find(i=>i.id===c.influ_id)||{}; return [influ.nome,influ.instagram,c.status].join(' ').toLowerCase().includes(q); }); }
+  const tb=document.getElementById('coletaTbody');
+  if(tb) tb.innerHTML=renderColetaRows(res);
+  const ct=document.getElementById('coletaCount');
+  if(ct) ct.textContent=`${res.length} coleta(s)`;
+}
+function openModalColeta(){
+  if(!S.projetoId){toast('Selecione um projeto primeiro');return;}
+  S.editColetaId=null;
+  document.getElementById('mColetaTitle').textContent='Nova Coleta de Stories';
+  document.getElementById('cData').value=new Date().toISOString().slice(0,10);
+  document.getElementById('cDriveLink').value='';
+  document.getElementById('cNumStories').value='';
+  document.getElementById('cStatus').value='pendente';
+  document.getElementById('cObs').value='';
+  document.getElementById('cInfluId').value='';
+  openModal('modalColeta');
+}
+function novaColetaPara(influId){
+  openModalColeta();
+  setTimeout(()=>document.getElementById('cInfluId').value=influId,50);
+}
+function openModalEditColeta(id){
+  const c=S.coletas.find(x=>x.id===id); if(!c)return;
+  S.editColetaId=id;
+  document.getElementById('mColetaTitle').textContent='Editar Coleta';
+  document.getElementById('cInfluId').value=c.influ_id||'';
+  document.getElementById('cData').value=c.data||'';
+  document.getElementById('cDriveLink').value=c.drive_link||'';
+  document.getElementById('cNumStories').value=c.num_stories||'';
+  document.getElementById('cStatus').value=c.status||'pendente';
+  document.getElementById('cObs').value=c.observacoes||'';
+  openModal('modalColeta');
+}
+async function salvarColeta(){
+  const influ_id=parseInt(document.getElementById('cInfluId').value);
+  if(!influ_id){toast('Selecione o influenciador');return;}
+  const data=document.getElementById('cData').value;
+  if(!data){toast('Informe a data');return;}
+  const drive_link=document.getElementById('cDriveLink').value.trim();
+  if(!drive_link){toast('Cole o link do Drive');return;}
+  const body={influ_id,projeto_id:S.projetoId,data,drive_link,num_stories:parseInt(document.getElementById('cNumStories').value)||0,status:document.getElementById('cStatus').value,observacoes:document.getElementById('cObs').value.trim()};
+  if(S.editColetaId){ await api.put('/api/storydesk/coletas',{...body,id:S.editColetaId}); toast('Coleta atualizada ✓'); S.editColetaId=null; }
+  else{ await api.post('/api/storydesk/coletas',body); toast('Coleta registrada ✓'); }
+  closeModal('modalColeta');
+  await loadColetas();
+  renderColetas();
+}
+
+/* ══════════════════════════════════════════
+   REGISTROS (análises)
+══════════════════════════════════════════ */
+async function loadRegistros(){
+  if(!S.projetoId)return;
+  const d=await api.get(`/api/storydesk/registros?projeto_id=${S.projetoId}`);
+  S.registros=d?.registros||[];
+}
+function renderRegistros(){
+  const el=document.getElementById('regContent');
+  if(!S.projetoId){el.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Selecione um projeto</div></div>';return;}
+  if(!S.registros.length){el.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Nenhum registro ainda</div><div class="empty-sub">Analise coletas para gerar registros</div></div>';return;}
+  const grupos=[...new Set(S.influs.map(i=>i.grupo).filter(Boolean))];
+  el.innerHTML=`
+    <div class="search-row">
+      <input class="search-input" id="searchReg" placeholder="Buscar por influ, tema, produto..." oninput="filtrarRegistros()"/>
+      <select class="sel" id="filtRegInflu" onchange="filtrarRegistros()">
+        <option value="">Todos os influs</option>
+        ${S.influs.map(i=>`<option value="${i.id}">${H(i.nome)}</option>`).join('')}
+      </select>
+      <select class="sel" id="filtRegSent" onchange="filtrarRegistros()">
+        <option value="">Todo sentimento</option>
+        <option value="Positivo">Positivo</option>
+        <option value="Neutro">Neutro</option>
+        <option value="Negativo">Negativo</option>
+      </select>
+      <select class="sel" id="filtRegGrupo" onchange="filtrarRegistros()">
+        <option value="">Todos os grupos</option>
+        ${grupos.map(g=>`<option value="${g}">${H(g)}</option>`).join('')}
+      </select>
+      <button class="tbtn tbtn-green" onclick="exportarCSV()">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>CSV
+      </button>
+      <button class="tbtn tbtn-green" onclick="exportarXLSX()">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Excel
+      </button>
+      <span style="font-size:11px;color:var(--text-muted)" id="regCount">${S.registros.length} registro(s)</span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Data</th><th>Influenciador</th><th>Grupo</th><th>Tema</th>
+          <th>Sentimento</th><th>Msg. Marca</th><th>Prod. NN</th><th>Competidor</th>
+          <th>Formato</th><th>Link</th>
+        </tr></thead>
+        <tbody id="regTbody">${renderRegRows(S.registros)}</tbody>
+      </table>
+    </div>`;
+}
+function renderRegRows(regs){
+  if(!regs.length) return `<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:24px">Nenhum resultado</td></tr>`;
+  return regs.map(r=>{
+    const influ=S.influs.find(i=>i.id===r.dol_id)||{nome:'—',instagram:'',grupo:''};
+    const fmts=[];
+    if(r.feed==='Sim')fmts.push('Feed');
+    if(r.stories==='Sim')fmts.push('Stories');
+    if(r.reels==='Sim')fmts.push('Reels');
+    return `<tr class="clickable" onclick="openDrawerReg(${r.id})">
+      <td style="white-space:nowrap">${fmtDate(r.data)}</td>
+      <td><div class="td-nome">${H(influ.nome)}</div>${influ.instagram?`<div class="td-at">@${H(influ.instagram)}</div>`:''}</td>
+      <td><span class="chip chip-gray">${H(influ.grupo||'—')}</span></td>
+      <td class="td-trunc" title="${H(r.tema_principal||'')}">${H(r.tema_principal||'—')}</td>
+      <td>${chipSent(r.sentimento)}</td>
+      <td class="td-trunc">${H(r.mensagem_marca||'—')}</td>
+      <td>${r.produtos_nn?`<span class="chip chip-nn" style="font-size:9px">${H(r.produtos_nn)}</span>`:'—'}</td>
+      <td>${r.produtos_competidor?`<span class="chip chip-comp" style="font-size:9px">${H(r.produtos_competidor)}</span>`:'—'}</td>
+      <td style="white-space:nowrap">${fmts.map(f=>`<span class="chip chip-gray">${f}</span>`).join(' ')||'—'}</td>
+      <td onclick="event.stopPropagation()">${r.link?`<a href="${H(r.link)}" target="_blank" class="chip chip-blue" style="text-decoration:none">↗</a>`:'—'}</td>
+    </tr>`;
+  }).join('');
+}
+function filtrarRegistros(){
+  const q=(document.getElementById('searchReg')?.value||'').toLowerCase();
+  const fi=document.getElementById('filtRegInflu')?.value||'';
+  const fs=document.getElementById('filtRegSent')?.value||'';
+  const fg=document.getElementById('filtRegGrupo')?.value||'';
+  let res=S.registros;
+  if(fi) res=res.filter(r=>r.dol_id===parseInt(fi));
+  if(fs) res=res.filter(r=>(r.sentimento||'')===fs);
+  if(fg){ const ids=S.influs.filter(i=>i.grupo===fg).map(i=>i.id); res=res.filter(r=>ids.includes(r.dol_id)); }
+  if(q) res=res.filter(r=>{ const i=S.influs.find(x=>x.id===r.dol_id)||{}; return [r.tema_principal,r.sentimento,r.produtos_nn,r.produtos_competidor,r.mensagem_marca,i.nome,i.instagram].join(' ').toLowerCase().includes(q); });
+  const tb=document.getElementById('regTbody');
+  if(tb) tb.innerHTML=renderRegRows(res);
+  const ct=document.getElementById('regCount');
+  if(ct) ct.textContent=`${res.length} registro(s)`;
+}
+
+/* ══════════════════════════════════════════
+   EXPORTAR
+══════════════════════════════════════════ */
+function getRegsParaExport(){
+  return S.registros.map(r=>{
+    const influ=S.influs.find(i=>i.id===r.dol_id)||{nome:'',instagram:'',grupo:'',especialidade:'',crm:'',url_perfil:''};
+    return {
+      'Data': r.data||'',
+      'Nome': influ.nome||'',
+      'CRM': influ.crm||'',
+      'Grupo': influ.grupo||'',
+      'Perfil': influ.url_perfil||('https://www.instagram.com/'+(influ.instagram||'')),
+      'Tema Principal': r.tema_principal||'',
+      'Microtema': r.microtema||'',
+      'Sentimento': r.sentimento||'',
+      'Mensagem da marca': r.mensagem_marca||'',
+      'Novo Nordisk (sem medicamento)': r.novo_nordisk||'',
+      'Produtos NN': r.produtos_nn||'',
+      'Sema brands (medicamentos)': r.sema_brands||'',
+      'Sema composto (com e sem medicamentos)': r.sema_composto||'',
+      'Produtos Competidor': r.produtos_competidor||'',
+      'Tirze brands (medicamentos)': r.tirze_brands||'',
+      'Tirze composto (com e sem medicamentos)': r.tirze_composto||'',
+      'Seguidores': r.seguidores||0,
+      'Interações (comentários + curtidas)': r.interacoes||0,
+      'Impacto': r.impacto||0,
+      'Feed (sim ou não)': r.feed||'',
+      'Stories (sim ou não)': r.stories||'',
+      'Reels ou TikTok (sim ou não)': r.reels||'',
+      'Views': r.views||0,
+      'Minutagem': r.minutagem||'',
+      'Link': r.link||'',
+      'Conteúdo': r.transcricao||'',
+    };
+  });
+}
+function exportarCSV(){
+  const rows=getRegsParaExport();
+  if(!rows.length){toast('Sem registros para exportar');return;}
+  const cols=Object.keys(rows[0]);
+  const csv=[cols.join(';'),...rows.map(r=>cols.map(c=>{ const v=String(r[c]||'').replace(/"/g,'""'); return `"${v}"`; }).join(';'))].join('\n');
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  const proj=S.projetos.find(p=>p.id===S.projetoId);
+  a.download=`storydesk_${proj?.nome||'export'}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); toast('CSV exportado ✓');
+}
+// ── Sanitização de células para export XLSX (SheetJS) ──────────────
+// Mesma causa-raiz identificada em pipeline-irx.html: emojis e chars de
+// controle (comuns em transcrição de Reels/TikTok) quebram o XML para o
+// Excel, embora o Google Sheets tolere e abra normalmente.
+const sanitizeXLSXCell=v=>{
+  if(v==null)return'';
+  if(typeof v!=='string')return v;
+  return v
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g,'')
+    .replace(/[\uD800-\uDFFF]/g,'')
+    .replace(/[\u{1F000}-\u{1FFFF}]/gu,'')
+    .replace(/[\u{2000}-\u{2BFF}]/gu,'')
+    .replace(/\uFFFE|\uFFFF/g,'');
+};
+const sanitizeXLSXRow=r=>Object.fromEntries(Object.entries(r).map(([k,v])=>[k,typeof v==='string'?sanitizeXLSXCell(v):v]));
+
+function exportarXLSX(){
+  const rows=getRegsParaExport();
+  if(!rows.length){toast('Sem registros para exportar');return;}
+  const ws=XLSX.utils.json_to_sheet(rows.map(sanitizeXLSXRow));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Registros');
+  const proj=S.projetos.find(p=>p.id===S.projetoId);
+  XLSX.writeFile(wb,`storydesk_${proj?.nome||'export'}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Excel exportado ✓');
+}
+
+/* ══════════════════════════════════════════
+   DRAWER REGISTRO
+══════════════════════════════════════════ */
+function openDrawerReg(id){
+  const r=S.registros.find(x=>x.id===id); if(!r)return;
+  S.drawerRegId=id;
+  const influ=S.influs.find(i=>i.id===r.dol_id)||{nome:'—',instagram:'',grupo:'',especialidade:''};
+  const fmts=[];
+  if(r.feed==='Sim')fmts.push('Feed');
+  if(r.stories==='Sim')fmts.push('Stories');
+  if(r.reels==='Sim')fmts.push('Reels/TikTok');
+  document.getElementById('drawerTitle').textContent=influ.nome+' — '+fmtDate(r.data);
+  document.getElementById('drawerBody').innerHTML=`
+    <div class="dsec">
+      <div class="dsec-title">Influenciador</div>
+      <div class="drow"><span class="dkey">Nome</span><span class="dval"><strong>${H(influ.nome)}</strong></span></div>
+      ${influ.instagram?`<div class="drow"><span class="dkey">Instagram</span><span class="dval"><a href="https://instagram.com/${influ.instagram}" target="_blank">@${H(influ.instagram)} ↗</a></span></div>`:''}
+      ${influ.grupo?`<div class="drow"><span class="dkey">Grupo</span><span class="dval"><span class="chip chip-gray">${H(influ.grupo)}</span></span></div>`:''}
+      ${influ.especialidade?`<div class="drow"><span class="dkey">Especialidade</span><span class="dval">${H(influ.especialidade)}</span></div>`:''}
+    </div>
+    <div class="dsec">
+      <div class="dsec-title">Análise</div>
+      <div class="drow"><span class="dkey">Data</span><span class="dval">${fmtDate(r.data)}</span></div>
+      <div class="drow"><span class="dkey">Tema</span><span class="dval">${H(r.tema_principal||'—')}</span></div>
+      ${r.microtema?`<div class="drow"><span class="dkey">Microtema</span><span class="dval">${H(r.microtema)}</span></div>`:''}
+      <div class="drow"><span class="dkey">Sentimento</span><span class="dval">${chipSent(r.sentimento)}</span></div>
+      ${r.mensagem_marca?`<div class="drow"><span class="dkey">Msg. da marca</span><span class="dval"><span class="chip chip-gray">${H(r.mensagem_marca)}</span></span></div>`:''}
+      <div class="drow"><span class="dkey">Formato</span><span class="dval">${fmts.map(f=>`<span class="chip chip-gray">${f}</span>`).join(' ')||'—'}</span></div>
+      ${r.link?`<div class="drow"><span class="dkey">Link</span><span class="dval"><a href="${H(r.link)}" target="_blank">${H(r.link).slice(0,50)}… ↗</a></span></div>`:''}
+    </div>
+    <div class="dsec">
+      <div class="dsec-title">Produtos</div>
+      <div class="drow"><span class="dkey">Prod. NN</span><span class="dval">${r.produtos_nn?`<span class="chip chip-nn">${H(r.produtos_nn)}</span>`:'—'}</span></div>
+      <div class="drow"><span class="dkey">Sema composto</span><span class="dval">${r.sema_composto==='Sim'?'<span class="chip chip-nn">Sim</span>':'<span class="chip chip-gray">Não</span>'}</span></div>
+      <div class="drow"><span class="dkey">Competidor</span><span class="dval">${r.produtos_competidor?`<span class="chip chip-comp">${H(r.produtos_competidor)}</span>`:'—'}</span></div>
+      <div class="drow"><span class="dkey">Tirze composto</span><span class="dval">${r.tirze_composto==='Sim'?'<span class="chip chip-comp">Sim</span>':'<span class="chip chip-gray">Não</span>'}</span></div>
+    </div>
+    <div class="dsec">
+      <div class="dsec-title">Métricas</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${[['Seguidores',r.seguidores],['Interações',r.interacoes],['Views',r.views],['Impacto',r.impacto]].map(([k,v])=>`
+          <div style="background:var(--surface-2);border:1px solid var(--bg-2);border-radius:var(--r-md);padding:10px">
+            <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px">${k}</div>
+            <div style="font-size:18px;font-weight:700;color:var(--text-primary);margin-top:2px">${v?Number(v).toLocaleString('pt-BR'):'—'}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    ${r.transcricao?`<div class="dsec"><div class="dsec-title">Transcrição</div><div class="transc-box">${H(r.transcricao)}</div></div>`:''}`;
+  document.getElementById('drawerOverlay').classList.add('open');
+}
+function closeDrawer(){ document.getElementById('drawerOverlay').classList.remove('open'); }
+
+async function confirmarApagarRegistro(){
+  if(!S.drawerRegId)return;
+  if(!confirm('Apagar este registro permanentemente? Esta ação não pode ser desfeita.'))return;
+  await api.del('/api/storydesk/registros?id='+S.drawerRegId);
+  S.registros = S.registros.filter(r=>r.id!==S.drawerRegId);
+  S.drawerRegId = null;
+  closeDrawer();
+  renderRegistros();
+  toast('Registro apagado ✓');
+}
+
+async function confirmarApagarColeta(id, e){
+  if(e){e.stopPropagation();}
+  const c = S.coletas.find(x=>x.id===id);
+  if(!c)return;
+  const influ = S.influs.find(i=>i.id===c.influ_id)||{nome:'?'};
+  const regsCount = S.registros.filter(r=>r.coleta_id===id).length;
+  const msg = regsCount
+    ? `Apagar a coleta de ${influ.nome} (${c.data}) e os ${regsCount} registro(s) vinculado(s)? Esta ação não pode ser desfeita.`
+    : `Apagar a coleta de ${influ.nome} (${c.data})? Esta ação não pode ser desfeita.`;
+  if(!confirm(msg))return;
+  // apagar registros vinculados
+  const regsVinc = S.registros.filter(r=>r.coleta_id===id);
+  for(const r of regsVinc){ await api.del('/api/storydesk/registros?id='+r.id); }
+  // apagar coleta
+  await api.del('/api/storydesk/coletas?id='+id);
+  S.registros = S.registros.filter(r=>r.coleta_id!==id);
+  S.coletas = S.coletas.filter(c=>c.id!==id);
+  renderColetas();
+  renderRegistros();
+  toast('Coleta apagada ✓');
+}
+function irAnalisarReg(){
+  if(!S.drawerRegId)return;
+  const r=S.registros.find(x=>x.id===S.drawerRegId);
+  if(!r)return;
+  closeDrawer();
+  // acha a coleta associada e vai analisar
+  S.analisarColetaId=r.coleta_id;
+  switchTab('analisar');
+  renderAnalisar(r.coleta_id, S.drawerRegId);
+}
+
+/* ══════════════════════════════════════════
+   ANALISAR — WIZARD
+══════════════════════════════════════════ */
+function irAnalisar(coletaId){
+  S.analisarColetaId=coletaId;
+  switchTab('analisar');
+  renderAnalisar(coletaId);
+}
+
+function renderAnalisar(coletaId){
+  const coleta=S.coletas.find(c=>c.id===coletaId);
+  const el=document.getElementById('analisarContent');
+  if(!coleta){el.innerHTML='<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">Coleta não encontrada</div></div>';return;}
+  const influ=S.influs.find(i=>i.id===coleta.influ_id)||{nome:'—',instagram:''};
+  const prompt=buildPrompt(influ,coleta);
+  // registros existentes desta coleta
+  const regsExist=S.registros.filter(r=>r.coleta_id===coletaId);
+
+  el.innerHTML=`
+    <div style="max-width:800px;margin:0 auto">
+
+      <!-- Header coleta -->
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="influ-av">${av(influ.nome)}</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:600;color:var(--text-primary)">${H(influ.nome)}</div>
+            ${influ.instagram?`<div style="font-size:11px;color:var(--accent)">@${H(influ.instagram)}</div>`:''}
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">📅 ${fmtDate(coleta.data)} · ${coleta.num_stories||'?'} stories</div>
+          </div>
+          ${coleta.drive_link?`<a href="${H(coleta.drive_link)}" target="_blank" class="tbtn" style="text-decoration:none">↗ Abrir pasta no Drive</a>`:''}
+        </div>
+      </div>
+
+      <!-- PASSO 1 -->
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-title">
+          <span style="background:var(--accent);color:#fff;width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">1</span>
+          Copie o prompt e rode no Gemini (Google Drive)
+        </div>
+        <div class="fhint" style="margin-bottom:10px">No Drive: abra a pasta → <strong>"Pedir ao Gemini"</strong> → selecione <strong>todos</strong> os arquivos (imagens <em>e</em> vídeos .mp4) → cole o prompt abaixo.</div>
+        <div class="prompt-box">
+          <pre id="promptTxt">${prompt}</pre>
+          <button class="copy-btn" id="copyBtn" onclick="copiarPrompt()">Copiar</button>
+        </div>
+      </div>
+
+      <!-- PASSO 2 -->
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-title">
+          <span style="background:var(--accent);color:#fff;width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">2</span>
+          Cole a resposta completa do Gemini
+        </div>
+        <textarea class="ftextarea big" id="geminiRaw" placeholder="Cole aqui a resposta completa do Gemini..."></textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:8px">
+          <button class="tbtn tbtn-accent" onclick="parsearGemini(${coletaId})">⚡ Separar e preencher stories</button>
+        </div>
+      </div>
+
+      <!-- PASSO 3: cards por story -->
+      <div id="storiesCards" style="margin-bottom:12px">
+        ${regsExist.length?renderStoriesCards(regsExist,influ):''}
+      </div>
+
+      <!-- Botão salvar tudo -->
+      <div id="saveBtnWrap" style="display:${regsExist.length?'flex':'none'};justify-content:flex-end;gap:8px;margin-bottom:20px">
+        <button class="tbtn" onclick="switchTab('coletas')">← Voltar</button>
+        <button class="tbtn tbtn-accent" onclick="salvarTodosStories(${coletaId})">💾 Salvar todos os stories</button>
+      </div>
+    </div>`;
+}
+
+function renderStoriesCards(stories, influ){
+  return stories.map((s,i)=>`
+    <div class="card" style="margin-bottom:10px" id="scard-${i}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:600;color:var(--accent)">Story ${i+1}</div>
+        <button onclick="removerStoryCard(${i})" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px">✕</button>
+      </div>
+      <div class="form-grid">
+        <div class="form-group form-full"><label class="form-label">Conteúdo / Transcrição</label><textarea class="ftextarea" id="s${i}_transc" style="min-height:80px">${H(s.transcricao||s.conteudo||'')}</textarea></div>
+        <div class="form-group"><label class="form-label">Tema Principal</label><input class="finput" id="s${i}_tema" value="${H(s.tema_principal||'')}"/></div>
+        <div class="form-group"><label class="form-label">Microtema</label><input class="finput" id="s${i}_micro" value="${H(s.microtema||'')}"/></div>
+        <div class="form-group"><label class="form-label">Sentimento</label>
+          <select class="fsel" id="s${i}_sent">
+            <option ${(s.sentimento||'Neutro')==='Positivo'?'selected':''}>Positivo</option>
+            <option ${(s.sentimento||'Neutro')==='Neutro'?'selected':''}>Neutro</option>
+            <option ${(s.sentimento||'Neutro')==='Negativo'?'selected':''}>Negativo</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Mensagem da marca</label><input class="finput" id="s${i}_msg" value="${H(s.mensagem_marca||'')}" placeholder="Ex: Obesidade, MASH"/></div>
+        <div class="form-group"><label class="form-label">Novo Nordisk (inst.)</label>
+          <select class="fsel" id="s${i}_nn_inst">
+            <option ${(s.novo_nordisk||'Não')==='Não'?'selected':''}>Não</option>
+            <option ${(s.novo_nordisk||'Não')==='Sim'?'selected':''}>Sim</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Produtos NN</label><input class="finput" id="s${i}_nn" value="${H(s.produtos_nn||'')}" placeholder="Wegovy, Ozempic..."/></div>
+        <div class="form-group"><label class="form-label">Sema composto</label>
+          <select class="fsel" id="s${i}_sema">
+            <option ${(s.sema_composto||'Não')==='Não'?'selected':''}>Não</option>
+            <option ${(s.sema_composto||'Não')==='Sim'?'selected':''}>Sim</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Sema brands</label><input class="finput" id="s${i}_sema_brands" value="${H(s.sema_brands||'')}" placeholder="Ex: Wegovy, Ozempic"/></div>
+        <div class="form-group"><label class="form-label">Produtos Competidor</label><input class="finput" id="s${i}_comp" value="${H(s.produtos_competidor||'')}" placeholder="Mounjaro, Retatrutida..."/></div>
+        <div class="form-group"><label class="form-label">Tirze composto</label>
+          <select class="fsel" id="s${i}_tirze">
+            <option ${(s.tirze_composto||'Não')==='Não'?'selected':''}>Não</option>
+            <option ${(s.tirze_composto||'Não')==='Sim'?'selected':''}>Sim</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Tirze brands</label><input class="finput" id="s${i}_tirze_brands" value="${H(s.tirze_brands||'')}" placeholder="Ex: Mounjaro"/></div>
+        <div class="form-group"><label class="form-label">Seguidores</label><input class="finput" id="s${i}_seg" type="number" value="${s.seguidores||''}" oninput="document.getElementById('s${i}_impacto').value=Math.round((parseInt(this.value)||0)*0.2)||''"/></div>
+        <div class="form-group"><label class="form-label">Interações</label><input class="finput" id="s${i}_int" type="number" value="${s.interacoes||''}"/></div>
+        <div class="form-group"><label class="form-label">Views</label><input class="finput" id="s${i}_views" type="number" value="${s.views||''}"/></div>
+        <div class="form-group"><label class="form-label">Minutagem</label><input class="finput" id="s${i}_min" value="${H(s.minutagem||'')}" placeholder="Ex: 0:15"/></div>
+        <div class="form-group"><label class="form-label">Impacto</label><input class="finput" id="s${i}_impacto" type="number" value="${s.impacto||''}"/></div>
+        <div class="form-group form-full">
+          <label class="form-label">Formato</label>
+          <div style="display:flex;gap:14px;margin-top:4px">
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" id="s${i}_feed" ${s.feed==='Sim'?'checked':''}> Feed</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" id="s${i}_stories" ${s.stories!=='Não'?'checked':''}> Stories</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" id="s${i}_reels" ${s.reels==='Sim'?'checked':''}> Reels/TikTok</label>
+          </div>
+        </div>
+        <div class="form-group form-full"><label class="form-label">Link</label><input class="finput" id="s${i}_link" value="${H(s.link||'')}" placeholder="https://www.instagram.com/..."/></div>
+      </div>
+    </div>`).join('');
+}
+
+// Índices dos cards ativos (para permitir remoção)
+let _storyCards = [];
+
+function removerStoryCard(i){
+  const el=document.getElementById('scard-'+i);
+  if(el){el.style.opacity='0.3';el.style.pointerEvents='none';}
+  _storyCards=_storyCards.filter(x=>x!==i);
+}
+
+function parsearGemini(coletaId){
+  const raw=document.getElementById('geminiRaw')?.value.trim();
+  if(!raw){toast('Cole a resposta do Gemini primeiro');return;}
+  const coleta=S.coletas.find(c=>c.id===coletaId);
+  const influ=S.influs.find(i=>i.id===coleta?.influ_id)||{nome:'—',instagram:''};
+
+  // Dividir por stories
+  const storyBlocks = splitStories(raw);
+  if(!storyBlocks.length){toast('Nenhum story detectado — verifique o formato da resposta');return;}
+
+  // Criar objetos temporários para cada story
+  const storiesData = storyBlocks.map((block,i)=>parseStoryBlock(block, i, coleta));
+  _storyCards = storiesData.map((_,i)=>i);
+
+  // Renderizar cards
+  document.getElementById('storiesCards').innerHTML = renderStoriesCards(storiesData, influ);
+  document.getElementById('saveBtnWrap').style.display='flex';
+  toast(`${storyBlocks.length} story(s) detectado(s) ✓ — revise e salve`);
+}
+
+function splitStories(raw){
+  // Tenta dividir por "Story N" ou "Story N:" no início de linha
+  const parts = raw.split(/(?=^\*{0,2}\s*Story\s+\d+[\*:.\s])/mi).filter(s=>s.trim());
+  if(parts.length > 1) return parts;
+  // Fallback: divide por "---" ou "***" separadores
+  const parts2 = raw.split(/^[-*]{3,}\s*$/m).filter(s=>s.trim());
+  if(parts2.length > 1) return parts2;
+  // Fallback final: tudo como um story só
+  return [raw];
+}
+
+function parseStoryBlock(block, idx, coleta){
+  function ex(labels){
+    for(const l of labels){
+      // formato linear
+      const re=new RegExp(l+'[^:\\n|]*[:\\-]\\s*([^\\n|]+)','i');
+      const m=block.match(re);
+      if(m){const v=m[1].replace(/\*+/g,'').replace(/\|.*/,'').trim();if(v&&v!=='—'&&v!=='')return v;}
+      // tabela markdown
+      const reT=new RegExp('\\|[^|]*'+l+'[^|]*\\|\\s*([^|\\n]+)\\s*\\|','i');
+      const mT=block.match(reT);
+      if(mT){const v=mT[1].replace(/\*+/g,'').replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').trim();if(v&&v!=='—'&&v!=='')return v;}
+    }return '';
+  }
+  function exLink(){
+    const m=block.match(/Link[^|\\n]*\|[^|\\n]*\[([^\]]+)\]\(([^)]+)\)/i);
+    if(m) return m[2];
+    const m2=block.match(/Link[^:\\n]*[:\\-]\s*(https?:\/\/[^\s|\n]+)/i);
+    if(m2) return m2[1];
+    return '';
+  }
+  function exSent(){
+    const v=ex(['Sentimento','Tom']).toLowerCase();
+    if(v.includes('positiv')) return 'Positivo';
+    if(v.includes('negativ')) return 'Negativo';
+    if(v.includes('neutro')||v.includes('neutro')) return 'Neutro';
+    return 'Neutro';
+  }
+  function exSim(labels){
+    const v=ex(labels).toLowerCase();
+    return v.includes('sim')?'Sim':'Não';
+  }
+  // Transcrição = conteúdo do bloco (antes da análise estruturada ou tudo)
+  let transc = block;
+  const p2idx = block.search(/PARTE\s*2|ANÁLISE ESTRUTURADA|análise estruturada/i);
+  if(p2idx > 0) transc = block.slice(0, p2idx).trim();
+  // Remove cabeçalho "Story N:"
+  transc = transc.replace(/^\*{0,2}\s*Story\s+\d+[\*:.\s]*/i,'').trim();
+
+  const seg = parseInt(ex(['Seguidores']))||0;
+
+  return {
+    coleta_id: coleta?.id||0,
+    dol_id: coleta?.influ_id||0,
+    projeto_id: S.projetoId,
+    data: coleta?.data||'',
+    transcricao: transc,
+    conteudo: transc,
+    tema_principal: ex(['Tema Principal','Tema']),
+    microtema: ex(['Microtema','Subtema']),
+    sentimento: exSent(),
+    mensagem_marca: ex(['Mensagem da marca','Mensagem NN','Mensagem da Marca']),
+    novo_nordisk: exSim(['Novo Nordisk \\(inst','Novo Nordisk sem','Novo Nordisk \\(']),
+    produtos_nn: ex(['Produtos NN mencionados','Produtos NN','Produtos Novo Nordisk']),
+    sema_brands: ex(['Sema brands','Sema brands \\(med']),
+    sema_composto: exSim(['Sema composto','Semaglutida composto']),
+    produtos_competidor: ex(['Produtos Competidor','Competidor']),
+    tirze_brands: ex(['Tirze brands','Tirze brands \\(med']),
+    tirze_composto: exSim(['Tirze composto','Tirzepatida composto']),
+    seguidores: seg,
+    interacoes: parseInt(ex(['Interações','Interacoes']))||0,
+    views: parseInt(ex(['Views','Visualizações']))||0,
+    minutagem: ex(['Minutagem','Duração','Duracao']),
+    impacto: Math.round(seg*0.2)||0,
+    feed: exSim(['Feed'])!=='Sim'?'Não':'Sim',
+    stories: 'Sim',
+    reels: exSim(['Reels','TikTok']),
+    link: exLink(),
+  };
+}
+
+function buildPrompt(influ,coleta){
+  return `Esta pasta contém imagens (.jpg/.png) e vídeos (.mp4). Para os vídeos, assista ao conteúdo completo, transcreva o áudio falado e o texto exibido em tela. Para as imagens, descreva o conteúdo visual e transcreva todos os textos visíveis.
+
+Para CADA story, faça a análise separada. Use o formato:
+
+**Story 1**
+- Conteúdo/Transcrição: [transcrição completa de áudio + texto em tela para vídeos | descrição + texto para imagens]
+- Tema Principal: 
+- Microtema: 
+- Sentimento: Positivo | Neutro | Negativo
+- Mensagem da marca: [contexto NN: Obesidade, Diabetes, MASH, Benefícios CV — ou Não]
+- Novo Nordisk (inst.): Sim | Não
+- Produtos NN mencionados: [Wegovy, Ozempic, Rybelsus, Poviztra, Extensior, CagriSema, Wegovy Pill, Saxenda — ou Não]
+- Sema brands (medicamentos): [nome da marca NN] | Não
+- Sema composto (c/ e s/ med.): Sim | Não
+- Produtos Competidor: [Mounjaro, Retatrutida, Zepbound, etc.] | Não
+- Tirze brands (medicamentos): [nome marca competidor] | Não
+- Tirze composto (c/ e s/ med.): Sim | Não
+- Seguidores: [número atual do perfil]
+- Interações: [curtidas + comentários visíveis]
+- Views: [visualizações se visível]
+- Minutagem: [duração do story, ex: 0:15]
+- Feed: Sim | Não
+- Stories: Sim | Não
+- Reels/TikTok: Sim | Não
+- Link: [URL do conteúdo]
+
+**Story 2**
+[repita o mesmo formato]
+
+Use "—" quando a informação não estiver disponível.`;
+}
+
+function copiarPrompt(){
+  const txt=document.getElementById('promptTxt')?.textContent;
+  if(!txt)return;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const btn=document.getElementById('copyBtn');
+    btn.textContent='✓ Copiado!';btn.classList.add('ok');
+    setTimeout(()=>{btn.textContent='Copiar';btn.classList.remove('ok');},2000);
+  });
+}
+
+async function salvarTodosStories(coletaId){
+  const coleta=S.coletas.find(c=>c.id===coletaId); if(!coleta)return;
+
+  // Coleta os dados de cada card ativo
+  const cards=document.querySelectorAll('[id^="scard-"]');
+  const stories=[];
+  cards.forEach(card=>{
+    const i=parseInt(card.id.replace('scard-',''));
+    if(card.style.opacity==='0.3') return; // removido
+    stories.push({
+      coleta_id: coletaId,
+      dol_id: coleta.influ_id,
+      projeto_id: S.projetoId,
+      data: coleta.data,
+      transcricao: document.getElementById(`s${i}_transc`)?.value.trim()||'',
+      tema_principal: document.getElementById(`s${i}_tema`)?.value.trim()||'',
+      microtema: document.getElementById(`s${i}_micro`)?.value.trim()||'',
+      sentimento: document.getElementById(`s${i}_sent`)?.value||'Neutro',
+      mensagem_marca: document.getElementById(`s${i}_msg`)?.value.trim()||'',
+      novo_nordisk: document.getElementById(`s${i}_nn_inst`)?.value||'Não',
+      produtos_nn: document.getElementById(`s${i}_nn`)?.value.trim()||'',
+      sema_brands: document.getElementById(`s${i}_sema_brands`)?.value.trim()||'',
+      sema_composto: document.getElementById(`s${i}_sema`)?.value||'Não',
+      produtos_competidor: document.getElementById(`s${i}_comp`)?.value.trim()||'',
+      tirze_brands: document.getElementById(`s${i}_tirze_brands`)?.value.trim()||'',
+      tirze_composto: document.getElementById(`s${i}_tirze`)?.value||'Não',
+      seguidores: parseInt(document.getElementById(`s${i}_seg`)?.value)||0,
+      interacoes: parseInt(document.getElementById(`s${i}_int`)?.value)||0,
+      views: parseInt(document.getElementById(`s${i}_views`)?.value)||0,
+      minutagem: document.getElementById(`s${i}_min`)?.value.trim()||'',
+      impacto: parseInt(document.getElementById(`s${i}_impacto`)?.value)||0,
+      feed: document.getElementById(`s${i}_feed`)?.checked?'Sim':'Não',
+      stories: document.getElementById(`s${i}_stories`)?.checked?'Sim':'Não',
+      reels: document.getElementById(`s${i}_reels`)?.checked?'Sim':'Não',
+      link: document.getElementById(`s${i}_link`)?.value.trim()||'',
+    });
+  });
+
+  if(!stories.length){toast('Nenhum story para salvar');return;}
+
+  // Remove registros anteriores desta coleta e insere novos
+  const regsAnt=S.registros.filter(r=>r.coleta_id===coletaId);
+  for(const r of regsAnt){ await api.del(`/api/storydesk/registros?id=${r.id}`); }
+
+  for(const s of stories){ await api.post('/api/storydesk/registros', s); }
+
+  // Marca coleta como analisado
+  await api.put('/api/storydesk/coletas',{...coleta,id:coletaId,status:'analisado'});
+
+  toast(`${stories.length} story(s) salvos ✓`);
+  await loadColetas();
+  await loadRegistros();
+  switchTab('registros');
+}
+
+
+
+/* ══════════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════════ */
+function renderDashboard(){
+  const el=document.getElementById('dashContent');
+  if(!S.projetoId){el.innerHTML='<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">Selecione um projeto</div></div>';return;}
+  const regs=S.registros;
+  if(!regs.length){el.innerHTML='<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">Nenhum registro ainda</div><div class="empty-sub">Analise coletas para ver o dashboard</div></div>';return;}
+  const total=regs.length;
+  const pos=regs.filter(r=>(r.sentimento||'').toLowerCase()==='positivo').length;
+  const neg=regs.filter(r=>(r.sentimento||'').toLowerCase()==='negativo').length;
+  const neu=regs.filter(r=>(r.sentimento||'').toLowerCase()==='neutro').length;
+  const totalImpacto=regs.reduce((s,r)=>s+(parseInt(r.impacto)||0),0);
+  const inflsAtivos=new Set(regs.map(r=>r.dol_id)).size;
+  // top produtos NN
+  const nnC={};
+  regs.forEach(r=>(r.produtos_nn||'').split(',').map(s=>s.trim()).filter(s=>s&&s!=='Não').forEach(p=>{nnC[p]=(nnC[p]||0)+1;}));
+  const topNN=Object.entries(nnC).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  // top competidores
+  const cC={};
+  regs.forEach(r=>(r.produtos_competidor||'').split(',').map(s=>s.trim()).filter(s=>s&&s!=='Não').forEach(p=>{cC[p]=(cC[p]||0)+1;}));
+  const topC=Object.entries(cC).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  // top temas
+  const tC={};
+  regs.forEach(r=>{const t=(r.tema_principal||'').trim();if(t)tC[t]=(tC[t]||0)+1;});
+  const topT=Object.entries(tC).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  // top influs
+  const iC={};
+  regs.forEach(r=>{iC[r.dol_id]=(iC[r.dol_id]||0)+1;});
+  const topI=Object.entries(iC).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([id,cnt])=>({influ:S.influs.find(i=>i.id===parseInt(id))||{nome:'?'},cnt}));
+  // últimos 20
+  const ultimos=[...regs].sort((a,b)=>new Date(b.data)-new Date(a.data)).slice(0,20);
+
+  el.innerHTML=`
+    <div class="metrics-grid">
+      <div class="metric"><div class="metric-lbl">Registros</div><div class="metric-val">${total}</div><div class="metric-sub">${inflsAtivos} influ(s) analisado(s)</div></div>
+      <div class="metric"><div class="metric-lbl">Sentimento Positivo</div><div class="metric-val" style="color:#22c55e">${total?Math.round(pos/total*100):0}%</div><div class="metric-sub">${pos} registro(s)</div></div>
+      <div class="metric"><div class="metric-lbl">Sentimento Negativo</div><div class="metric-val" style="color:#ef4444">${total?Math.round(neg/total*100):0}%</div><div class="metric-sub">${neg} registro(s)</div></div>
+      <div class="metric"><div class="metric-lbl">Impacto Total</div><div class="metric-val">${totalImpacto>999999?(totalImpacto/1e6).toFixed(1)+'M':totalImpacto>999?(totalImpacto/1000).toFixed(1)+'k':totalImpacto}</div><div class="metric-sub">soma de alcance</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
+      <div class="card">
+        <div class="card-title">Sentimento</div>
+        ${[['Positivo',pos,'#22c55e'],['Neutro',neu,'#f59e0b'],['Negativo',neg,'#ef4444']].map(([l,v,c])=>`
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:11px;color:var(--text-secondary)">${l}</span>
+              <span style="font-size:11px;font-weight:600;color:${c}">${v} (${total?Math.round(v/total*100):0}%)</span>
+            </div>
+            <div style="height:5px;background:var(--bg-2);border-radius:3px"><div style="height:5px;background:${c};border-radius:3px;width:${total?v/total*100:0}%"></div></div>
+          </div>`).join('')}
+      </div>
+      <div class="card">
+        <div class="card-title">Top Produtos NN</div>
+        ${topNN.length?topNN.map(([p,c])=>`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span class="chip chip-nn" style="font-size:9px">${H(p)}</span><strong style="font-size:11px">${c}</strong></div>`).join(''):'<div class="fhint">Nenhum produto NN</div>'}
+      </div>
+      <div class="card">
+        <div class="card-title">Top Competidores</div>
+        ${topC.length?topC.map(([p,c])=>`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span class="chip chip-comp" style="font-size:9px">${H(p)}</span><strong style="font-size:11px">${c}</strong></div>`).join(''):'<div class="fhint">Nenhum competidor</div>'}
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div class="card">
+        <div class="card-title">Top Temas</div>
+        ${topT.map(([t,c])=>`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><span style="font-size:11px;color:var(--text-secondary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${H(t)}</span><strong style="font-size:11px;margin-left:8px">${c}</strong></div>`).join('')}
+      </div>
+      <div class="card">
+        <div class="card-title">Influs mais ativos</div>
+        ${topI.map(({influ,cnt})=>`
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <div class="influ-av" style="width:26px;height:26px;font-size:10px;flex-shrink:0">${av(influ.nome)}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${H(influ.nome||'?')}</div>
+              ${influ.instagram?`<div style="font-size:9px;color:var(--accent)">@${H(influ.instagram)}</div>`:''}
+            </div>
+            <strong style="font-size:11px">${cnt}</strong>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:8px">Últimos registros <span style="font-size:9px;opacity:.5">(clique para ver detalhes)</span></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Data</th><th>Influenciador</th><th>Grupo</th><th>Tema</th><th>Sentimento</th><th>Prod. NN</th><th>Competidor</th><th>Link</th></tr></thead>
+          <tbody>
+            ${ultimos.map(r=>{
+              const influ=S.influs.find(i=>i.id===r.dol_id)||{nome:'—',instagram:'',grupo:''};
+              return `<tr class="clickable" onclick="openDrawerReg(${r.id})">
+                <td style="white-space:nowrap">${fmtDate(r.data)}</td>
+                <td><div class="td-nome">${H(influ.nome)}</div>${influ.instagram?`<div class="td-at">@${H(influ.instagram)}</div>`:''}</td>
+                <td><span class="chip chip-gray">${H(influ.grupo||'—')}</span></td>
+                <td class="td-trunc" title="${H(r.tema_principal||'')}">${H(r.tema_principal||'—')}</td>
+                <td>${chipSent(r.sentimento)}</td>
+                <td>${r.produtos_nn?`<span class="chip chip-nn" style="font-size:9px">${H(r.produtos_nn.slice(0,25))}</span>`:'—'}</td>
+                <td>${r.produtos_competidor?`<span class="chip chip-comp" style="font-size:9px">${H(r.produtos_competidor.slice(0,25))}</span>`:'—'}</td>
+                <td onclick="event.stopPropagation()">${r.link?`<a href="${H(r.link)}" target="_blank" class="chip chip-blue" style="text-decoration:none">↗</a>`:'—'}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════ */
+function renderCurrentTab(){
+  const active=document.querySelector('.tab-btn.active')?.dataset.tab||'dashboard';
+  switchTab(active);
+}
+
+async function init(){
+  if(typeof initMode==='function') initMode();
+  const _nc=document.getElementById('navbar-container');
+  if(_nc&&typeof renderNavbar==='function'){_nc.innerHTML=renderNavbar('storydesk');if(typeof initTheme==='function')initTheme();}
+  if(typeof initTheme==='function') initTheme();
+  await loadProjetos();
+}
+init();
+</script>
+</body>
+</html>

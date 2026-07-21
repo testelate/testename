@@ -1,0 +1,2641 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Diagnóstico personalizado — HUB.nexus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    :root {
+      --orange: var(--accent); --orange-2: var(--accent-light);
+      --bg: #f5ece0; --text: #3a1200; --sub: #7a4a30; --muted: #c09070;
+      --glass: rgba(255,255,255,0.58); --border: rgba(180,100,40,0.18); --t: 0.22s ease;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+    .orb { position: fixed; border-radius: 50%; filter: blur(90px); pointer-events: none; z-index: 0; }
+    .orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, var(--accent) 0%, transparent 65%); opacity: 0.22; top: -160px; right: -80px; animation: drift-1 14s ease-in-out infinite; }
+    .orb-2 { width: 380px; height: 380px; background: radial-gradient(circle, #ff8800 0%, transparent 65%); opacity: 0.14; bottom: -100px; left: 60px; animation: drift-2 18s ease-in-out infinite; }
+    @keyframes drift-1 { 0%,100%{transform:translate(0,0)} 33%{transform:translate(-40px,28px)} 66%{transform:translate(18px,-20px)} }
+    @keyframes drift-2 { 0%,100%{transform:translate(0,0)} 33%{transform:translate(28px,-18px)} 66%{transform:translate(-18px,26px)} }
+
+    header { position: fixed; top: 0; left: 0; right: 0; height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; background: rgba(255,255,255,0.55); backdrop-filter: blur(28px); border-bottom: 1px solid var(--border); z-index: 20; }
+    .logo-wrap { display: flex; align-items: center; gap: 9px; }
+    .logo-mark { width: 28px; height: 28px; background: linear-gradient(135deg, var(--orange), #cc3300); border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .logo-mark svg { width: 14px; height: 14px; }
+    .logo-name { font-size: 13px; font-weight: 500; color: var(--text); letter-spacing: -0.2px; }
+    .logo-name span { color: var(--orange); }
+    .header-badge { font-size: 11px; color: var(--sub); background: hsla(var(--theme-h),90%,50%,0.08); border: 1px solid hsla(var(--theme-h),90%,50%,0.16); border-radius: 50px; padding: 4px 12px; }
+
+    .progress-bar-wrap { position: fixed; top: 56px; left: 0; right: 0; height: 3px; background: rgba(180,100,40,0.12); z-index: 19; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--orange), var(--orange-2)); transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
+
+    main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 100px 24px 80px; position: relative; z-index: 1; }
+    .q-card { width: 100%; max-width: 680px; animation: fadeUp 0.4s cubic-bezier(0.4,0,0.2,1); }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+    .q-step { font-size: 11px; font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; color: var(--orange); margin-bottom: 10px; }
+    .q-text { font-size: 28px; font-weight: 300; color: var(--text); line-height: 1.3; letter-spacing: -0.8px; margin-bottom: 8px; }
+    .q-text strong { font-weight: 600; }
+    .q-hint { font-size: 13px; color: var(--muted); margin-bottom: 28px; line-height: 1.5; }
+    .q-info { font-size: 12px; color: var(--sub); background: hsla(var(--theme-h),90%,50%,0.06); border: 1px solid hsla(var(--theme-h),90%,50%,0.14); border-radius: 10px; padding: 10px 14px; margin-bottom: 20px; line-height: 1.5; }
+    .q-warn { font-size: 12px; color: #cc4400; background: rgba(255,60,0,0.06); border: 1px solid rgba(255,60,0,0.18); border-radius: 10px; padding: 10px 14px; margin-bottom: 20px; line-height: 1.5; }
+
+    /* Product intro card */
+    .product-intro { background: rgba(255,255,255,0.65); border: 1px solid var(--border); border-radius: 20px; padding: 28px; margin-bottom: 28px; backdrop-filter: blur(16px); }
+    .product-intro-icon { font-size: 36px; margin-bottom: 12px; }
+    .product-intro-title { font-size: 20px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .product-intro-desc { font-size: 14px; color: var(--sub); line-height: 1.65; margin-bottom: 16px; }
+    .product-intro-bullets { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+    .product-intro-bullets li { font-size: 13px; color: var(--sub); display: flex; align-items: flex-start; gap: 8px; }
+    .product-intro-bullets li::before { content: '•'; color: var(--orange); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+    .product-intro-time { display: inline-flex; align-items: center; gap: 5px; margin-top: 14px; padding: 5px 10px; background: hsla(var(--theme-h),90%,50%,0.08); border: 1px solid hsla(var(--theme-h),90%,50%,0.18); border-radius: 20px; font-size: 11px; color: var(--orange); }
+
+    .options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+    .option { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: var(--glass); border: 1px solid var(--border); border-radius: 14px; cursor: pointer; transition: all var(--t); backdrop-filter: blur(16px); }
+    .option:hover { background: rgba(255,255,255,0.80); border-color: hsla(var(--theme-h),90%,50%,0.28); transform: translateX(4px); }
+    .option.selected { background: rgba(255,255,255,0.90); border-color: hsla(var(--theme-h),90%,50%,0.50); box-shadow: 0 0 0 3px hsla(var(--theme-h),90%,50%,0.08); }
+    .option.voxia-opt { border-color: hsla(var(--theme-h),90%,50%,0.22); background: hsla(var(--theme-h),90%,50%,0.03); }
+    .option-key { width: 26px; height: 26px; border-radius: 8px; background: hsla(var(--theme-h),90%,50%,0.10); border: 1px solid hsla(var(--theme-h),90%,50%,0.22); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--orange); flex-shrink: 0; transition: all var(--t); }
+    .option.selected .option-key { background: var(--orange); color: #fff; border-color: var(--orange); }
+    .option-label { font-size: 14px; font-weight: 400; color: var(--text); line-height: 1.4; }
+    .option-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .voxia-badge { display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(90deg,hsla(var(--theme-h),90%,50%,0.15),rgba(180,0,255,0.08)); border: 1px solid hsla(var(--theme-h),90%,50%,0.28); border-radius: 6px; padding: 1px 7px; font-size: 10px; font-weight: 600; color: var(--orange); margin-left: 8px; }
+
+    .check-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+    .check-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 18px; background: var(--glass); border: 1px solid var(--border); border-radius: 14px; cursor: pointer; transition: all var(--t); backdrop-filter: blur(16px); }
+    .check-item:hover { background: rgba(255,255,255,0.78); border-color: hsla(var(--theme-h),90%,50%,0.24); }
+    .check-item.checked { background: rgba(255,255,255,0.90); border-color: hsla(var(--theme-h),90%,50%,0.45); }
+    .check-box { width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid hsla(var(--theme-h),90%,50%,0.35); background: hsla(var(--theme-h),90%,50%,0.05); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; transition: all var(--t); }
+    .check-item.checked .check-box { background: var(--orange); border-color: var(--orange); }
+    .check-box svg { width: 12px; height: 12px; fill: none; stroke: #fff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transition: opacity var(--t); }
+    .check-item.checked .check-box svg { opacity: 1; }
+    .check-label { font-size: 14px; font-weight: 400; color: var(--text); line-height: 1.4; }
+    .check-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .dynamic-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    .dynamic-item { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+    .dynamic-input { flex: 1; min-width: 120px; padding: 11px 14px; background: rgba(255,255,255,0.60); border: 1px solid var(--border); border-radius: 10px; font-size: 13px; color: var(--text); font-family: 'Inter', sans-serif; outline: none; transition: all var(--t); }
+    .dynamic-input:focus { background: rgba(255,255,255,0.82); border-color: hsla(var(--theme-h),90%,50%,0.38); box-shadow: 0 0 0 3px hsla(var(--theme-h),90%,50%,0.07); }
+    .dynamic-input.error { border-color: rgba(255,60,0,0.40) !important; }
+    .dynamic-input.url { flex: 1.1; }
+    .dynamic-remove { width: 30px; height: 30px; border-radius: 8px; background: rgba(255,60,0,0.07); border: 1px solid rgba(255,60,0,0.15); color: #cc3300; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all var(--t); font-family: 'Inter', sans-serif; margin-top: 4px; }
+    .dynamic-remove:hover { background: rgba(255,60,0,0.14); }
+    .add-btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; background: hsla(var(--theme-h),90%,50%,0.08); border: 1px dashed hsla(var(--theme-h),90%,50%,0.30); border-radius: 10px; font-size: 12px; color: var(--orange); cursor: pointer; font-family: 'Inter', sans-serif; transition: all var(--t); margin-bottom: 20px; }
+    .add-btn:hover { background: hsla(var(--theme-h),90%,50%,0.14); }
+    .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 8px; }
+    @media (max-width: 560px) { .cols2 { grid-template-columns: 1fr; } }
+    .section-label { font-size: 12px; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+    .counter-hint { font-size: 11px; color: var(--muted); margin-bottom: 14px; }
+
+    /* Atributo com explicação */
+    .attr-item { margin-bottom: 12px; }
+    .attr-row { display: flex; align-items: center; gap: 8px; }
+    .attr-explain { padding: 8px 12px; background: rgba(255,255,255,0.45); border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; font-size: 11px; color: var(--sub); line-height: 1.5; }
+    .attr-explain-inp { width: 100%; background: transparent; border: none; outline: none; font-size: 11px; color: var(--sub); font-family: 'Inter', sans-serif; resize: none; line-height: 1.5; }
+    .attr-explain-inp::placeholder { color: var(--muted); }
+    .attr-name-inp { flex: 1; padding: 10px 13px; background: rgba(255,255,255,0.60); border: 1px solid var(--border); border-radius: 8px 8px 0 0; font-size: 13px; color: var(--text); font-family: 'Inter', sans-serif; outline: none; transition: all var(--t); }
+    .attr-name-inp:focus { background: rgba(255,255,255,0.82); border-color: hsla(var(--theme-h),90%,50%,0.38); }
+    .attr-name-inp.error { border-color: rgba(255,60,0,0.40) !important; }
+
+    .prompt-add-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    .prompt-add-row input { flex: 1; padding: 12px 16px; background: rgba(255,255,255,0.62); border: 1px solid var(--border); border-radius: 12px; font-size: 13px; color: var(--text); font-family: 'Inter', sans-serif; outline: none; transition: all var(--t); }
+    .prompt-add-row input:focus { background: rgba(255,255,255,0.85); border-color: hsla(var(--theme-h),90%,50%,0.40); box-shadow: 0 0 0 3px hsla(var(--theme-h),90%,50%,0.08); }
+    .prompt-add-row button { padding: 0 18px; background: hsla(var(--theme-h),90%,50%,0.12); border: 1px solid hsla(var(--theme-h),90%,50%,0.28); border-radius: 12px; font-size: 12px; font-weight: 500; color: var(--orange); cursor: pointer; font-family: 'Inter', sans-serif; transition: all var(--t); white-space: nowrap; }
+    .prompt-add-row button:hover { background: hsla(var(--theme-h),90%,50%,0.22); }
+    .prompt-card { padding: 12px 16px; background: rgba(255,255,255,0.55); border: 1px solid var(--border); border-radius: 12px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+    .prompt-card p { font-size: 13px; color: var(--text); line-height: 1.45; flex: 1; margin: 0; }
+    .prompt-del { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; flex-shrink: 0; padding: 0 4px; transition: color var(--t); font-family: 'Inter', sans-serif; }
+    .prompt-del:hover { color: #cc3300; }
+    .error-msg { font-size: 12px; color: #cc3300; margin-top: 8px; background: rgba(255,60,0,0.06); border: 1px solid rgba(255,60,0,0.18); border-radius: 8px; padding: 8px 12px; }
+
+    .review-box { background: rgba(255,255,255,0.55); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; margin-bottom: 14px; }
+    .review-title { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .review-row { display: flex; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+    .review-key { color: var(--muted); min-width: 120px; flex-shrink: 0; }
+    .review-val { color: var(--text); line-height: 1.45; }
+    .review-tag { display: inline-block; padding: 2px 8px; background: hsla(var(--theme-h),90%,50%,0.10); border: 1px solid hsla(var(--theme-h),90%,50%,0.20); border-radius: 6px; font-size: 11px; color: var(--orange); margin: 2px 2px 0 0; }
+
+    .free-wrap { position: relative; margin-bottom: 20px; }
+    .free-input { width: 100%; min-height: 140px; padding: 16px 18px; background: var(--glass); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: 16px; font-size: 14px; color: var(--text); font-family: 'Inter', sans-serif; outline: none; resize: vertical; transition: all var(--t); line-height: 1.6; }
+    .free-input.single { min-height: 48px; resize: none; padding: 14px 18px; }
+    .free-input::placeholder { color: var(--muted); }
+    .free-input:focus { background: rgba(255,255,255,0.82); border-color: hsla(var(--theme-h),90%,50%,0.42); box-shadow: 0 0 0 3px hsla(var(--theme-h),90%,50%,0.08); }
+    .free-input.limit-warn { border-color: rgba(200,80,0,0.50) !important; box-shadow: 0 0 0 3px rgba(200,80,0,0.09) !important; }
+    .char-counter { display: flex; justify-content: flex-end; margin-top: 5px; font-size: 10px; color: var(--muted); transition: color .2s; }
+    .char-counter.warn { color: #cc4400; font-weight: 600; }
+
+    /* Card de pergunta aberta no estilo wizard */
+    .q-field-card { background: rgba(255,255,255,0.60); border: 1.5px solid hsla(var(--theme-h),90%,50%,0.18); border-radius: 18px; padding: 22px 22px 16px; margin-bottom: 16px; backdrop-filter: blur(16px); transition: border-color .2s, box-shadow .2s; }
+    .q-field-card:focus-within { border-color: hsla(var(--theme-h),90%,50%,0.45); box-shadow: 0 0 0 3px hsla(var(--theme-h),90%,50%,0.07); }
+    .q-field-num { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--orange); margin-bottom: 6px; }
+    .q-field-label { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 4px; line-height: 1.4; }
+    .q-field-hint { font-size: 12px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+    .q-field-card .free-input { border: none; border-radius: 10px; background: rgba(255,255,255,0.55); box-shadow: inset 0 1px 3px rgba(180,100,40,0.07); min-height: 110px; font-size: 13px; }
+    .q-field-card .free-input:focus { background: rgba(255,255,255,0.88); box-shadow: none; border: none; }
+
+    /* Botão Finalizar — destaque total */
+    .btn-finalizar { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 16px 36px; background: linear-gradient(135deg, var(--orange), #cc3300); border: none; border-radius: 14px; font-size: 15px; font-weight: 600; color: #fff; cursor: pointer; font-family: 'Inter', sans-serif; transition: all .22s; box-shadow: 0 6px 24px hsla(var(--theme-h),90%,50%,0.32); letter-spacing: -0.2px; width: 100%; margin-top: 8px; }
+    .btn-finalizar:hover { transform: translateY(-2px); box-shadow: 0 10px 32px hsla(var(--theme-h),90%,50%,0.42); }
+    .btn-finalizar:active { transform: translateY(0); }
+    .btn-finalizar svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .finalizar-note { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; line-height: 1.5; }
+
+    /* Social links */
+    .social-link-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .social-platform-tag { min-width: 90px; padding: 8px 10px; background: rgba(255,255,255,0.60); border: 1px solid var(--border); border-radius: 8px; font-size: 11px; font-weight: 600; color: var(--sub); text-align: center; }
+    .social-link-inp { flex: 1; padding: 9px 13px; background: rgba(255,255,255,0.55); border: 1px solid var(--border); border-radius: 8px; font-size: 12px; color: var(--text); font-family: 'Inter', sans-serif; outline: none; transition: all var(--t); }
+    .social-link-inp:focus { background: rgba(255,255,255,0.82); border-color: hsla(var(--theme-h),90%,50%,0.38); }
+
+    .nav-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+    .btn-next { display: inline-flex; align-items: center; gap: 7px; padding: 12px 24px; background: rgba(255,255,255,0.65); border: 1px solid hsla(var(--theme-h),90%,50%,0.35); border-radius: 12px; font-size: 13px; font-weight: 500; color: var(--accent-dark); cursor: pointer; font-family: 'Inter', sans-serif; transition: all var(--t); backdrop-filter: blur(12px); }
+    .btn-next:hover { background: rgba(255,255,255,0.88); transform: translateY(-1px); box-shadow: 0 4px 16px hsla(var(--theme-h),90%,50%,0.12); }
+    .btn-next svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .btn-back { padding: 12px 16px; background: transparent; border: 1px solid var(--border); border-radius: 12px; font-size: 13px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; transition: all var(--t); }
+    .btn-back:hover { background: rgba(255,255,255,0.55); color: var(--sub); }
+    .nav-hint { font-size: 11px; color: var(--muted); margin-left: 4px; }
+
+    .result-card { width: 100%; max-width: 660px; animation: fadeUp 0.5s cubic-bezier(0.4,0,0.2,1); }
+    .result-icon { width: 56px; height: 56px; border-radius: 16px; background: hsla(var(--theme-h),90%,50%,0.12); border: 1px solid hsla(var(--theme-h),90%,50%,0.25); display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+    .result-icon svg { width: 26px; height: 26px; fill: none; stroke: var(--orange); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .result-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; color: var(--orange); margin-bottom: 10px; }
+    .result-title { font-size: 32px; font-weight: 300; color: var(--text); letter-spacing: -1px; line-height: 1.2; margin-bottom: 16px; }
+    .result-title strong { font-weight: 600; }
+    .result-body { font-size: 14px; color: var(--sub); line-height: 1.75; margin-bottom: 28px; max-width: 500px; }
+    .result-box { background: var(--glass); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: 16px; padding: 20px 22px; margin-bottom: 24px; }
+    .result-box-title { font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 12px; }
+    .result-points { display: flex; flex-direction: column; gap: 10px; }
+    .result-point { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--sub); line-height: 1.5; }
+    .rp-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--orange); flex-shrink: 0; margin-top: 6px; }
+    .result-footer { font-size: 11px; color: var(--muted); line-height: 1.6; padding-top: 16px; border-top: 1px solid var(--border); }
+    .result-footer a { color: var(--orange); text-decoration: none; }
+
+    /* ── Botão de Ajuda flutuante ── */
+    .help-fab { position: fixed; bottom: 72px; right: 20px; width: 42px; height: 42px; border-radius: 50%; background: var(--orange); border: none; cursor: pointer; box-shadow: 0 4px 16px hsla(var(--theme-h),90%,50%,0.40); display: flex; align-items: center; justify-content: center; z-index: 150; transition: all .2s; font-family: 'Inter', sans-serif; }
+    .help-fab:hover { transform: scale(1.08); box-shadow: 0 6px 22px hsla(var(--theme-h),90%,50%,0.52); }
+    .help-fab svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ── Painel de Ajuda ── */
+    .help-panel-overlay { position: fixed; inset: 0; background: rgba(40,15,0,0.50); backdrop-filter: blur(10px); z-index: 400; display: flex; align-items: flex-end; justify-content: flex-end; padding: 0; animation: fadeInOverlay .2s ease; }
+    @media (min-width: 600px) { .help-panel-overlay { align-items: center; justify-content: flex-end; padding: 24px; } }
+    .help-panel { background: rgba(255,248,240,0.98); border: 1px solid hsla(var(--theme-h),90%,50%,0.18); border-radius: 24px 24px 0 0; width: 100%; max-width: 440px; max-height: 85vh; overflow-y: auto; padding: 28px 26px 36px; box-shadow: 0 -12px 48px rgba(80,20,0,0.18); animation: slideUpPanel .25s cubic-bezier(0.4,0,0.2,1); }
+    @media (min-width: 600px) { .help-panel { border-radius: 24px; max-height: 80vh; animation: slideUpBox .22s cubic-bezier(0.4,0,0.2,1); } }
+    @keyframes slideUpPanel { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .help-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+    .help-panel-title { font-size: 16px; font-weight: 600; color: var(--text); }
+    .help-close { background: none; border: none; cursor: pointer; padding: 4px; color: var(--muted); font-size: 20px; line-height: 1; font-family: 'Inter', sans-serif; transition: color .15s; }
+    .help-close:hover { color: var(--text); }
+    /* Tabs do painel */
+    .help-tabs { display: flex; gap: 6px; margin-bottom: 20px; }
+    .help-tab { flex: 1; padding: 8px 0; text-align: center; font-size: 12px; font-weight: 500; color: var(--muted); background: hsla(var(--theme-h),90%,50%,0.04); border: 1px solid rgba(180,100,40,0.14); border-radius: 10px; cursor: pointer; font-family: 'Inter', sans-serif; transition: all .15s; }
+    .help-tab.active { background: var(--orange); border-color: var(--orange); color: #fff; }
+    /* Tutorial steps */
+    .tut-step { display: flex; gap: 14px; margin-bottom: 18px; align-items: flex-start; }
+    .tut-num { width: 28px; height: 28px; border-radius: 50%; background: var(--orange); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .tut-body h4 { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .tut-body p { font-size: 12px; color: var(--sub); line-height: 1.6; margin: 0; }
+    .tut-tip { font-size: 11px; color: var(--orange); background: hsla(var(--theme-h),90%,50%,0.07); border: 1px solid hsla(var(--theme-h),90%,50%,0.18); border-radius: 7px; padding: 6px 10px; margin-top: 6px; display: inline-block; }
+    /* FAQ */
+    .faq-item { border-bottom: 1px solid var(--border); padding: 14px 0; }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q { font-size: 13px; font-weight: 500; color: var(--text); cursor: pointer; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; line-height: 1.45; }
+    .faq-q .faq-icon { flex-shrink: 0; font-size: 16px; transition: transform .2s; margin-top: 1px; }
+    .faq-item.open .faq-icon { transform: rotate(45deg); }
+    .faq-a { font-size: 12px; color: var(--sub); line-height: 1.7; margin-top: 10px; display: none; }
+    .faq-item.open .faq-a { display: block; }
+
+    footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 32px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.45); backdrop-filter: blur(20px); border-top: 1px solid var(--border); z-index: 10; }
+    .footer-text { font-size: 11px; color: var(--muted); }
+    .footer-text a { color: var(--sub); text-decoration: none; }
+    .footer-lock { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--muted); }
+    .footer-lock svg { width: 11px; height: 11px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .toast { position: fixed; bottom: 60px; right: 20px; background: rgba(20,10,2,0.92); border: 1px solid rgba(255,255,255,0.09); border-radius: 10px; padding: 10px 16px; font-size: 11px; color: rgba(255,210,180,0.9); z-index: 200; opacity: 0; transform: translateY(8px); transition: all 0.3s; pointer-events: none; max-width: 300px; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .divider { height: 1px; background: var(--border); margin: 20px 0; }
+    /* Modal de confirmação de navegação */
+    .confirm-overlay { position: fixed; inset: 0; background: rgba(40,15,0,0.55); backdrop-filter: blur(8px); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 24px; animation: fadeInOverlay .18s ease; }
+    @keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
+    .confirm-box { background: rgba(255,248,240,0.97); border: 1px solid hsla(var(--theme-h),90%,50%,0.22); border-radius: 20px; padding: 28px 28px 22px; max-width: 400px; width: 100%; box-shadow: 0 24px 64px rgba(80,20,0,0.22); animation: slideUpBox .22s cubic-bezier(0.4,0,0.2,1); }
+    @keyframes slideUpBox { from { transform: translateY(18px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .confirm-icon { font-size: 28px; margin-bottom: 10px; }
+    .confirm-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 8px; line-height: 1.3; }
+    .confirm-desc { font-size: 13px; color: var(--sub); line-height: 1.6; margin-bottom: 8px; }
+    .confirm-saved { font-size: 11px; color: #cc5500; background: hsla(var(--theme-h),90%,50%,0.07); border: 1px solid hsla(var(--theme-h),90%,50%,0.18); border-radius: 8px; padding: 7px 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 6px; }
+    .confirm-actions { display: flex; gap: 10px; }
+    .confirm-btn { flex: 1; padding: 11px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; font-family: 'Inter', sans-serif; cursor: pointer; transition: all .18s; }
+    .confirm-btn-cancel { background: rgba(255,255,255,0.75); border: 1px solid rgba(180,100,40,0.22); color: var(--sub); }
+    .confirm-btn-cancel:hover { background: rgba(255,255,255,0.95); }
+    .confirm-btn-go { background: var(--orange); border: 1px solid var(--orange); color: #fff; box-shadow: 0 3px 12px hsla(var(--theme-h),90%,50%,0.28); }
+    .confirm-btn-go:hover { background: #e55b00; transform: translateY(-1px); }
+    /* ── Gerador de prompt de apoio ── */
+    .prompt-gen-btn { display:flex;align-items:center;gap:6px;width:100%;padding:10px 14px;margin-bottom:10px;background:linear-gradient(135deg,hsla(var(--theme-h),90%,50%,0.08),hsla(var(--theme-h),90%,50%,0.04));border:1px dashed hsla(var(--theme-h),90%,50%,0.35);border-radius:12px;font-size:12px;font-weight:600;color:var(--orange);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;text-align:left; }
+    .prompt-gen-btn:hover { background:hsla(var(--theme-h),90%,50%,0.13);border-style:solid; }
+    .prompt-gen-modal { position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px); }
+    .prompt-gen-box { background:#fff8f4;border-radius:18px;width:100%;max-width:580px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,0.18); }
+    .prompt-gen-header { padding:18px 20px 14px;border-bottom:1px solid hsla(var(--theme-h),90%,50%,0.12);display:flex;align-items:flex-start;justify-content:space-between;gap:12px; }
+    .prompt-gen-header-text h3 { font-size:14px;font-weight:700;color:var(--text);margin:0 0 3px; }
+    .prompt-gen-header-text p { font-size:11px;color:var(--muted);margin:0;line-height:1.4; }
+    .prompt-gen-close { background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0; }
+    .prompt-gen-body { padding:16px 20px;overflow-y:auto;flex:1; }
+    .prompt-gen-label { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--orange);margin-bottom:8px; }
+    .prompt-gen-textarea { width:100%;min-height:260px;padding:14px;background:#fff;border:1px solid hsla(var(--theme-h),90%,50%,0.2);border-radius:12px;font-size:12px;font-family:'Inter',sans-serif;color:var(--text);line-height:1.65;resize:vertical;outline:none;box-sizing:border-box; }
+    .prompt-gen-textarea:focus { border-color:hsla(var(--theme-h),90%,50%,0.45);box-shadow:0 0 0 3px hsla(var(--theme-h),90%,50%,0.08); }
+    .prompt-gen-footer { padding:12px 20px 16px;border-top:1px solid hsla(var(--theme-h),90%,50%,0.1);display:flex;gap:8px;align-items:center; }
+    .prompt-gen-copy { flex:1;padding:10px;background:var(--orange);border:none;border-radius:10px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .15s; }
+    .prompt-gen-copy:hover { opacity:.88; }
+    .prompt-gen-copy.copied { background:#55aa66; }
+    .prompt-gen-hint { font-size:11px;color:var(--muted);line-height:1.5;max-width:220px; }
+
+    /* ── Avaliador de prompt ── */
+    .prompt-eval-box { margin-top: 8px; margin-bottom: 4px; border-radius: 12px; overflow: hidden; border: 1px solid hsla(var(--theme-h),90%,50%,0.25); background: hsla(var(--theme-h),90%,50%,0.04); animation: fadeInEval .2s ease; }
+    @keyframes fadeInEval { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+    .prompt-eval-loading { padding: 10px 14px; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+    .prompt-eval-loading::before { content:''; display:inline-block; width:10px; height:10px; border:2px solid hsla(var(--theme-h),90%,50%,0.3); border-top-color:var(--orange); border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .prompt-eval-content { padding: 10px 14px; }
+    .prompt-eval-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .prompt-eval-label.good { color: #55aa66; }
+    .prompt-eval-label.bad  { color: var(--orange); }
+    .prompt-eval-suggestion { font-size: 12px; color: var(--text); line-height: 1.5; background: rgba(255,255,255,0.5); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; font-style: italic; }
+    .prompt-eval-reason { font-size: 11px; color: var(--muted); line-height: 1.4; margin-bottom: 8px; }
+    .prompt-eval-actions { display: flex; gap: 6px; }
+    .prompt-eval-use { padding: 5px 12px; background: hsla(var(--theme-h),90%,50%,0.15); border: 1px solid hsla(var(--theme-h),90%,50%,0.35); border-radius: 8px; font-size: 11px; font-weight: 600; color: var(--orange); cursor: pointer; font-family: 'Inter', sans-serif; transition: background .15s; }
+    .prompt-eval-use:hover { background: hsla(var(--theme-h),90%,50%,0.28); }
+    .prompt-eval-dismiss { padding: 5px 10px; background: none; border: 1px solid var(--border); border-radius: 8px; font-size: 11px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; transition: color .15s; }
+    .prompt-eval-dismiss:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <header>
+    <div class="logo-wrap">
+      <div class="logo-mark">
+        <svg viewBox="0 0 15 15" fill="none">
+          <rect x="1" y="1" width="5.5" height="5.5" rx="1.5" fill="white" opacity=".95"/>
+          <rect x="8.5" y="1" width="5.5" height="5.5" rx="1.5" fill="white" opacity=".5"/>
+          <rect x="1" y="8.5" width="5.5" height="5.5" rx="1.5" fill="white" opacity=".5"/>
+          <rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1.5" fill="white" opacity=".95"/>
+        </svg>
+      </div>
+      <span class="logo-name">HUB<span>.</span>nexus</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button id="btnSalvarRascunho" onclick="salvarRascunho()" title="Salvar progresso e continuar depois"
+        style="display:none;align-items:center;gap:5px;
+          background:var(--accent);color:#fff;border:none;border-radius:8px;
+          padding:6px 13px;font-size:11px;font-weight:600;font-family:inherit;
+          cursor:pointer;box-shadow:0 2px 8px hsla(var(--theme-h),90%,50%,0.35);transition:all .2s;white-space:nowrap;">
+        <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;">
+          <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+        </svg>
+        Salvar e continuar depois
+      </button>
+      <div class="header-badge" id="headerBadge">Diagnóstico personalizado</div>
+    </div>
+  </header>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+  </div>
+  <main><div id="screen"></div></main>
+  <footer>
+    <div class="footer-text">Suas respostas são <strong>confidenciais</strong> e usadas apenas para personalizar nossa proposta. <a href="#">Política de privacidade</a></div>
+    <div class="footer-lock">
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      Conexão segura
+    </div>
+  </footer>
+  <div class="toast" id="toast"></div>
+  <div id="confirmOverlay" style="display:none;"></div>
+  <button class="help-fab" onclick="openHelp()" title="Ajuda e dúvidas" id="helpFab">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  </button>
+  <div id="helpPanelOverlay" style="display:none;"></div>
+
+  <script>
+  /* ══════════════════════════════════════════════
+     ESTADO GLOBAL
+  ══════════════════════════════════════════════ */
+  let navHistory = [];
+  let current = 'abertura';
+  let respostas = {};
+  let produtoParam = null;
+
+  // Estado Vox.ia — imagem/autoridade
+  let vx = {
+    tipo: '',           // 'marca' | 'porta-voz'
+    empresa: '',
+    site: '',
+    objetivo_diagnostico: '',
+    objetivos: [],
+    concorrentes: [{ nome:'', site:'' }, { nome:'', site:'' }, { nome:'', site:'' }, { nome:'', site:'' }, { nome:'', site:'' }],
+    atributos_pos: [{ nome:'', explicacao:'' }, { nome:'', explicacao:'' }, { nome:'', explicacao:'' }, { nome:'', explicacao:'' }, { nome:'', explicacao:'' }],
+    atributos_neg: [{ nome:'', explicacao:'' }, { nome:'', explicacao:'' }, { nome:'', explicacao:'' }, { nome:'', explicacao:'' }, { nome:'', explicacao:'' }],
+    narrativa: '',
+    prompts_b: [],
+    prompts_u: [],
+    nuances: '',
+    email: '',
+  };
+
+  // Estado Vox.ia — temático
+  let vxt = {
+    tema: '',
+    objetivo_diagnostico: '',
+    aprofundamento: '',
+    partes_tema: '',
+    objetivos: [],
+    prompts: [],
+    nuances: '',
+    email: '',
+  };
+
+  let isErrataMode = false;
+  let briefingId = null;
+  let errataFields = {};
+  let errataSequence = [];
+  let currentErrataIdx = 0;
+
+  /* ══════════════════════════════════════════════
+     HELPERS
+  ══════════════════════════════════════════════ */
+  function makeTextarea(placeholder, storageKey, minHeight, isSingle) {
+    const wrap = document.createElement('div');
+    wrap.className = 'free-wrap';
+    const ta = document.createElement(isSingle ? 'input' : 'textarea');
+    ta.className = 'free-input' + (isSingle ? ' single' : '');
+    ta.placeholder = placeholder;
+    ta.value = respostas[storageKey] || '';
+    if (!isSingle) {
+      ta.maxLength = 500;
+      ta.style.minHeight = (minHeight || 140) + 'px';
+      // Contador de caracteres
+      const counter = document.createElement('div');
+      counter.className = 'char-counter';
+      const updateCounter = () => {
+        const rem = 500 - ta.value.length;
+        counter.textContent = `${ta.value.length}/500`;
+        counter.classList.toggle('warn', rem < 80);
+        ta.classList.toggle('limit-warn', rem < 20);
+      };
+      ta.addEventListener('input', () => { if (storageKey) respostas[storageKey] = ta.value; updateCounter(); });
+      updateCounter();
+      wrap.appendChild(ta);
+      wrap.appendChild(counter);
+    } else {
+      ta.addEventListener('input', () => { if (storageKey) respostas[storageKey] = ta.value; });
+      wrap.appendChild(ta);
+    }
+    return { wrap, ta };
+  }
+
+  /* Cria um card estilo wizard para uma pergunta aberta */
+  function mkFieldCard(num, label, hint, placeholder, storageKey) {
+    const card = document.createElement('div');
+    card.className = 'q-field-card';
+    card.innerHTML = `
+      <div class="q-field-num">Pergunta ${num}</div>
+      <div class="q-field-label">${label}</div>
+      ${hint ? `<div class="q-field-hint">${hint}</div>` : ''}
+    `;
+    const { wrap, ta } = makeTextarea(placeholder, storageKey, 110);
+    card.appendChild(wrap);
+    return { card, ta };
+  }
+
+  function mkCard(step, texto, hint) {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    card.innerHTML = `<div class="q-step">${step}</div><div class="q-text">${texto}</div><div class="q-hint">${hint}</div>`;
+    return card;
+  }
+
+  function mkOptions(opts, stateKey, onClick) {
+    const el = document.createElement('div');
+    el.className = 'options';
+    opts.forEach(op => {
+      const div = document.createElement('div');
+      div.className = 'option' + (respostas[stateKey] === op.label ? ' selected' : '') + (op.voxia ? ' voxia-opt' : '');
+      div.innerHTML = `<div class="option-key">${op.key}</div><div>
+        <div class="option-label">${op.label}${op.voxia ? '<span class="voxia-badge">✦ Vox.ia</span>' : ''}</div>
+        ${op.desc ? `<div class="option-desc">${op.desc}</div>` : ''}</div>`;
+      div.addEventListener('click', () => {
+        respostas[stateKey] = op.label;
+        el.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+        div.classList.add('selected');
+        if (onClick) setTimeout(() => onClick(op), 280);
+      });
+      el.appendChild(div);
+    });
+    return el;
+  }
+
+  function mkNextBtn(label) {
+    const btn = document.createElement('button');
+    btn.className = 'btn-next';
+    btn.innerHTML = `${label} <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>`;
+    return btn;
+  }
+
+  function mkBackBtn() {
+    const btn = document.createElement('button');
+    btn.className = 'btn-back';
+    btn.textContent = '← Voltar';
+    btn.addEventListener('click', goBack);
+    return btn;
+  }
+
+  function addNav(card, showBack, backFn, nextFn, isChoice) {
+    const nav = document.createElement('div');
+    nav.className = 'nav-row';
+    if (showBack) { const b = mkBackBtn(); if (backFn) b.addEventListener('click', backFn); nav.appendChild(b); }
+    if (nextFn) { const n = mkNextBtn('Confirmar'); n.addEventListener('click', nextFn); nav.appendChild(n); }
+    if (isChoice) { const h = document.createElement('span'); h.className = 'nav-hint'; h.textContent = 'ou clique em uma opção'; nav.appendChild(h); }
+    card.appendChild(nav);
+  }
+
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg; el.classList.add('show');
+    clearTimeout(window._t);
+    window._t = setTimeout(() => el.classList.remove('show'), 3500);
+  }
+
+  /* ══════════════════════════════════════════════
+     PRODUCT INTRO CARD BUILDER
+  ══════════════════════════════════════════════ */
+  function mkProductIntro({ icon, titulo, descricao, bullets, tempo }) {
+    const el = document.createElement('div');
+    el.className = 'product-intro';
+    el.innerHTML = `
+      <div class="product-intro-icon">${icon}</div>
+      <div class="product-intro-title">${titulo}</div>
+      <div class="product-intro-desc">${descricao}</div>
+      <ul class="product-intro-bullets">${bullets.map(b => `<li>${b}</li>`).join('')}</ul>
+      ${tempo ? `<div class="product-intro-time">⏱ ${tempo}</div>` : ''}
+    `;
+    return el;
+  }
+
+  /* ══════════════════════════════════════════════
+     FLUXO PRINCIPAL
+  ══════════════════════════════════════════════ */
+  const PRODUTO_ROUTES = {
+    'voxia_imagem':         'vx_identificacao',
+    'voxia_tema':           'vxt_identificacao',
+    'mapa_narrativas':      'prod_mapa_narrativas',
+    'mapa_influenciadores': 'prod_mapa_influenciadores',
+    'netnografia':          'prod_netnografia',
+  };
+
+
+  function goTo(id) {
+    // Mostra confirmação apenas se a tela atual tem campos de texto preenchidos
+    // (não em telas de múltipla escolha onde o clique já é a própria resposta)
+    const hasFilledFields = (() => {
+      const screen = document.getElementById('screen');
+      if (!screen) return false;
+      const textareas = screen.querySelectorAll('textarea, input[type="text"], input:not([type])');
+      return Array.from(textareas).some(el => el.value && el.value.trim().length > 10);
+    })();
+
+    // Só pede confirmação se: está no meio do fluxo + tem texto preenchido na tela
+    if (navHistory.length > 0 && hasFilledFields) {
+      showNavigationConfirm(() => _doGoTo(id));
+    } else {
+      _doGoTo(id);
+    }
+  }
+
+  function _doGoTo(id) {
+    if (isErrataMode) {
+      currentErrataIdx++;
+      if (currentErrataIdx < errataSequence.length) { navHistory.push(current); current = errataSequence[currentErrataIdx]; }
+      else { finalizarErrata(); return; }
+    } else {
+      navHistory.push(current); current = id;
+    }
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Toast de auto-save ao avançar
+    if (navHistory.length > 1) {
+      toast('✅ Progresso salvo — você pode voltar aqui depois');
+    }
+  }
+
+  function showNavigationConfirm(onConfirm) {
+    const ov = document.getElementById('confirmOverlay');
+    ov.style.display = 'flex';
+    ov.innerHTML = `
+      <div class="confirm-overlay" onclick="if(event.target===this)closeConfirm()">
+        <div class="confirm-box">
+          <div class="confirm-icon">💾</div>
+          <div class="confirm-title">Tem certeza que quer avançar com essas respostas?</div>
+          <div class="confirm-desc">Se mudar de ideia, você pode voltar e refazer qualquer etapa clicando em <strong>← Voltar</strong>.</div>
+          <div class="confirm-saved">
+            <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;flex-shrink:0;"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+            Não se preocupe — ao mudar de página, seu progresso fica salvo e você pode voltar depois.
+          </div>
+          <div class="confirm-actions">
+            <button class="confirm-btn confirm-btn-cancel" onclick="closeConfirm()">← Rever respostas</button>
+            <button class="confirm-btn confirm-btn-go" id="confirmGoBtn">Confirmar e avançar →</button>
+          </div>
+        </div>
+      </div>`;
+    document.getElementById('confirmGoBtn').onclick = () => {
+      closeConfirm();
+      onConfirm();
+    };
+  }
+
+  function closeConfirm() {
+    const ov = document.getElementById('confirmOverlay');
+    ov.style.display = 'none';
+    ov.innerHTML = '';
+  }
+
+  async function finalizarErrata() {
+    // email/nome: try vx first (populated from D1 restore), then respostas
+    const emailFinal = vx.email || vxt.email || respostas._email || respostas.email || '';
+    const nomeFinal  = vx.empresa || vxt.tema || respostas._nome || respostas.nome || '';
+    await salvarBriefing(emailFinal, nomeFinal);
+    current = 'resultado'; render();
+  }
+
+  function goBack() {
+    if (!navHistory.length) return;
+    current = navHistory.pop(); render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function render() {
+    const screen = document.getElementById('screen');
+    screen.innerHTML = '';
+
+    const handlers = {
+      'abertura': renderAbertura,
+      'contexto_mercado': renderContextoMercado,
+      'cons_obj': renderConsultivoObj,
+      'cons_canais': renderConsultivoCanais,
+      'cons_ritmo': renderConsultivoRitmo,
+      'cons_formato': renderConsultivoFormato,
+      'checklist': renderChecklist,
+      'imprensa': () => renderTrilha('imprensa'),
+      'redes': () => renderTrilha('redes'),
+      'diagnostico': () => renderTrilha('diagnostico'),
+      'bi': () => renderTrilha('bi'),
+      'porte': renderPorte,
+      'dor': renderDor,
+      // VOX.IA IMAGEM
+      'vx_identificacao': renderVxIdentificacao,
+      'vx_objetivos': renderVxObjetivos,
+      'vx_concorrentes': renderVxConcorrentes,
+      'vx_atributos': renderVxAtributos,
+      'vx_branded': renderVxBranded,
+      'vx_unbranded': renderVxUnbranded,
+      'vx_narrativa': renderVxNarrativa,
+      'vx_finalizacao': renderVxFinalizacao,
+      // VOX.IA TEMA
+      'vxt_identificacao': renderVxtIdentificacao,
+      'vxt_aprofundamento': renderVxtAprofundamento,
+      'vxt_objetivos': renderVxtObjetivos,
+      'vxt_prompts': renderVxtPrompts,
+      'vxt_finalizacao': renderVxtFinalizacao,
+      // OUTROS PRODUTOS
+      'prod_mapa_narrativas': renderProdMapaNarrativas,
+      'prod_mapa_influenciadores': renderProdMapaInfluenciadores,
+      'prod_netnografia': renderProdNetnografia,
+      'captura_email': renderCapturaEmail,
+      'resultado': renderResultado,
+    };
+
+    const fn = handlers[current];
+    if (fn) fn(screen);
+
+    // Barra de progresso baseada no histórico real
+    const isVoxia = current.startsWith('vx') || current.startsWith('vxt');
+    const totalMap = { voxia_imagem: 8, voxia_tema: 5, mapa_narrativas: 3, mapa_influenciadores: 3, netnografia: 3 };
+    const total = totalMap[produtoParam] || (isVoxia ? 8 : 9);
+    const pct = Math.min(Math.round((navHistory.length / total) * 100), 99);
+    document.getElementById('progressFill').style.width = (current === 'resultado' ? 100 : pct) + '%';
+  }
+
+  /* ══════════════════════════════════════════════
+     ABERTURA
+  ══════════════════════════════════════════════ */
+  function renderAbertura(screen) {
+    if (produtoParam && PRODUTO_ROUTES[produtoParam]) {
+      goTo(PRODUTO_ROUTES[produtoParam]);
+      return;
+    }
+    const card = mkCard('Passo 1', 'Como podemos ajudar você hoje?', 'Escolha o caminho que melhor descreve sua necessidade.');
+    const opts = [
+      { key:'A', label:'Preciso de ajuda para um desafio estratégico', desc:'Não tenho escopo fechado. Foco no problema/dor (Fluxo Consultivo).', next:'cons_obj' },
+      { key:'B', label:'Tenho um escopo técnico definido', desc:'Já sei o que quero. Foco em configuração de serviço (Checklist).', next:'checklist' }
+    ];
+    const optsEl = mkOptions(opts, 'abertura', (op) => {
+      respostas.fluxo_escolhido = op.label;
+      respostas._next_after_context = op.next;
+      goTo('contexto_mercado');
+    });
+    card.appendChild(optsEl);
+    addNav(card, false, null, null, true);
+    screen.appendChild(card);
+  }
+
+  /* ── RAIO-X ── */
+  function renderContextoMercado(screen) {
+    const card = mkCard('Passo 2', 'Raio-X da Marca e Mercado', 'Essas informações guiarão nossa equipe e a IA na construção e direcionamento preciso da sua solução.');
+
+    const perguntas = [
+      { num:1, label:'Objetivos e Desafios', hint:'Qual o principal desafio da empresa para se manter competitiva? O foco é gestão de imagem, prevenção de crise ou análise de concorrência?', ph:'Ex: "Nosso maior desafio é monitorar crises em tempo real e entender como a marca é percebida..."', key:'ctx_objetivo' },
+      { num:2, label:'Cenário Competitivo', hint:'Quais são os principais concorrentes da marca (sugestão: até 7)? A marca é considerada referência ou líder no setor?', ph:'Ex: "Nossos principais concorrentes são X, Y e Z. Somos líderes em..."', key:'ctx_concorrentes' },
+      { num:3, label:'Contexto Histórico e Sensibilidade', hint:'Nos últimos 12 meses, houve algum tema de grande impacto (crise, fusão, campanha)? Houve mudanças na liderança?', ph:'Ex: "Em março houve uma crise relacionada a..."', key:'ctx_sensibilidade' },
+      { num:4, label:'Porta-vozes e Influência Digital', hint:'Quem são as principais lideranças públicas ou porta-vozes? A marca atua ativamente com influenciadores?', ph:'Ex: "Nosso CEO é X, que aparece frequentemente na mídia. Trabalhamos com influenciadores de..."', key:'ctx_portavozes' },
+    ];
+
+    perguntas.forEach(p => {
+      const { card: fc } = mkFieldCard(p.num, p.label, p.hint, p.ph, p.key);
+      card.appendChild(fc);
+    });
+
+    const nav = document.createElement('div'); nav.className = 'nav-row';
+    nav.appendChild(mkBackBtn());
+    const next = mkNextBtn('Avançar');
+    next.addEventListener('click', () => {
+      if (!respostas.ctx_objetivo?.trim()) { toast('Preencha ao menos a primeira pergunta (Objetivos e Desafios).'); return; }
+      goTo(respostas._next_after_context || 'cons_obj');
+    });
+    nav.appendChild(next); card.appendChild(nav); screen.appendChild(card);
+  }
+
+  /* ── TRILHA CONSULTIVA ── */
+  function renderConsultivoObj(screen) {
+    const card = mkCard('Passo 3', 'Mapeamento do Objetivo Latente', 'Qual é o seu objetivo principal com este monitoramento?');
+    const opts = [
+      { key:'A', label:'Gestão de imagem e reputação', desc:'Saber como a marca é vista' },
+      { key:'B', label:'Monitoramento e prevenção de crises', desc:'Agilidade para apagar incêndios' },
+      { key:'C', label:'Análise de concorrência e benchmarking', desc:'Saber o que o mercado está fazendo' },
+      { key:'D', label:'Apoio à tomada de decisão e tendências', desc:'Dados para guiar o negócio' },
+      { key:'E', label:'Entender como minha marca aparece nas IAs generativas', desc:'Presença no ChatGPT, Gemini, Copilot e outros', voxia: true }
+    ];
+    const optsEl = mkOptions(opts, 'cons_obj', (op) => {
+      respostas.cons_obj = op.label;
+      if (op.voxia) { respostas.trilha = 'vx_identificacao'; goTo('vx_identificacao'); }
+      else goTo('cons_canais');
+    });
+    card.appendChild(optsEl);
+    addNav(card, true, goBack);
+    screen.appendChild(card);
+  }
+
+  function renderConsultivoCanais(screen) {
+    const card = mkCard('Passo 4', 'Radar de Canais', 'Onde esse problema ou desafio acontece com mais frequência?');
+    const opts = [
+      { key:'A', label:'Imprensa tradicional', desc:'Portais online, Rádio, TV e Impressos' },
+      { key:'B', label:'Redes Sociais e Mar Aberto', desc:'Instagram, LinkedIn, X, TikTok, Reclame Aqui' },
+      { key:'C', label:'Busca por um cenário 360º', desc:'Imprensa + Redes Integradas' }
+    ];
+    const optsEl = mkOptions(opts, 'cons_canais', (op) => { respostas.cons_canais = op.label; goTo('cons_ritmo'); });
+    card.appendChild(optsEl); addNav(card, true, goBack); screen.appendChild(card);
+  }
+
+  function renderConsultivoRitmo(screen) {
+    const card = mkCard('Passo 5', 'Ritmo e Urgência', 'Qual a velocidade que você precisa consumir essa informação?');
+    const opts = [
+      { key:'A', label:'Preciso saber na hora', desc:'Alertas em tempo real via WhatsApp/E-mail' },
+      { key:'B', label:'Preciso de uma visão diária', desc:'Boletins matinais/vespertinos para a diretoria' },
+      { key:'C', label:'Preciso de análises táticas', desc:'Relatórios semanais ou mensais' },
+      { key:'D', label:'Estudo de um momento passado', desc:'Relatórios sob demanda / dados retroativos' }
+    ];
+    const optsEl = mkOptions(opts, 'cons_ritmo', (op) => { respostas.cons_ritmo = op.label; goTo('cons_formato'); });
+    card.appendChild(optsEl); addNav(card, true, goBack); screen.appendChild(card);
+  }
+
+  function renderConsultivoFormato(screen) {
+    const card = mkCard('Passo 6', 'Consumo da Informação', 'Como você ou sua diretoria preferem ver essa inteligência?');
+    const opts = [
+      { key:'A', label:'Dashboards interativos', desc:'Para acompanhar e filtrar a qualquer momento' },
+      { key:'B', label:'Relatórios executivos e apresentações', desc:'Análises aprofundadas em PDF/PPT' },
+      { key:'C', label:'Mensagens rápidas e diretas', desc:'Resumos no celular / WhatsApp' }
+    ];
+    const optsEl = mkOptions(opts, 'cons_formato', (op) => { respostas.cons_formato = op.label; goTo('dor'); });
+    card.appendChild(optsEl); addNav(card, true, goBack); screen.appendChild(card);
+  }
+
+  /* ── CHECKLIST E TRILHAS A-D ── */
+  function renderChecklist(screen) {
+    const card = mkCard('Passo 3', 'Selecione a trilha do seu escopo', 'Marque o serviço que já está definido na sua demanda.');
+    const opts = [
+      { key:'A', label:'Monitorar o que a imprensa fala sobre mim ou meu setor', desc:'Clipping, alertas, monitor de cobertura', next:'imprensa' },
+      { key:'B', label:'Entender minha presença e desempenho nas redes sociais', desc:'Análise de engajamento, sentimento, audiência', next:'redes' },
+      { key:'C', label:'Fazer um diagnóstico ou estudo específico', desc:'Análise pontual, relatório especial', next:'diagnostico' },
+      { key:'D', label:'Obter inteligência de negócios e dados estratégicos', desc:'BI, benchmarking, cenários, tendências', next:'bi' },
+      { key:'E', label:'Entender como minha marca aparece nas IAs generativas', desc:'Presença no ChatGPT, Gemini, Copilot e outros', next:'vx_identificacao', voxia: true },
+    ];
+    const optsEl = mkOptions(opts, 'checklist', (op) => { respostas.trilha = op.next; goTo(op.next); });
+    card.appendChild(optsEl); addNav(card, true, goBack, null, true); screen.appendChild(card);
+  }
+
+  const TRILHAS = {
+    imprensa: { step:'Aprofundamento de Escopo', texto:'Com que <strong>frequência</strong> você precisa acompanhar a cobertura?', hint:'Isso nos ajuda a indicar o produto com a periodicidade ideal para o seu ritmo.', next:'porte',
+      opts:[{key:'A',label:'Diariamente — preciso saber o que saiu toda manhã',desc:'Acompanhamento contínuo e ágil'},{key:'B',label:'Semanalmente — um resumo consolidado por semana',desc:'Visão estratégica sem sobrecarga'},{key:'C',label:'Sob demanda — só quando há um evento ou crise',desc:'Cobertura pontual e situacional'},{key:'D',label:'Mensalmente — relatório periódico de cobertura',desc:'Análise de longo prazo'}]},
+    redes:    { step:'Aprofundamento de Escopo', texto:'O que você quer <strong>medir</strong> nas redes sociais?', hint:'Selecione o foco principal da análise.', next:'porte',
+      opts:[{key:'A',label:'Meu próprio desempenho — posts, alcance, engajamento',desc:'Performance dos perfis oficiais'},{key:'B',label:'O que falam de mim — menções, sentimento, reputação',desc:'Monitoramento de marca e reputação'},{key:'C',label:'Concorrentes e setor — como estou comparado ao mercado',desc:'Benchmarking de redes sociais'},{key:'D',label:'Tudo acima de forma integrada',desc:'Visão completa 360°'}]},
+    diagnostico:{step:'Aprofundamento de Escopo',texto:'Que tipo de <strong>diagnóstico</strong> você precisa?',hint:'Descreva o escopo do estudo que você tem em mente.',next:'porte',
+      opts:[{key:'A',label:'Análise de um momento específico — evento, crise, lançamento',desc:'Estudo pontual e aprofundado'},{key:'B',label:'Diagnóstico periódico — semanal ou mensal',desc:'Acompanhamento regular com relatórios'},{key:'C',label:'Mapeamento de narrativas — o que está sendo dito sobre um tema',desc:'Análise de discurso e narrativa'},{key:'D',label:'Auditoria de comunicação — como estou me posicionando',desc:'Avaliação estratégica completa'}]},
+    bi:       { step:'Aprofundamento de Escopo',texto:'Qual decisão estratégica você precisa <strong>embasar</strong>?',hint:'Vamos entender o contexto para indicar a inteligência certa.',next:'porte',
+      opts:[{key:'A',label:'Entender minha posição versus concorrentes',desc:'Benchmarking competitivo'},{key:'B',label:'Antecipar tendências e movimentos do setor',desc:'Análise de cenários e sinais de mercado'},{key:'C',label:'Medir o impacto das minhas ações de comunicação',desc:'ROI de comunicação e PR'},{key:'D',label:'Construir um painel de indicadores contínuo',desc:'Dashboard estratégico permanente'}]},
+  };
+
+  function renderTrilha(id) {
+    const screen = document.getElementById('screen');
+    const t = TRILHAS[id];
+    const card = mkCard(t.step, t.texto, t.hint);
+    const optsEl = mkOptions(t.opts, id, (op) => { respostas[id] = op.key; goTo(t.next); });
+    card.appendChild(optsEl); addNav(card, true, goBack); screen.appendChild(card);
+  }
+
+  function renderPorte(screen) {
+    const card = mkCard('Dimensionamento', 'Como você descreveria o <strong>porte</strong> do que você precisa monitorar?', 'Isso nos ajuda a dimensionar a solution corretamente.');
+    const opts = [
+      {key:'A',label:'Focado — uma marca, empresa ou pessoa',desc:'Escopo bem delimitado'},
+      {key:'B',label:'Médio — marca + concorrentes diretos + setor',desc:'Visão ampliada do ecossistema'},
+      {key:'C',label:'Amplo — múltiplas marcas, veículos ou mercados',desc:'Cobertura robusta e abrangente'},
+      {key:'D',label:'Não tenho certeza — preciso de orientação',desc:'Vamos ajudar a definir juntos'},
+    ];
+    const optsEl = mkOptions(opts, 'porte', (op) => { respostas.porte = op.key; goTo('dor'); });
+    card.appendChild(optsEl); addNav(card, true, goBack); screen.appendChild(card);
+  }
+
+  function renderDor(screen) {
+    const card = mkCard('Contexto Final', 'Descreva em suas próprias palavras: <strong>qual dor ou desafio específico</strong> você quer resolver?', 'Seja detalhista. Quanto mais contexto, mais certeira será nossa recomendação.');
+    const { card: fc } = mkFieldCard(1, 'Descreva sua necessidade', 'Fale sobre o problema que quer resolver, o contexto do negócio e o que já foi tentado antes.', 'Ex: "Preciso de um monitoramento automatizado porque minha equipe gasta 5 horas por dia..."', 'dor');
+    card.appendChild(fc);
+    const nav = document.createElement('div'); nav.className = 'nav-row';
+    nav.appendChild(mkBackBtn());
+    const next = mkNextBtn('Continuar');
+    next.addEventListener('click', () => {
+      if (!respostas.dor?.trim()) { toast('Descreva sua necessidade específica.'); return; }
+      goTo('captura_email');
+    });
+    nav.appendChild(next); card.appendChild(nav); screen.appendChild(card);
+  }
+
+  /* ══════════════════════════════════════════════
+     VOX.IA — IMAGEM & AUTORIDADE (8 passos)
+     1. Identificação → 2. Objetivos → 3. Cenário competitivo
+     4. Atributos → 5. Prompts institucionais → 6. Prompts mercado
+     7. Pilares de autoridade → 8. Revisão e envio
+  ══════════════════════════════════════════════ */
+  function renderVxIdentificacao(screen) {
+    const card = mkCard('Vox.IA — Imagem & Autoridade · Passo 1 de 8', '1. O que vamos <strong>analisar</strong>?', 'Diga qual sujeito você quer diagnósticar nas IAs generativas.');
+
+    card.appendChild(mkProductIntro({
+      icon: '🏛️',
+      titulo: 'Vox.IA — Imagem & Autoridade',
+      descricao: 'Analisamos como sua marca ou porta-voz é percebido pelo ChatGPT, Gemini, Copilot e outros modelos de linguagem. Medimos presença, autoridade e Share of Voice frente à concorrência.',
+      bullets: [
+        'Como as IAs descrevem sua marca hoje',
+        'Share of Voice frente aos seus principais concorrentes',
+        'Atributos e narrativas que os modelos associam a você',
+        'Identificação de alucinações ou associações negativas',
+        'Recomendações de AEO para ampliar sua autoridade digital',
+      ],
+      tempo: 'Preenchimento: ~8 minutos'
+    }));
+
+    const opts = [
+      { key:'A', label:'Uma Marca ou Empresa', desc:'Analisar a percepção institucional de uma organização nas IAs' },
+      { key:'B', label:'Um Porta-voz ou Executivo', desc:'Analisar a autoridade e reputação de uma liderança pública' },
+    ];
+    const optsEl = mkOptions(opts, 'vx_tipo', (op) => {
+      vx.tipo = op.key === 'A' ? 'marca' : 'porta-voz';
+      renderVxIdCampos(card.querySelector('.vx-campos'));
+    });
+    card.appendChild(optsEl);
+
+    const campos = document.createElement('div');
+    campos.className = 'vx-campos';
+    card.appendChild(campos);
+    if (vx.tipo) renderVxIdCampos(campos);
+
+    const nav = document.createElement('div'); nav.className = 'nav-row';
+    nav.appendChild(mkBackBtn());
+    const next = mkNextBtn('Avançar');
+    next.addEventListener('click', () => {
+      if (!vx.tipo) { toast('Selecione o que será analisado.'); return; }
+      if (!vx.empresa.trim()) { toast('Informe o nome da empresa ou porta-voz.'); return; }
+      if (!vx.site.trim() || !vx.site.includes('.')) { toast('Informe um site oficial válido (ex: empresa.com.br).'); return; }
+      if (!vx.objetivo_diagnostico.trim()) { toast('Explique o que você quer diagnosticar.'); return; }
+      goTo('vx_objetivos');
+    });
+    nav.appendChild(next); card.appendChild(nav); screen.appendChild(card);
+  }
+
+  function renderVxIdCampos(container) {
+    if (!container) return;
+    container.innerHTML = '';
+
+    const lblNome = document.createElement('div'); lblNome.className = 'section-label'; lblNome.style.marginTop = '16px';
+    lblNome.textContent = vx.tipo === 'porta-voz' ? 'Nome do porta-voz / executivo:' : 'Nome da marca ou empresa:';
+    const inpNome = document.createElement('input'); inpNome.className = 'dynamic-input'; inpNome.style.cssText = 'width:100%;margin-bottom:14px;';
+    inpNome.placeholder = vx.tipo === 'porta-voz' ? 'Ex: João da Silva, Ministra Ana...' : 'Ex: Nestlé, Banco do Brasil...';
+    inpNome.value = vx.empresa;
+    inpNome.addEventListener('input', () => { vx.empresa = inpNome.value; });
+    container.appendChild(lblNome); container.appendChild(inpNome);
+
+    const lblSite = document.createElement('div'); lblSite.className = 'section-label'; lblSite.textContent = 'Site Oficial:';
+    const inpSite = document.createElement('input'); inpSite.className = 'dynamic-input'; inpSite.style.cssText = 'width:100%;margin-bottom:6px;';
+    inpSite.placeholder = 'https://www.suaempresa.com.br';
+    inpSite.value = vx.site;
+    inpSite.addEventListener('input', () => { vx.site = inpSite.value; });
+    const noteS = document.createElement('div'); noteS.className = 'q-hint'; noteS.style.marginBottom = '16px';
+    noteS.textContent = 'As IAs utilizam esse link para medir sua autoridade digital e taxa de citação direta.';
+    container.appendChild(lblSite); container.appendChild(inpSite); container.appendChild(noteS);
+
+    const lblObj = document.createElement('div'); lblObj.className = 'section-label'; lblObj.textContent = 'O que você quer diagnosticar com o Vox.IA?';
+    const { wrap: wObj, ta: taObj } = makeTextarea('Ex: Quero entender se as IAs nos recomendam como líderes em sustentabilidade e como aparecemos frente aos nossos concorrentes no setor...', null, 90);
+    taObj.value = vx.objetivo_diagnostico;
+    taObj.addEventListener('input', () => { vx.objetivo_diagnostico = taObj.value; });
+    container.appendChild(lblObj); container.appendChild(wObj);
+  }
+
+  function renderVxObjetivos(screen) {
+    const card = mkCard('Vox.IA — Imagem & Autoridade · Passo 2 de 8', '2. <strong>Objetivos</strong> Estratégicos', 'Selecione no mínimo 1 objetivo para o diagnóstico.');
+    const items = [
+      { key:'Diagnóstico Narrativo', desc:'Mapeia como as IAs descrevem a marca ou porta-voz nas respostas geradas.' },
+      { key:'Liderança & Share of Voice', desc:'Analisa recomendações face à concorrência — quem aparece mais.' },
+      { key:'Mitigar Associações Negativas', desc:'Identifica alucinações, crises passadas ou contextos indesejados.' },
+      { key:'Ampliar Autoridade', desc:'Estratégia para tornar sua marca a fonte primária dos modelos de IA.' },
+    ];
+    const checkList = document.createElement('div'); checkList.className = 'check-list';
+    items.forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'check-item' + (vx.objetivos.includes(item.key) ? ' checked' : '');
+      el.innerHTML = `<div class="check-box"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div><div class="check-label">${item.key}</div><div class="check-desc">${item.desc}</div></div>`;
+      el.addEventListener('click', () => {
+        const idx = vx.objetivos.indexOf(item.key);
+        if (idx === -1) vx.objetivos.push(item.key); else vx.objetivos.splice(idx, 1);
+        el.classList.toggle('checked', vx.objetivos.includes(item.key));
+      });
+      checkList.appendChild(el);
+    });
+    card.appendChild(checkList);
+    const nav = document.createElement('div'); nav.className = 'nav-row';
+    nav.appendChild(mkBackBtn());
+    const next = mkNextBtn('Avançar');
+    next.addEventListener('click', () => {
+      if (!vx.objetivos.length) { toast('Selecione pelo menos um objetivo.'); return; }
+      goTo('vx_concorrentes');
+    });
+    nav.appendChild(next); card.appendChild(nav); screen.appendChild(card);
+  }
+
+  function renderVxConcorrentes(screen) {
+    const card = mkCard('Vox.IA — Imagem & Autoridade · Passo 3 de 8', '3. <strong>Cenário</strong> Competitivo', 'Liste de 5 a 10 players concorrentes para benchmarking de Share of Voice.');
+
+    const listEl = document.createElement('div'); listEl.className = 'dynamic-list';
+
+    // Track sites and names for duplicate detection
+    function getDupErr() {
+      const nomes = vx.concorrentes.map(c => c.nome.trim().toLowerCase()).filter(Boolean);
+      const sites = vx.concorrentes.map(c => c.site.trim().toLowerCase()).filter(Boolean);
+      const nomeDup = nomes.length !== new Set(nomes).size;
+      const siteDup = sites.length !== new Set(sites).size;
+      return { nomeDup, siteDup };
+    }
+
+    let errEl = document.createElement('div'); errEl.className = 'error-msg'; errEl.style.display = 'none';
+
+    function renderList() {
+      listEl.innerHTML = '';
+      vx.concorrentes.forEach((c, i) => {
+        const item = document.createElement('div'); item.style.cssText = 'margin-bottom:8px;';
+        const row = document.createElement('div'); row.className = 'dynamic-item';
+        const inpNome = document.createElement('input'); inpNome.className = 'dynamic-input'; inpNome.placeholder = 'Nome do concorrente';
+        inpNome.value = c.nome; inpNome.addEventListener('input', () => { vx.concorrentes[i].nome = inpNome.value; });
+        const inpSite = document.createElement('input'); inpSite.className = 'dynamic-input url'; inpSite.placeholder = 'https://site.com.br';
+        inpSite.value = c.site; inpSite.addEventListener('input', () => { vx.concorrentes[i].site = inpSite.value; });
+        if (vx.concorrentes.length > 1) {
+          const del = document.createElement('button'); del.className = 'dynamic-remove'; del.textContent = '×';
+          del.addEventListener('click', () => { vx.concorrentes.splice(i, 1); renderList(); });
+          row.appendChild(inpNome); row.appendChild(inpSite); row.appendChild(del);
+        } else {
+          row.appendChild(inpNome); row.appendChild(inpSite);
+        }
+        item.appendChild(row); listEl.appendChild(item);
+      });
+
+      if (vx.concorrentes.length < 10) {
+        const addBtn = document.createElement('button'); addBtn.className = 'add-btn';
+        addBtn.innerHTML = '+ Adicionar concorrente';
+        addBtn.addEventListener('click', () => { if (vx.concorrentes.length < 10) { vx.concorrentes.push({nome:'',site:''}); renderList(); } });
+        listEl.appendChild(addBtn);
+      }
+    }
+    renderList();
+    card.appendChild(listEl); card.appendChild(errEl);
+
+    const nav = document.createElement('div'); nav.className = 'nav-row';
+    nav.appendChild(mkBackBtn());
+    const next = mkNextBtn('Avançar');
+    next.addEventListener('click', () => {
+      const validos = vx.concorrentes.filter(c => c.nome.trim() && c.site.trim());
+      const { nomeDup, siteDup } = getDupErr();
+      if (nomeDup) { errEl.textContent = 'Há nomes de concorrentes repetidos. Remova as duplicatas.'; errEl.style.display = 'block'; return; }
+      if (siteDup) { errEl.textContent = 'Há sites repetidos. Cada concorrente precisa ter um site único.'; errEl.style.display = 'block'; return; }
+      if (validos.length < 3) { errEl.textContent = `Adicione mais ${3 - validos.length} concorrente(s) válido(s) com nome e site.`; errEl.style.display = 'block'; return; }
+      const siteInvalido = validos.find(c => !c.site.includes('.'));
+      if (siteInvalido) { errEl.textContent = `O site de "${siteInvalido.nome}" parece inválido. Verifique.`; errEl.style.display = 'block'; return; }
+      errEl.style.display = 'none';
+      goTo('vx_atributos');
+    });
+    nav.appendChild(next); card.appendChild(nav); screen.appendChild(card);
+  }
+
+  function renderVxAtributos(screen) {
+    const card = mkCard('Vox.IA — Imagem & Autoridade · Passo 4 de 8', '4. <strong>Atributos</strong> da Marca', 'Defina de 5 a 10 valores para cada lado. Para cada atributo, adicione uma explicação contextual.');
+
+    const infoEl = document.createElement('div'); infoEl.className = 'q-info';
+    infoEl.innerHTML = '<strong>Como usar:</strong> Escreva o atributo (ex: <em>Transparente</em>) e, no campo abaixo, explique o que significa para sua marca (ex: "A empresa é líder em dados setoriais e transparência de processos"). Isso torna a análise mais precisa.';
+    card.appendChild(infoEl);
+
+    const cols = document.createElement('div'); cols.className = 'cols2';
+
+    function makeAttrSide(title, caption, arr, isNeg) {
+      const col = document.createElement('div');
+      const lbl = document.createElement('div'); lbl.className = 'section-label'; lbl.textContent = title;
+      const cap = document.createElement('div'); cap.className = 'counter-hint'; cap.textContent = caption;
+      col.appendChild(lbl); col.appendChild(cap);
+
+      const listEl = document.createElement('div');
+      let errEl2 = document.createElement('div'); errEl2.className = 'error-msg'; errEl2.style.display = 'none';
+
+      function renderItems() {
+        listEl.innerHTML = '';
+        arr.forEach((item, i) => {
+          const wrapper = document.createElement('div'); wrapper.className = 'attr-item';
+          const row = document.createElement('div'); row.className = 'attr-row';
+          const inpNome = document.createElement('input'); inpNome.className = 'attr-name-inp'; inpNome.placeholder = 'Atributo (ex: Transparente)';
+          inpNome.value = item.nome; inpNome.addEventListener('input', () => { arr[i].nome = inpNome.value; });
+          if (arr.length > 1) {
+            const del = document.createElement('button'); del.className = 'dynamic-remove'; del.textContent = '×'; del.style.marginTop = '0';
+            del.addEventListener('click', () => { arr.splice(i, 1); renderItems(); });
+            row.appendChild(inpNome); row.appendChild(del);
+          } else {
+            row.appendChild(inpNome);
+          }
+          const explWrap = document.createElement('div'); explWrap.className = 'attr-explain';
+          const explInp = document.createElement('textarea'); explInp.className = 'attr-explain-inp'; explInp.rows = 2;
+          explInp.placeholder = 'Explicação: o que esse atributo significa na prática para a marca?';
+          explInp.value = item.explicacao; explInp.addEventListener('input', () => { arr[i].explicacao = explInp.value; });
+          explWrap.appendChild(explInp);
+          wrapper.appendChild(row); wrapper.appendChild(explWrap);
+          listEl.appendChild(wrapper);
+        });
+        if (arr.length < 10) {
+          const addBtn = document.createElement('button'); addBtn.className = 'add-btn'; addBtn.style.width = '100%';
+          addBtn.innerHTML = '+ Adicionar';
+          addBtn.addEventListener('click', () => { arr.push({nome:'',explicacao:''}); renderItems(); });
+          listEl.appendChild(addBtn);
+        }
+      }
+      renderItems();
+      col.appendChild(listEl); col.appendChild(errEl2);
+      col._errEl = errEl2;
+      col._check = () => {
+        const nomes = arr.map(a => a.nome.trim().toLowerCase()).filter(Boolean);
+        if (nomes.length !== new Set(nomes).size) { errEl2.textContent = 'Há atributos repetidos.'; errEl2.style.display = 'block'; return false; }
+        if (arr.filter(a => a.nome.trim()).length < 5) { errEl2.textContent = `Adicione mais ${5 - arr.filter(a=>a.nome.trim()).length} atributos.`; errEl2.style.display = 'block'; return false; }
+        errEl2.style.display = 'none'; return true;
+      };
+      return col;
+    }
+
+    const colPos = makeAttrSide('✅ Atributos Positivos', 'Valores que você quer que as IAs associem à sua marca.', vx.atributos_pos, false);
+    const colNeg = makeAttrSide('❌ Atributos Negativos', 'Termos que você NÃO quer associados à sua marca.', vx.atributos_neg, true);
+    cols.appendChild(colPos); cols.appendChild(colNeg); card.appendChild(cols);
+
+    const nav = document.createElement('div'); nav.className = 'nav-row';
+    nav.appendChild(mkBackBtn());
+    const next = mkNextBtn('Avançar');
+    next.addEventListener('click', () => {
+      const okPos = colPos._check(); const okNeg = colNeg._check();
+      if (!okPos || !okNeg) return;
+      goTo('vx_branded');
+    });
+    nav.appendChild(next); card.appendChild(nav); screen.appendChild(card);
+  }
+
+  // ── Avaliador de qualidade de prompt — validação local, sem API ──
+  function avaliarPrompt(valor, tipo, empresa, container, onUsar) {
+    container.innerHTML = '';
+    if (!valor || valor.length < 10) return;
+
+    const v = valor.trim();
+    const vLow = v.toLowerCase();
+    const empLow = (empresa || '').toLowerCase();
+
+    // ── Regras baseadas em boas práticas de engenharia de prompts ──
+    const problemas = [];
+
+    // 1. Perguntas indutivas com validação sim/não (viés de complacência)
+    const indutivos = [/^é verdade que/i, /^é correto (dizer|afirmar)/i, /^(é|foi) considerad[ao]/i, /^(é|foi) reconhecid[ao]/i, /^(tem sido|é) (visto|visto) como/i];
+    if (indutivos.some(r => r.test(v))) {
+      problemas.push({ tipo: 'indutivo', msg: 'Perguntas que começam com "É considerada…" ou "É verdade que…" tendem a induzir confirmação. Prefira começar com "Como", "Quais" ou "De que forma".' });
+    }
+
+    // 2. Superlativos absolutos sem critério (melhor, pior, mais X, menos X)
+    const superlativos = /\b(o melhor|a melhor|os melhores|as melhores|o pior|a pior|o mais |a mais |o menos |a menos |número 1|#1)\b/i;
+    if (superlativos.test(v)) {
+      problemas.push({ tipo: 'superlativo', msg: 'Superlativos como "o melhor" ou "o mais confiável" sem critério de comparação forçam a IA a eleger um vencedor. Tente adicionar um contexto: "considerando X e Y".' });
+    }
+
+    // 3. Branded: pergunta não tem o nome da empresa
+    if (tipo === 'branded' && empLow && !vLow.includes(empLow)) {
+      problemas.push({ tipo: 'sem_empresa', msg: `O nome "${empresa}" precisa aparecer na pergunta para que a IA avalie especificamente a marca.` });
+    }
+
+    // 4. Unbranded: pergunta menciona a empresa
+    if (tipo === 'unbranded' && empLow && vLow.includes(empLow)) {
+      problemas.push({ tipo: 'tem_empresa', msg: `Remova "${empresa}" desta pergunta — o objetivo é medir presença orgânica no setor, sem citar a marca diretamente.` });
+    }
+
+    // 5. Pergunta muito curta / vaga (menos de 6 palavras)
+    if (v.split(/\s+/).length < 6) {
+      problemas.push({ tipo: 'vaga', msg: 'A pergunta está muito curta. Adicione contexto: setor, critério ou dimensão que deseja avaliar.' });
+    }
+
+    // 6. Unbranded singular sem critério ("Qual é o banco que...")
+    if (tipo === 'unbranded' && /^qual é o\b/i.test(v) && !/considerando|em termos|em relação|comparando/i.test(v)) {
+      problemas.push({ tipo: 'singular', msg: 'Perguntas no singular ("Qual é o banco que...") forçam a IA a escolher um único vencedor. Prefira o plural: "Quais bancos..." e adicione critérios de comparação.' });
+    }
+
+    // 7. Pergunta sem ponto de interrogação (pode ser afirmação, não pergunta)
+    if (!v.includes('?')) {
+      problemas.push({ tipo: 'nao_pergunta', msg: 'Certifique-se de que é uma pergunta — as IAs respondem melhor a interrogações claras.' });
+    }
+
+    if (problemas.length === 0) return; // Tudo certo, sem comentário
+
+    // Exibe apenas o problema mais relevante
+    const principal = problemas[0];
+
+    // Gera sugestão de reformulação automática para casos simples
+    let sugestao = '';
+    if (principal.tipo === 'superlativo' && tipo === 'branded') {
+      sugestao = v.replace(superlativos, '').replace(/\s+/g, ' ').trim();
+      sugestao = `Como ${empresa} é avaliada ${sugestao.replace(/^(em|para|como|no|na)\s*/i, 'em termos de ')}?`;
+    } else if (principal.tipo === 'singular' && tipo === 'unbranded') {
+      sugestao = v.replace(/^qual é o\b/i, 'Quais são os principais').replace(/\?/, ' no Brasil?');
+    } else if (principal.tipo === 'indutivo') {
+      sugestao = v.replace(/^é verdade que\s*/i, 'De que forma ').replace(/^(é|foi) considerad[ao]\s*/i, 'Como é avaliad').replace(/\?/, ' pelo mercado?');
+    }
+
+    // Monta o card de sugestão
+    const box = document.createElement('div'); box.className = 'prompt-eval-box';
+    const inner = document.createElement('div'); inner.className = 'prompt-eval-content';
+
+    const label = document.createElement('div');
+    label.className = 'prompt-eval-label bad';
+    label.innerHTML = '💡 Temos uma sugestão para você';
+    inner.appendChild(label);
+
+    const reason = document.createElement('div'); reason.className = 'prompt-eval-reason';
+    reason.textContent = principal.msg; inner.appendChild(reason);
+
+    if (sugestao && sugestao !== v) {
+      const sug = document.createElement('div'); sug.className = 'prompt-eval-suggestion';
+      sug.textContent = `"${sugestao}"`; inner.appendChild(sug);
+
+      const actions = document.createElement('div'); actions.className = 'prompt-eval-actions';
+      const useBtn = document.createElement('button'); useBtn.className = 'prompt-eval-use';
+      useBtn.textContent = '↑ Usar esta versão';
+      useBtn.addEventListener('click', () => { onUsar(sugestao); container.innerHTML = ''; });
+      const dismissBtn = document.createElement('button'); dismissBtn.className = 'prompt-eval-dismiss';
+      dismissBtn.textContent = 'Manter a minha';
+      dismissBtn.addEventListener('click', () => { container.innerHTML = ''; });
+      actions.appendChild(useBtn); actions.appendChild(dismissBtn); inner.appendChild(actions);
+    } else {
+      const dismissBtn = document.createElement('button'); dismissBtn.className = 'prompt-eval-dismiss';
+      dismissBtn.textContent = 'Entendi';
+      dismissBtn.addEventListener('click', () => { container.innerHTML = ''; });
+      inner.appendChild(dismissBtn);
+    }
+
+    box.appendChild(inner); container.appendChild(box);
+  }
+
+
+  function mkBestPracticeCards(tipo, empresa) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;';
+
+    const card = (icon, titulo, cor, items) => {
+      const c = document.createElement('div');
+      c.style.cssText = `background:${cor};border-radius:12px;padding:12px 14px;`;
+      const h = document.createElement('div');
+      h.style.cssText = 'font-size:11px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:5px;';
+      h.innerHTML = `<span>${icon}</span>${titulo}`;
+      c.appendChild(h);
+      items.forEach(({ label, exemplo }) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'margin-bottom:6px;';
+        const lbl = document.createElement('div');
+        lbl.style.cssText = 'font-size:11px;font-weight:600;color:var(--text);line-height:1.4;';
+        lbl.textContent = label;
+        row.appendChild(lbl);
+        if (exemplo) {
+          const ex = document.createElement('div');
+          ex.style.cssText = 'font-size:10px;color:var(--muted);line-height:1.4;font-style:italic;margin-top:1px;';
+          ex.textContent = exemplo;
+          row.appendChild(ex);
+        }
+        c.appendChild(row);
+      });
+      return c;
+    };
+
+    const fazerItems = tipo === 'tematico' ? [
+      { label: '✓ Perguntas abertas e neutras', exemplo: '"Como [tema] é percebido no cenário atual?"' },
+      { label: '✓ Use "O que", "Como", "Quais", "Por que"', exemplo: '"Como [tema] é percebido no Brasil?"' },
+      { label: '✓ Varie os ângulos', exemplo: 'Histórico, técnico, social, econômico, cultural' },
+      { label: '✓ Deixe a IA responder livremente', exemplo: 'Sem direcionar para uma resposta esperada' },
+      { label: '✓ Termine com "?"', exemplo: 'Perguntas funcionam melhor que afirmações' },
+    ] : tipo === 'branded' ? [
+      { label: '✓ Cite a marca na pergunta', exemplo: `Ex: "Como ${empresa} é avaliada em...?"` },
+      { label: '✓ Use framing analítico', exemplo: '"Como", "Quais", "De que forma", "Quais fatores"' },
+      { label: '✓ Peça avaliação, não confirmação', exemplo: 'Evite: "É considerada boa...?"' },
+      { label: '✓ Adicione contexto ou setor', exemplo: 'Ex: "...entre correntistas brasileiros?"' },
+      { label: '✓ Termine com "?"', exemplo: 'Perguntas funcionam melhor que afirmações' },
+    ] : [
+      { label: '✓ NÃO cite a marca', exemplo: 'Deixe a IA chegar a ela organicamente' },
+      { label: '✓ Use plural', exemplo: '"Quais bancos..." em vez de "Qual é o banco..."' },
+      { label: '✓ Adicione critérios', exemplo: '"...considerando taxas e acessibilidade?"' },
+      { label: '✓ Foque no setor', exemplo: 'Pergunte sobre o mercado, não sobre uma marca' },
+      { label: '✓ Termine com "?"', exemplo: 'Perguntas funcionam melhor que afirmações' },
+    ];
+
+    const evitarItems = tipo === 'tematico' ? [
+      { label: '✗ Citar marcas ou empresas', exemplo: 'Deixe a IA mencionar organicamente' },
+      { label: '✗ Perguntas indutivas', exemplo: '"É verdade que...?", "É correto dizer...?"' },
+      { label: '✗ Superlativos sem critério', exemplo: '"o mais importante", "o pior problema"' },
+      { label: '✗ Perguntas muito curtas', exemplo: 'Menos de 6 palavras = resposta genérica' },
+      { label: '✗ Duas perguntas em uma', exemplo: 'Use "?" apenas no final' },
+    ] : [
+      { label: '✗ Perguntas indutivas', exemplo: '"É considerada...?", "É verdade que...?"' },
+      { label: '✗ Superlativos sem critério', exemplo: '"o melhor", "o pior", "o mais confiável"' },
+      { label: '✗ Persona restrita', exemplo: '"segundo os clientes", "na opinião dos especialistas"' },
+      { label: '✗ Perguntas muito curtas', exemplo: 'Menos de 6 palavras = resposta genérica' },
+      { label: '✗ Duas perguntas em uma', exemplo: 'Use "?" apenas no final' },
+    ];
+
+    wrap.appendChild(card('✓', 'Boas práticas', 'rgba(85,170,102,0.09)', fazerItems));
+    wrap.appendChild(card('✗', 'O que evitar', 'rgba(204,68,0,0.07)', evitarItems));
+    return wrap;
+  }
+
+  // ── Gerador de prompt de apoio para a IA ──
+  function gerarTextoPrompt(tipo) {
+    const emp  = vx.empresa  || '[empresa]';
+    const site = vx.site     || '';
+    const narr = vx.narrativa || '';
+    const objs = (vx.objetivos || []).filter(Boolean).join(', ') || '';
+    const concs = (vx.concorrentes || []).filter(c => c.nome).map(c => c.site ? `${c.nome} (${c.site})` : c.nome).join(', ') || '';
+    const aPos  = (vx.atributos_pos || []).filter(a => a.nome).map(a => a.explicacao ? `${a.nome} — ${a.explicacao}` : a.nome).join('\n    • ') || '';
+    const aNeg  = (vx.atributos_neg || []).filter(a => a.nome).map(a => a.explicacao ? `${a.nome} — ${a.explicacao}` : a.nome).join('\n    • ') || '';
+
+    if (tipo === 'branded') {
+      return `Você é um especialista em engenharia de prompts para análise de reputação institucional em IAs generativas.
+
+Preciso de ajuda para criar perguntas de qualidade sobre a minha marca para serem testadas em modelos de IA como ChatGPT, Gemini e Copilot.
+
+━━ SOBRE A MARCA ━━
+Empresa: ${emp}${site ? `\nSite: ${site}` : ''}${narr ? `\nNarrativa desejada: ${narr}` : ''}${objs ? `\nObjetivos estratégicos: ${objs}` : ''}${concs ? `\nConcorrentes: ${concs}` : ''}${aPos ? `\n\nAtributos positivos que queremos mapear:\n    • ${aPos}` : ''}${aNeg ? `\n\nAtributos negativos que queremos monitorar:\n    • ${aNeg}` : ''}
+
+━━ REGRAS OBRIGATÓRIAS ━━
+• O nome "${emp}" DEVE aparecer em todas as perguntas
+• Usar framing analítico: "Como", "Quais", "De que forma", "Quais fatores"
+• PROIBIDO: perguntas indutivas ("É considerada...?", "É verdade que...?")
+• PROIBIDO: superlativos sem critério ("o melhor", "o mais confiável")
+• PROIBIDO: persona restrita ("segundo os clientes", "na opinião dos especialistas")
+• Cada pergunta deve ser específica o suficiente para a IA não responder de forma vaga
+• Termine cada pergunta com "?"
+
+━━ TAREFA ━━
+Gere 25 perguntas institucionais (branded) de alta qualidade seguindo essas regras.
+Para cada pergunta, explique em 1 linha o atributo ou dimensão que ela está medindo.
+
+Formato esperado:
+1. [pergunta]
+   → Mede: [atributo]`;
+    } else {
+      return `Você é um especialista em engenharia de prompts para análise de presença de mercado em IAs generativas.
+
+Preciso de ajuda para criar perguntas de mercado que meçam autoridade orgânica do setor sem citar a minha marca diretamente.
+
+━━ CONTEXTO ━━
+Empresa (NÃO deve aparecer nas perguntas): ${emp}${site ? `\nSite: ${site}` : ''}${concs ? `\nConcorrentes do setor: ${concs}` : ''}${objs ? `\nObjetivos da análise: ${objs}` : ''}
+
+━━ REGRAS OBRIGATÓRIAS ━━
+• O nome "${emp}" NÃO deve aparecer em nenhuma pergunta
+• Usar plural: "Quais bancos/empresas..." em vez de "Qual é o banco/empresa..."
+• Sempre incluir critérios de comparação: "considerando X e Y"
+• PROIBIDO: superlativos sem critério ("o melhor", "o mais seguro")
+• PROIBIDO: perguntas que forcem uma única resposta vencedora
+• Cobrir diferentes dimensões: segurança, atendimento, inovação, acessibilidade, reputação
+• Termine cada pergunta com "?"
+
+━━ TAREFA ━━
+Gere 25 perguntas de mercado (unbranded) de alta qualidade seguindo essas regras.
+Para cada pergunta, explique em 1 linha qual dimensão competitiva ela mede.
+
+Formato esperado:
+1. [pergunta]
+   → Dimensão: [categoria]`;
+    }
+  }
+
+  function abrirModalGerador(tipo) {
+    const texto = gerarTextoPrompt(tipo);
+    const overlay = document.createElement('div'); overlay.className = 'prompt-gen-modal';
+
+    const box = document.createElement('div'); box.className = 'prompt-gen-box';
+
+    // Header
+    const header = document.createElement('div'); header.className = 'prompt-gen-header';
+    const htxt = document.createElement('div'); htxt.className = 'prompt-gen-header-text';
+    htxt.innerHTML = `<h3>🤖 Prompt de apoio — ${tipo === 'branded' ? 'Perguntas Institucionais' : 'Perguntas de Mercado'}</h3>
+      <p>Copie, cole em qualquer IA (ChatGPT, Gemini, Copilot…) e ela vai gerar as melhores perguntas para o seu caso.</p>`;
+    const closeBtn = document.createElement('button'); closeBtn.className = 'prompt-gen-close'; closeBtn.textContent = '×';
+    closeBtn.addEventListener('click', () => overlay.remove());
+    header.appendChild(htxt); header.appendChild(closeBtn); box.appendChild(header);
+
+    // Body
+    const body = document.createElement('div'); body.className = 'prompt-gen-body';
+    const lbl = document.createElement('div'); lbl.className = 'prompt-gen-label'; lbl.textContent = 'Prompt gerado com os dados do briefing:';
+    const ta = document.createElement('textarea'); ta.className = 'prompt-gen-textarea'; ta.value = texto; ta.readOnly = true;
+    body.appendChild(lbl); body.appendChild(ta); box.appendChild(body);
+
+    // Footer
+    const footer = document.createElement('div'); footer.className = 'prompt-gen-footer';
+    const copyBtn = document.createElement('button'); copyBtn.className = 'prompt-gen-copy'; copyBtn.textContent = '📋 Copiar prompt';
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(texto).then(() => {
+        copyBtn.textContent = '✓ Copiado!'; copyBtn.classList.add('copied');
+        setTimeout(() => { copyBtn.textContent = '📋 Copiar prompt'; copyBtn.classList.remove('copied'); }, 2500);
+      });
+    });
+    const hint = document.createElement('div'); hint.className = 'prompt-gen-hint';
+    hint.textContent = 'Cole em ChatGPT, Gemini ou Copilot para receber sugestões de perguntas prontas.';
+    footer.appendChild(copyBtn); footer.appendChild(hint); box.appendChild(footer);
+
+    overlay.appendChild(box);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+  }
+
+  function renderVxBranded(screen) {
+    const MAX_B = 25, MIN_B = 5;
+    const card = mkCard('Vox.IA — Imagem & Autoridade · Passo 5 de 8', '5. Perguntas <strong>Institucionais</strong>', 'Cada pergunta será testada nos modelos de IA para mapear sua reputação.');
+
+    const info = document.createElement('div'); info.className = 'q-info';
+    info.innerHTML = `<strong>Obrigatório:</strong> "${vx.empresa}" deve aparecer em cada pergunta. Exemplo: <em>"${vx.empresa} é considerada referência em sustentabilidade?"</em>`;
+    card.appendChild(info);
+
+    const genBtn_b = document.createElement('button'); genBtn_b.className = 'prompt-gen-btn';
+    genBtn_b.innerHTML = '🤖 Não sabe por onde começar? Gere um prompt de apoio para sua IA favorita';
+    genBtn_b.addEventListener('click', () => abrirModalGerador('branded'));
+    card.appendChild(genBtn_b);
+    card.appendChild(mkBestPracticeCards('branded', vx.empresa));
+
+    const addRow = document.createElement('div'); addRow.className = 'prompt-add-row';
+    const inp = document.createElement('input'); inp.placeholder = `Ex: ${vx.empresa} é recomendada para...?`;
+    const addBtn = document.createElement('button'); addBtn.textContent = '+ Adicionar';
+    addRow.appendChild(inp); addRow.appendChild(addBtn); card.appendChild(addRow);
+
+    const evalEl = document.createElement('div');
+    card.appendChild(evalEl);
+    inp.addEventListener('blur', () => avaliarPrompt(inp.value.trim(), 'branded', vx.empresa, evalEl, v => { inp.value = v; }));
+
+    const listEl = document.createElement('div');
+    const errEl = document.createElement('div'); errEl.className = 'error-msg'; errEl.style.display = 'none';
+
+    function renderPrompts() {
+      listEl.innerHTML = '';
+      vx.prompts_b.forEach((p, i) => {
+        const pc = document.createElement('div'); pc.className = 'prompt-card';
+        const ptxt = document.createElement('p'); ptxt.textContent = p;
+        const del = document.createElement('button'); del.className = 'prompt-del'; del.textContent = '×';
+        del.addEventListener('click', () => { vx.prompts_b.splice(i, 1); renderPrompts(); updateCount(); });
+        pc.appendChild(ptxt); pc.appendChild(del); listEl.appendChild(pc);
+      });
+    }
+    renderPrompts(); card.appendChild(listEl); card.appendChild(errEl);
+
+    const cntSpan = document.createElement('span'); cntSpan.className = 'nav-hint';
+    function updateCount() {
+      const n = vx.prompts_b.length;
+      cntSpan.textContent = `${n} / mín. ${MIN_B} · máx. ${MAX_B}`;
+      cntSpan.style.color = n >= MAX_B ? '#cc4400' : n >= MIN_B ? '#66aa55' : 'var(--muted)';
+      addBtn.disabled = n >= MAX_B;
+      addBtn.style.opacity = n >= MAX_B ? '0.4' : '1';
+    }
+    updateCount();
+
+    function addPrompt() {
+      const v = inp.value.trim(); if (!v) return;
+      if (vx.prompts_b.length >= MAX_B) { toast(`Limite de ${MAX_B} perguntas institucionais atingido.`); return; }
+      if (!v.toLowerCase().includes(vx.empresa.toLowerCase())) {
+        errEl.textContent = `"${vx.empresa}" precisa constar na pergunta.`; errEl.style.display = 'block'; return;
+      }
+      if (vx.prompts_b.map(x=>x.toLowerCase()).includes(v.toLowerCase())) {
+        errEl.textContent = 'Pergunta duplicada.'; errEl.style.display = 'block'; return;
+      }
+      errEl.style.display = 'none'; vx.prompts_b.unshift(v); inp.value = ''; renderPrompts(); updateCount();
+    }
+    addBtn.addEventListener('click', addPrompt);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') addPrompt(); });
+
+    const nav = document.createElement('div'); nav.className = 'nav-row';
+    nav.appendChild(mkBackBtn());
+    const next = mkNextBtn('Avançar');
+    next.addEventListener('click', () => {
+      if (vx.prompts_b.length < MIN_B) { toast(`Faltam ${MIN_B - vx.prompts_b.length} perguntas institucionais (mínimo ${MIN_B}).`); return; }
+      goTo('vx_unbranded');
+    });
+    nav.appendChild(next); nav.appendChild(cntSpan); card.appendChild(nav); screen.appendChild(card);
+  }
+
+  function renderVxUnbranded(screen) {
+    const MAX_U = 25, MIN_U = 5;
+    const card = mkCard('Vox.IA — Imagem & Autoridade · Passo 6 de 8', '6. Perguntas de <strong>Mercado / Setor</strong>', 'Meça a autoridade orgânica no nicho sem citar a marca diretamente.');
+
+    const warn = document.createElement('div'); warn.className = 'q-warn';
+    warn.innerHTML = `<strong>Atenção:</strong> NÃO mencione "${vx.empresa}" nestas perguntas. O objetivo é medir presença orgânica no setor.`;
+    card.appendChild(warn);
+
+    const genBtn_u = document.createElement('button'); genBtn_u.className = 'prompt-gen-btn';
+    genBtn_u.innerHTML = '🤖 Não sabe por onde começar? Gere um prompt de apoio para sua IA favorita';
+    genBtn_u.addEventListener('click', () => abrirModalGerador('unbranded'));
+    card.appendChild(genBtn_u);
+    card.appendChild(mkBestPracticeCards('unbranded', vx.empresa));
+
+    const addRow = document.createElement('div'); addRow.className = 'prompt-add-row';
+    const inp = document.createElement('input'); inp.placeholder = 'Ex: Qual a melhor empresa de [Setor] no Brasil?';
+    const addBtn = document.createElement('button'); addBtn.textContent = '+ Adicionar';
+    addRow.appendChild(inp); addRow.appendChild(addBtn); card.appendChild(addRow);
+
+    const evalEl = document.createElement('div');
+    card.appendChild(evalEl);
+    inp.addEventListener('blur', () => avaliarPrompt(inp.value.trim(), 'unbranded', vx.empresa, evalEl, v => { inp.value = v; }));
+
+    const listEl = document.createElement('div');
+    const errEl = document.createElement('div'); errEl.className = 'error-msg'; errEl.style.display = 'none';
+
+    function renderPrompts() {
+      listEl.innerHTML = '';
+      vx.prompts_u.forEach((p, i) => {
+        const pc = document.createElement('div'); pc.className = 'prompt-card';
+        const ptxt = document.createElement('p'); ptxt.textContent = p;
+        const del = document.createElement('button'); del.className = 'prompt-del'; del.textContent = '×';
+        del.addEventListener('click', () => { vx.prompts_u.splice(i, 1); renderPrompts(); updateCount(); });
+        pc.appendChild(ptxt); pc.appendChild(del); listEl.appendChild(pc);
+      });
+    }
+    renderPrompts(); card.appendChild(listEl); card.appendChild(errEl);
+
+    const cntSpan = document.createElement('span'); cntSpan.className = 'nav-hint';
+    function updateCount() {
+      const n = vx.prompts_u.length;
+      cntSpan.textContent = `${n} / mín. ${MIN_U} · máx. ${MAX_U}`;
+      cntSpan.style.color = n >= MAX_U ? '#cc4400' : n >= MIN_U ? '#66aa55' : 'var(--muted)';
+      addBtn.disabled = n >= MAX_U;
+      addBtn.style.opacity = n >= MAX_U ? '0.4' : '1';
+    }
+    updateCount();
+
+    function addPrompt() {
+      const v = inp.value.trim(); if (!v) return;
+      if (vx.prompts_u.length >= MAX_U) { toast(`Limite de ${MAX_U} perguntas de mercado atingido.`); return; }
+      if (vx.empresa && v.toLowerCase().includes(vx.empresa.toLowerCase())) {
+        errEl.textContent = `Remova "${vx.empresa}" desta pergunta.`; errEl.style.display = 'block'; return;
+      }
+      if (vx.prompts_u.map(x=>x.toLowerCase()).includes(v.toLowerCase())) {
+        errEl.textContent = 'Pergunta duplicada.'; errEl.style.display = 'block'; return;
+      }
+      errEl.style.display = 'none'; vx.prompts_u.unshift(v); inp.value = ''; renderPrompts(); updateCount();
+    }
+    addBtn.addEventListener('click', addPrompt);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') addPrompt(); });
+
+    const nav = document.createElement('div'); nav.className = 'nav-row';
+    nav.appendChild(mkBackBtn());
+    const next = mkNextBtn('Avançar');
+    next.addEventListener('click', () => {
+      if (vx.prompts_u.length < MIN_U) { toast(`Faltam ${MIN_U - vx.prompts_u.length} perguntas de mercado (mínimo ${MIN_U}).`); return; }
+      goTo('vx_narrativa');
+    });
+    nav.appendChild(next); nav.appendChild(cntSpan); card.appendChild(nav); screen.appendChild(card);
+  }
+
+  function renderVxNarrativa(screen) {
+    const card = mkCard('Vox.IA — Imagem & Autoridade · Passo 7 de 8', '7. <strong>Pilares</strong> de Autoridade', 'Qual é a principal mensagem que você quer que a IA entregue ao falar de você?');
+
+    const info = document.createElement('div'); info.className = 'q-info';
+    info.textContent = 'Ex: "Somos a empresa que humaniza a tecnologia no agronegócio brasileiro". Descreva a narrativa que guia sua comunicação e que você quer ver refletida nas IAs.';
+    card.appendChild(info);
+
+    const { wrap, ta } = makeTextarea('Digite sua narrativa central aqui...', null, 150);
+    ta.value = vx.narrativa; ta.addEventListener('input', () => { vx.narrativa = ta.value; });
+    card.appendChild(wrap);
+
+    const nav = document.createElement('div'); nav.className = 'nav-row';
+    nav.appendChild(mkBackBtn());
+    const next = mkNextBtn('Avançar');
+    next.addEventListener('click', () => {
+      if (!vx.narrativa.trim()) { toast('Descreva a narrativa da marca.'); return; }
+      goTo('vx_finalizacao');
+    });
+    nav.appendChild(next); card.appendChild(nav); screen.appendChild(card);
+  }
+
+  function renderVxFinalizacao(screen) {
+    const card = mkCard('Vox.IA — Imagem & Autoridade · Passo 8 de 8', '8. <strong>Revisão</strong> e Envio', 'Confirme os dados abaixo antes de enviar o diagnóstico.');
+
+    const r1 = document.createElement('div'); r1.className = 'review-box';
+    r1.innerHTML = `<div class="review-title">📍 Identificação</div>
+      <div class="review-row"><span class="review-key">Sujeito:</span><span class="review-val">${vx.empresa}</span></div>
+      <div class="review-row"><span class="review-key">Tipo:</span><span class="review-val">${vx.tipo === 'porta-voz' ? 'Porta-voz / Executivo' : 'Marca / Empresa'}</span></div>
+      ${vx.site ? `<div class="review-row"><span class="review-key">Site:</span><span class="review-val">${vx.site}</span></div>` : ''}
+      <div class="review-row"><span class="review-key">Objetivos:</span><span class="review-val">${vx.objetivos.map(o=>`<span class="review-tag">${o}</span>`).join('')}</span></div>`;
+    card.appendChild(r1);
+
+    const r2 = document.createElement('div'); r2.className = 'review-box';
+    r2.innerHTML = `<div class="review-title">⚔ Ecossistema</div>
+      <div class="review-row"><span class="review-key">Concorrentes:</span><span class="review-val">${vx.concorrentes.filter(c=>c.nome).map(c=>c.nome).join(', ')}</span></div>
+      <div class="review-row"><span class="review-key">Atrib. positivos:</span><span class="review-val">${vx.atributos_pos.filter(a=>a.nome).map(a=>a.nome).join(', ')}</span></div>
+      <div class="review-row"><span class="review-key">Atrib. negativos:</span><span class="review-val">${vx.atributos_neg.filter(a=>a.nome).map(a=>a.nome).join(', ')}</span></div>`;
+    card.appendChild(r2);
+
+    const r3 = document.createElement('div'); r3.className = 'review-box';
+    const promptsBHtml = vx.prompts_b.map((p,i)=>`<div style="font-size:12px;color:var(--text);padding:5px 0;border-bottom:1px solid var(--border);line-height:1.4;"><span style="color:var(--muted);font-size:11px;margin-right:6px;">${i+1}.</span>${p}</div>`).join('');
+    const promptsUHtml = vx.prompts_u.map((p,i)=>`<div style="font-size:12px;color:var(--text);padding:5px 0;border-bottom:1px solid var(--border);line-height:1.4;"><span style="color:var(--muted);font-size:11px;margin-right:6px;">${i+1}.</span>${p}</div>`).join('');
+    r3.innerHTML = `<div class="review-title">🤖 Bateria de Testes</div>
+      <div style="margin-bottom:12px;">
+        <div class="review-key" style="margin-bottom:6px;">Institucionais (${vx.prompts_b.length}):</div>
+        <div style="max-height:140px;overflow-y:auto;border-radius:8px;">${promptsBHtml}</div>
+      </div>
+      <div>
+        <div class="review-key" style="margin-bottom:6px;">Mercado / Setor (${vx.prompts_u.length}):</div>
+        <div style="max-height:140px;overflow-y:auto;border-radius:8px;">${promptsUHtml}</div>
+      </div>`;
+    card.appendChild(r3);
+
+    card.appendChild(document.createElement('div')).className = 'divider';
+
+    const lblNu = document.createElement('div'); lblNu.className = 'section-label'; lblNu.textContent = 'Observações Finais';
+    card.appendChild(lblNu);
+    const infoNu = document.createElement('div'); infoNu.className = 'q-info';
+    infoNu.textContent = 'Algum detalhe, crise recente ou nuance não abordado? Contextos extras ajudam a evitar alucinações.';
+    card.appendChild(infoNu);
+    const { wrap: wNu, ta: taNu } = makeTextarea('Ex: Reestruturação de marca há 2 meses / Foco em investidores...', null, 80);
+    taNu.value = vx.nuances; taNu.addEventListener('input', () => { vx.nuances = taNu.value; });
+    card.appendChild(wNu);
+
+    const lblEm = document.createElement('div'); lblEm.className = 'section-label'; lblEm.style.marginTop = '16px'; lblEm.textContent = 'E-mail para contato *';
+    card.appendChild(lblEm);
+    const { wrap: wEm, ta: taEm } = makeTextarea('seuemail@empresa.com.br', null, 0, true);
+    taEm.value = vx.email; taEm.addEventListener('input', () => { vx.email = taEm.value; });
+    card.appendChild(wEm);
+
+    let lgpdOk = false;
+    const lgpdWrap = document.createElement('div'); lgpdWrap.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin:14px 0;cursor:pointer;';
+    const lgpdBox = document.createElement('div'); lgpdBox.className = 'check-box'; lgpdBox.style.cssText = 'min-width:20px;margin-top:1px;';
+    lgpdBox.innerHTML = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
+    const lgpdTxt = document.createElement('span'); lgpdTxt.style.cssText = 'font-size:12px;color:var(--sub);line-height:1.5;';
+    lgpdTxt.textContent = 'Aceito os termos de tratamento de dados sensíveis (LGPD).';
+    lgpdWrap.appendChild(lgpdBox); lgpdWrap.appendChild(lgpdTxt);
+    lgpdWrap.addEventListener('click', () => {
+      lgpdOk = !lgpdOk; lgpdBox.style.background = lgpdOk ? 'var(--orange)' : ''; lgpdBox.style.borderColor = lgpdOk ? 'var(--orange)' : '';
+      lgpdBox.querySelector('svg').style.opacity = lgpdOk ? '1' : '0';
+    });
+    card.appendChild(lgpdWrap);
+
+    const nav = document.createElement('div'); nav.className = 'nav-row';
+    nav.appendChild(mkBackBtn());
+    const btnFinalizar = document.createElement('button');
+    btnFinalizar.className = 'btn-finalizar';
+    btnFinalizar.innerHTML = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Finalizar e Enviar Briefing`;
+    btnFinalizar.addEventListener('click', () => {
+      if (!vx.email || !vx.email.includes('@')) { toast('Informe um e-mail válido.'); return; }
+      if (!lgpdOk) { toast('Aceite os termos LGPD para continuar.'); return; }
+      respostas._email = vx.email; respostas._nome = vx.empresa;
+      if (rascunhoToken) { fetch(`/api/rascunho/${rascunhoToken}`, { method:'DELETE' }).catch(()=>{}); rascunhoToken = null; try { localStorage.removeItem(RASCUNHO_LS_KEY); } catch(e) {} }
+      salvarBriefing(vx.email, vx.empresa); goTo('resultado');
+    });
+    card.appendChild(btnFinalizar);
+    const note = document.createElement('p'); note.className = 'finalizar-note';
+    note.textContent = 'Ao finalizar, seu briefing será enviado para a equipe HUB.nexus e você receberá um retorno em até 2 dias úteis.';
+    card.appendChild(note);
+    card.appendChild(nav); screen.appendChild(card);
+  }
+
+  /* ══════════════════════════════════════════════
+     VOX.IA — ANÁLISE TEMÁTICA (5 passos)
+     1. Identificação → 2. Aprofundamento → 3. Objetivos
+     4. Perguntas → 5. Revisão e envio
+  ══════════════════════════════════════════════ */
+  function renderVxtIdentificacao(screen) {
+    const card = mkCard('Vox.IA — Análise Temática · Passo 1 de 5', '1. Qual <strong>tema</strong> você quer analisar?', 'Diga qual narrativa ou assunto você quer entender como está sendo entregue pelas IAs.');
+
+    card.appendChild(mkProductIntro({
+      icon: '🎯',
+      titulo: 'Vox.IA — Análise Temática',
+      descricao: 'Avaliamos como as IAs generativas estão entregando um tema ou narrativa específica — sem focar em uma marca. Ideal para entender como o setor, uma pauta ou questão estratégica é percebida pelos modelos.',
+      bullets: [
+        'Como o tema é descrito e contextualizado pelas IAs',
+        'Quais narrativas e enquadramentos dominam as respostas',
+        'Comparação entre diferentes perspectivas sobre o tema',
+        'Identificação de lacunas e oportunidades de posicionamento',
+      ],
+      tempo: 'Preenchimento: ~5 minutos'
+    }));
+
+    const lblTema = document.createElement('div'); lblTema.className = 'section-label'; lblTema.textContent = 'Tema ou narrativa a ser analisado:';
+    const inpTema = document.createElement('input'); inpTema.className = 'dynamic-input'; inpTema.style.cssText = 'width:100%;margin-bottom:14px;';
+    inpTema.placeholder = 'Ex: Reforma Tributária, Sustentabilidade no Agronegócio, Segurança Pública...';
+    inpTema.value = vxt.tema; inpTema.addEventListener('input', () => { vxt.tema = inpTema.value; });
+    card.appendChild(lblTema); card.appendChild(inpTema);
+
+    const lblObj = document.createElement('div'); lblObj.className = 'section-label'; lblObj.textContent = 'O que você quer diagnosticar com o Vox.IA?';
+    const { wrap: wObj, ta: taObj } = makeTextarea('Ex: Queremos entender como as IAs estão contextualizando a reforma tributária e se nossa empresa aparece como referência no debate...', null, 90);
+    taObj.value = vxt.objetivo_diagnostico; taObj.addEventListener('input', () => { vxt.objetivo_diagnostico = taObj.value; });
+    card.appendChild(lblObj); card.appendChild(wObj);
+
+    const nav = document.createElement('div'); nav.className = 'nav-row';
+    nav.appendChild(mkBackBtn());
+    const next = mkNextBtn('Avançar');
+    next.addEventListener('click', () => {
+      if (!vxt.tema.trim()) { toast('Informe o tema a ser analisado.'); return; }
+      if (!vxt.objetivo_diagnostico.trim()) { toast('Explique o que você quer diagnosticar.'); return; }
+      goTo('vxt_aprofundamento');
+    });
+    nav.appendChild(next); card.appendChild(nav); screen.appendChild(card);
+  }
+
+  function renderVxtAprofundamento(screen) {
+    const card = mkCard('Vox.IA — Análise Temática · Passo 2 de 5', '2. <strong>Aprofundamento</strong> do Tema', 'Contextualize melhor o tema para direcionar a análise.');
+
+    const lbl1 = document.createElement('div'); lbl1.className = 'section-label'; lbl1.textContent = 'Por que este tema é relevante para você agora?';
+    const { wrap: w1, ta: ta1 } = makeTextarea('Ex: Estamos monitorando o debate para subsidiar nossas comunicações com o setor legislativo...', null, 100);
+    ta1.value = vxt.aprofundamento; ta1.addEventListener('input', () => { vxt.aprofundamento = ta1.value; });
+    card.appendChild(lbl1); card.appendChild(w1);
+
+    const lbl2 = document.createElement('div'); lbl2.className = 'section-label'; lbl2.textContent = 'Quais partes ou subtemas do assunto você quer analisar?';
+    const { wrap: w2, ta: ta2 } = makeTextarea('Ex: Como as IAs descrevem o impacto no setor industrial? Quem são as principais vozes citadas? Como a questão ambiental é contextualizada?', null, 100);
+    ta2.value = vxt.partes_tema; ta2.addEventListener('input', () => { vxt.partes_tema = ta2.value; });
+    card.appendChild(lbl2); card.appendChild(w2);
+
+    const nav = document.createElement('div'); nav.className = 'nav-row';
+    nav.appendChild(mkBackBtn());
+    const next = mkNextBtn('Avançar');
+    next.addEventListener('click', () => {
+      if (!vxt.aprofundamento.trim()) { toast('Explique a relevância do tema.'); return; }
+      goTo('vxt_objetivos');
+    });
+    nav.appendChild(next); card.appendChild(nav); screen.appendChild(card);
+  }
+
+  function renderVxtObjetivos(screen) {
+    const card = mkCard('Vox.IA — Análise Temática · Passo 3 de 5', '3. <strong>Objetivos</strong> da Análise', 'Selecione o que você quer descobrir com este diagnóstico.');
+    const items = [
+      { key:'Entender como o tema é entregue', desc:'Quais narrativas e enquadramentos as IAs usam para explicar o assunto.' },
+      { key:'Identificar oportunidades de posicionamento', desc:'Lacunas na cobertura do tema onde sua marca pode se inserir.' },
+      { key:'Monitorar evolução do debate', desc:'Como o tema está sendo tratado agora versus antes.' },
+      { key:'Subsidiar estratégia de comunicação', desc:'Dados para informar campanhas, releases ou posicionamentos públicos.' },
+      { key:'Benchmarking setorial', desc:'Comparar como diferentes players do setor são associados ao tema.' },
+    ];
+    const checkList = document.createElement('div'); checkList.className = 'check-list';
+    items.forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'check-item' + (vxt.objetivos.includes(item.key) ? ' checked' : '');
+      el.innerHTML = `<div class="check-box"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div><div class="check-label">${item.key}</div><div class="check-desc">${item.desc}</div></div>`;
+      el.addEventListener('click', () => {
+        const idx = vxt.objetivos.indexOf(item.key);
+        if (idx === -1) vxt.objetivos.push(item.key); else vxt.objetivos.splice(idx, 1);
+        el.classList.toggle('checked', vxt.objetivos.includes(item.key));
+      });
+      checkList.appendChild(el);
+    });
+    card.appendChild(checkList);
+    const nav = document.createElement('div'); nav.className = 'nav-row';
+    nav.appendChild(mkBackBtn());
+    const next = mkNextBtn('Avançar');
+    next.addEventListener('click', () => {
+      if (!vxt.objetivos.length) { toast('Selecione pelo menos um objetivo.'); return; }
+      goTo('vxt_prompts');
+    });
+    nav.appendChild(next); card.appendChild(nav); screen.appendChild(card);
+  }
+
+  function gerarTextoPromptTematico() {
+    const tema      = vxt.tema            || '[tema]';
+    const aprofund  = vxt.aprofundamento  || '';
+    const partes    = vxt.partes_tema     || '';
+    const objs      = (vxt.objetivos || []).filter(Boolean).join(', ') || '';
+
+    return `Você é um especialista em engenharia de prompts para análise de narrativas em IAs generativas.
+
+Preciso de ajuda para criar perguntas abertas de qualidade sobre um tema específico, para serem testadas em modelos de IA como ChatGPT, Gemini e Copilot. O objetivo é capturar como as IAs entendem e representam este tema organicamente.
+
+━━ SOBRE O TEMA ━━
+Tema: ${tema}${aprofund ? `\nContexto / aprofundamento: ${aprofund}` : ''}${partes ? `\nAspectos do tema: ${partes}` : ''}${objs ? `\nObjetivos da análise: ${objs}` : ''}
+
+━━ REGRAS OBRIGATÓRIAS ━━
+• NÃO mencione marcas, empresas ou organizações específicas nas perguntas
+• Use framing aberto: "O que", "Como", "Quais", "De que forma", "Por que"
+• PROIBIDO: perguntas indutivas ("É verdade que...?", "É correto dizer...?")
+• PROIBIDO: superlativos sem critério ("o melhor", "o mais importante")
+• Cada pergunta deve ser neutra o suficiente para qualquer IA responder livremente
+• Varie os ângulos: histórico, técnico, social, econômico, cultural
+• Termine cada pergunta com "?"
+
+━━ TAREFA ━━
+Gere 25 perguntas temáticas abertas de alta qualidade sobre "${tema}" seguindo essas regras.
+Para cada pergunta, indique em 1 linha qual ângulo ou dimensão ela explora.
+
+Formato esperado:
+1. [pergunta]
+   → Dimensão: [ângulo explorado]`;
+  }
+
+  function abrirModalGeradorTematico() {
+    const texto = gerarTextoPromptTematico();
+    const overlay = document.createElement('div'); overlay.className = 'prompt-gen-modal';
+    const box = document.createElement('div'); box.className = 'prompt-gen-box';
+
+    const header = document.createElement('div'); header.className = 'prompt-gen-header';
+    const htxt = document.createElement('div'); htxt.className = 'prompt-gen-header-text';
+    htxt.innerHTML = `<h3>🤖 Prompt de apoio — Perguntas Temáticas</h3>
+      <p>Copie, cole em qualquer IA (ChatGPT, Gemini, Copilot…) e receba 25 perguntas prontas sobre o tema.</p>`;
+    const closeBtn = document.createElement('button'); closeBtn.className = 'prompt-gen-close'; closeBtn.textContent = '×';
+    closeBtn.addEventListener('click', () => overlay.remove());
+    header.appendChild(htxt); header.appendChild(closeBtn); box.appendChild(header);
+
+    const body = document.createElement('div'); body.className = 'prompt-gen-body';
+    const lbl = document.createElement('div'); lbl.className = 'prompt-gen-label'; lbl.textContent = 'Prompt gerado com os dados do briefing:';
+    const ta = document.createElement('textarea'); ta.className = 'prompt-gen-textarea'; ta.value = texto; ta.readOnly = true;
+    body.appendChild(lbl); body.appendChild(ta); box.appendChild(body);
+
+    const footer = document.createElement('div'); footer.className = 'prompt-gen-footer';
+    const copyBtn = document.createElement('button'); copyBtn.className = 'prompt-gen-copy'; copyBtn.textContent = '📋 Copiar prompt';
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(texto).then(() => {
+        copyBtn.textContent = '✓ Copiado!'; copyBtn.classList.add('copied');
+        setTimeout(() => { copyBtn.textContent = '📋 Copiar prompt'; copyBtn.classList.remove('copied'); }, 2500);
+      });
+    });
+    const hint = document.createElement('div'); hint.className = 'prompt-gen-hint';
+    hint.textContent = 'Cole em ChatGPT, Gemini ou Copilot para receber sugestões de perguntas prontas.';
+    footer.appendChild(copyBtn); footer.appendChild(hint); box.appendChild(footer);
+
+    overlay.appendChild(box);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+  }
+
+  function renderVxtPrompts(screen) {
+    const card = mkCard('Vox.IA — Análise Temática · Passo 4 de 5', '4. <strong>Perguntas</strong> sobre o Tema', 'Adicione perguntas abertas. A IA responderá livremente — o objetivo é capturar como o tema é entendido.');
+
+    const info = document.createElement('div'); info.className = 'q-info';
+    info.innerHTML = `<strong>Dica:</strong> Use perguntas analíticas como <em>"Como ${vxt.tema || 'X'} é percebido no cenário atual?"</em> ou <em>"Quais fatores influenciam a percepção sobre ${vxt.tema || 'Y'}?"</em>. Evite perguntas genéricas como "O que você sabe sobre...".`;
+    card.appendChild(info);
+
+    const genBtn_t = document.createElement('button'); genBtn_t.className = 'prompt-gen-btn';
+    genBtn_t.innerHTML = '🤖 Não sabe por onde começar? Gere um prompt de apoio para sua IA favorita';
+    genBtn_t.addEventListener('click', () => abrirModalGeradorTematico());
+    card.appendChild(genBtn_t);
+    card.appendChild(mkBestPracticeCards('tematico', vxt.tema));
+
+    const addRow = document.createElement('div'); addRow.className = 'prompt-add-row';
+    const inp = document.createElement('input'); inp.placeholder = `Ex: Como ${vxt.tema || 'este tema'} é percebido no Brasil atualmente?`;
+    const addBtn = document.createElement('button'); addBtn.textContent = '+ Adicionar';
+    addRow.appendChild(inp); addRow.appendChild(addBtn); card.appendChild(addRow);
+
+    const listEl = document.createElement('div');
+    const errEl = document.createElement('div'); errEl.className = 'error-msg'; errEl.style.display = 'none';
+
+    function renderPrompts() {
+      listEl.innerHTML = '';
+      vxt.prompts.forEach((p, i) => {
+        const pc = document.createElement('div'); pc.className = 'prompt-card';
+        const ptxt = document.createElement('p'); ptxt.textContent = p;
+        const del = document.createElement('button'); del.className = 'prompt-del'; del.textContent = '×';
+        del.addEventListener('click', () => { vxt.prompts.splice(i, 1); renderPrompts(); updateCount(); });
+        pc.appendChild(ptxt); pc.appendChild(del); listEl.appendChild(pc);
+      });
+    }
+    renderPrompts(); card.appendChild(listEl); card.appendChild(errEl);
+
+    const cntSpan = document.createElement('span'); cntSpan.className = 'nav-hint';
+    function updateCount() { cntSpan.textContent = `${vxt.prompts.length}/5 mínimo`; }
+    updateCount();
+
+    function addPrompt() {
+      const v = inp.value.trim(); if (!v) return;
+      if (vxt.prompts.map(x=>x.toLowerCase()).includes(v.toLowerCase())) { errEl.textContent = 'Pergunta duplicada.'; errEl.style.display = 'block'; return; }
+      errEl.style.display = 'none'; vxt.prompts.unshift(v); inp.value = ''; renderPrompts(); updateCount();
+    }
+    addBtn.addEventListener('click', addPrompt); inp.addEventListener('keydown', e => { if (e.key === 'Enter') addPrompt(); });
+
+    const nav = document.createElement('div'); nav.className = 'nav-row';
+    nav.appendChild(mkBackBtn());
+    const next = mkNextBtn('Avançar');
+    next.addEventListener('click', () => {
+      if (vxt.prompts.length < 5) { toast(`Adicione mais ${5 - vxt.prompts.length} perguntas.`); return; }
+      goTo('vxt_finalizacao');
+    });
+    nav.appendChild(next); nav.appendChild(cntSpan); card.appendChild(nav); screen.appendChild(card);
+  }
+
+  function renderVxtFinalizacao(screen) {
+    const card = mkCard('Vox.IA — Análise Temática · Passo 5 de 5', '5. <strong>Revisão</strong> e Envio', 'Confirme os dados antes de enviar o diagnóstico.');
+
+    const r1 = document.createElement('div'); r1.className = 'review-box';
+    r1.innerHTML = `<div class="review-title">🎯 Tema</div>
+      <div class="review-row"><span class="review-key">Tema:</span><span class="review-val">${vxt.tema}</span></div>
+      <div class="review-row"><span class="review-key">Objetivos:</span><span class="review-val">${vxt.objetivos.map(o=>`<span class="review-tag">${o}</span>`).join('')}</span></div>
+      <div class="review-row"><span class="review-key">Perguntas:</span><span class="review-val">${vxt.prompts.length} pergunta(s)</span></div>`;
+
+    // Lista as perguntas individualmente
+    if (vxt.prompts.length > 0) {
+      const promptsList = document.createElement('div');
+      promptsList.style.cssText = 'margin-top:10px;border-top:1px solid rgba(0,0,0,0.06);padding-top:10px;display:flex;flex-direction:column;gap:6px;';
+      vxt.prompts.forEach((p, i) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:8px;align-items:flex-start;font-size:12px;line-height:1.5;color:var(--text);';
+        row.innerHTML = `<span style="color:var(--orange);font-weight:700;flex-shrink:0;min-width:18px;">${i+1}.</span><span>${p}</span>`;
+        promptsList.appendChild(row);
+      });
+      r1.appendChild(promptsList);
+    }
+
+    card.appendChild(r1);
+
+    card.appendChild(document.createElement('div')).className = 'divider';
+    const lblNu = document.createElement('div'); lblNu.className = 'section-label'; lblNu.textContent = 'Observações Finais';
+    card.appendChild(lblNu);
+    const { wrap: wNu, ta: taNu } = makeTextarea('Ex: Contexto adicional, sensibilidades políticas do tema...', null, 80);
+    taNu.value = vxt.nuances; taNu.addEventListener('input', () => { vxt.nuances = taNu.value; });
+    card.appendChild(wNu);
+
+    const lblEm = document.createElement('div'); lblEm.className = 'section-label'; lblEm.style.marginTop = '16px'; lblEm.textContent = 'E-mail para contato *';
+    card.appendChild(lblEm);
+    const { wrap: wEm, ta: taEm } = makeTextarea('seuemail@empresa.com.br', null, 0, true);
+    taEm.value = vxt.email; taEm.addEventListener('input', () => { vxt.email = taEm.value; });
+    card.appendChild(wEm);
+
+    let lgpdOk = false;
+    const lgpdWrap = document.createElement('div'); lgpdWrap.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin:14px 0;cursor:pointer;';
+    const lgpdBox = document.createElement('div'); lgpdBox.className = 'check-box'; lgpdBox.style.cssText = 'min-width:20px;margin-top:1px;';
+    lgpdBox.innerHTML = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
+    const lgpdTxt = document.createElement('span'); lgpdTxt.style.cssText = 'font-size:12px;color:var(--sub);line-height:1.5;';
+    lgpdTxt.textContent = 'Aceito os termos de tratamento de dados sensíveis (LGPD).';
+    lgpdWrap.appendChild(lgpdBox); lgpdWrap.appendChild(lgpdTxt);
+    lgpdWrap.addEventListener('click', () => {
+      lgpdOk = !lgpdOk; lgpdBox.style.background = lgpdOk ? 'var(--orange)' : ''; lgpdBox.style.borderColor = lgpdOk ? 'var(--orange)' : '';
+      lgpdBox.querySelector('svg').style.opacity = lgpdOk ? '1' : '0';
+    });
+    card.appendChild(lgpdWrap);
+
+    const nav = document.createElement('div'); nav.className = 'nav-row';
+    nav.appendChild(mkBackBtn());
+    const btnFinalizar = document.createElement('button');
+    btnFinalizar.className = 'btn-finalizar';
+    btnFinalizar.innerHTML = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Finalizar e Enviar Briefing`;
+    btnFinalizar.addEventListener('click', () => {
+      if (!vxt.email || !vxt.email.includes('@')) { toast('Informe um e-mail válido.'); return; }
+      if (!lgpdOk) { toast('Aceite os termos LGPD para continuar.'); return; }
+      respostas._email = vxt.email; respostas._nome = vxt.tema;
+      respostas.produto = 'voxia_tema'; respostas.vxt = vxt;
+      if (rascunhoToken) { fetch(`/api/rascunho/${rascunhoToken}`, { method:'DELETE' }).catch(()=>{}); rascunhoToken = null; try { localStorage.removeItem(RASCUNHO_LS_KEY); } catch(e) {} }
+      salvarBriefing(vxt.email, vxt.tema); goTo('resultado');
+    });
+    card.appendChild(btnFinalizar);
+    const note = document.createElement('p'); note.className = 'finalizar-note';
+    note.textContent = 'Ao finalizar, seu briefing será enviado para a equipe HUB.nexus e você receberá um retorno em até 2 dias úteis.';
+    card.appendChild(note);
+    card.appendChild(nav); screen.appendChild(card);
+  }
+
+  /* ══════════════════════════════════════════════
+     OUTROS PRODUTOS
+  ══════════════════════════════════════════════ */
+  function renderProdMapaNarrativas(screen) {
+    const card = mkCard('Mapa de Narrativas — Briefing', 'Mapeamento de <strong>Narrativas</strong>', 'Forneça as informações abaixo para direcionarmos a análise.');
+    card.appendChild(mkProductIntro({
+      icon: '🗺️',
+      titulo: 'Mapa de Narrativas',
+      descricao: 'Identificamos e analisamos os discursos que circulam na mídia e nas redes sobre a sua marca ou tema, revelando narrativas dominantes, emergentes e hostis.',
+      bullets: ['Mapeamento de narrativas em imprensa e redes sociais','Análise de sentimento e contexto competitivo','Identificação de porta-vozes e formadores de opinião','Relatório com recomendações de posicionamento'],
+      tempo: '~4 minutos'
+    }));
+
+    [
+      ['Marca ou tema a mapear', 'mn_marca', 'Ex: Reforma Tributária, Marca XPTO'],
+      ['Período de análise', 'mn_periodo', 'Ex: Últimos 3 meses, Jan–Mar 2026'],
+      ['Narrativas-chave que você quer monitorar', 'mn_narrativas', 'Ex: narrativa de crise, posicionamento sustentável...'],
+    ].forEach(([lbl, key, ph]) => {
+      const d = document.createElement('div'); d.className = 'section-label'; d.style.marginTop='16px'; d.textContent = lbl;
+      card.appendChild(d); card.appendChild(makeTextarea(ph, key, 70).wrap);
+    });
+
+    // Canais / redes sociais
+    const lblCanais = document.createElement('div'); lblCanais.className = 'section-label'; lblCanais.style.marginTop = '16px'; lblCanais.textContent = 'Redes sociais e links a analisar (opcional):';
+    card.appendChild(lblCanais);
+    const redesInfo = document.createElement('div'); redesInfo.className = 'q-hint'; redesInfo.style.marginBottom = '12px';
+    redesInfo.textContent = 'Indique perfis ou páginas específicas para incluir na análise.';
+    card.appendChild(redesInfo);
+    const mnSocialValidator = renderSocialLinks(card, 'mn_social_links', null, true); // true = validate URLs
+
+    // Imprensa
+    const lblImp = document.createElement('div'); lblImp.className = 'section-label'; lblImp.textContent = 'Incluir análise de imprensa? *';
+    card.appendChild(lblImp);
+    const optsImp = mkOptions([
+      { key:'A', label:'Sim, incluir cobertura de imprensa', desc:'Portais, jornais e revistas' },
+      { key:'B', label:'Apenas redes sociais', desc:'Instagram, X, LinkedIn, TikTok e outros' },
+      { key:'C', label:'Ambos — imprensa e redes', desc:'Visão 360°' },
+    ], 'mn_imprensa', () => {});
+    card.appendChild(optsImp);
+
+    // Formato
+    const lblFmt = document.createElement('div'); lblFmt.className = 'section-label'; lblFmt.textContent = 'Formato preferido do produto: *';
+    card.appendChild(lblFmt);
+    const optsFmt = mkOptions([
+      { key:'A', label:'Executivo e direto', desc:'Síntese com os principais pontos — leitura rápida' },
+      { key:'B', label:'Completo e aprofundado', desc:'Análise detalhada com contexto e exemplos' },
+    ], 'mn_formato', () => {});
+    card.appendChild(optsFmt);
+
+    // Apresentação
+    const lblApres = document.createElement('div'); lblApres.className = 'section-label'; lblApres.textContent = 'Prefere apresentação oral? *';
+    card.appendChild(lblApres);
+    const optsApres = mkOptions([
+      { key:'A', label:'Sim, apresentação oral + documento', desc:'Reunião de apresentação dos achados' },
+      { key:'B', label:'Apenas o documento de análise', desc:'Envio do relatório sem reunião' },
+    ], 'mn_apresentacao', () => {});
+    card.appendChild(optsApres);
+
+    addBriefingNav(card, screen, 'mn_marca', 'mapa_narrativas', () => {
+      if (!respostas.mn_imprensa) { toast('Selecione se deseja incluir análise de imprensa.'); return false; }
+      if (!respostas.mn_formato) { toast('Selecione o formato preferido do produto.'); return false; }
+      if (!respostas.mn_apresentacao) { toast('Indique se prefere apresentação oral.'); return false; }
+      if (!mnSocialValidator.validate()) { toast('Verifique os links das redes sociais — algum parece inválido.'); return false; }
+      return true;
+    });
+  }
+
+  function renderProdMapaInfluenciadores(screen) {
+    const card = mkCard('Mapa de Influenciadores — Briefing', 'Mapa de <strong>Influenciadores</strong>', 'Identifique os criadores certos para sua marca ou estratégia.');
+    card.appendChild(mkProductIntro({
+      icon: '👥',
+      titulo: 'Mapa de Influenciadores',
+      descricao: 'Mapeamos influenciadores relevantes para a sua marca, avaliando alcance, engajamento, aderência temática e riscos reputacionais.',
+      bullets: ['Mapeamento de influenciadores por nicho e plataforma','Análise de alcance, engajamento e aderência à marca','Scoring de risco reputacional por perfil','Recomendações para parcerias estratégicas'],
+      tempo: '~4 minutos'
+    }));
+
+    [
+      ['Marca ou segmento', 'mi_marca', 'Ex: Saúde e bem-estar, Marca XPTO'],
+      ['Categorias de influenciadores de interesse', 'mi_categorias', 'Ex: lifestyle, saúde, negócios, sustentabilidade...'],
+      ['Perfil de audiência desejado', 'mi_audiencia', 'Ex: 25–35 anos, classe A/B, interessados em saúde'],
+      ['Objetivo da análise ou parceria', 'mi_objetivo', 'Ex: lançamento de produto, benchmarking, estratégia always-on'],
+    ].forEach(([lbl, key, ph]) => {
+      const d = document.createElement('div'); d.className = 'section-label'; d.style.marginTop='16px'; d.textContent = lbl;
+      card.appendChild(d); card.appendChild(makeTextarea(ph, key, 70).wrap);
+    });
+
+    const lblPlat = document.createElement('div'); lblPlat.className = 'section-label'; lblPlat.textContent = 'Plataformas prioritárias (marque todas que se aplicam):';
+    card.appendChild(lblPlat);
+    const platOpts = ['Instagram','TikTok','YouTube','LinkedIn','X (Twitter)','Facebook','Kwai'].map((p, i) => ({ key: String.fromCharCode(65+i), label: p }));
+    // Multi-select via check-list
+    const checkPlat = document.createElement('div'); checkPlat.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;';
+    respostas.mi_plataformas_arr = respostas.mi_plataformas_arr || [];
+    platOpts.forEach(opt => {
+      const btn = document.createElement('button');
+      const sel = respostas.mi_plataformas_arr.includes(opt.label);
+      btn.style.cssText = `padding:7px 14px;border-radius:20px;font-size:12px;cursor:pointer;font-family:inherit;transition:all .2s;background:${sel?'var(--orange)':'rgba(255,255,255,0.60)'};border:1px solid ${sel?'var(--orange)':'var(--border)'};color:${sel?'#fff':'var(--sub)'};`;
+      btn.textContent = opt.label;
+      btn.addEventListener('click', () => {
+        const idx = respostas.mi_plataformas_arr.indexOf(opt.label);
+        if (idx === -1) respostas.mi_plataformas_arr.push(opt.label); else respostas.mi_plataformas_arr.splice(idx, 1);
+        btn.style.background = respostas.mi_plataformas_arr.includes(opt.label) ? 'var(--orange)' : 'rgba(255,255,255,0.60)';
+        btn.style.borderColor = respostas.mi_plataformas_arr.includes(opt.label) ? 'var(--orange)' : 'var(--border)';
+        btn.style.color = respostas.mi_plataformas_arr.includes(opt.label) ? '#fff' : 'var(--sub)';
+      });
+      checkPlat.appendChild(btn);
+    });
+    card.appendChild(checkPlat);
+
+    // Links de redes
+    const lblLinks = document.createElement('div'); lblLinks.className = 'section-label'; lblLinks.textContent = 'Links dos perfis que você já acompanha (opcional):';
+    card.appendChild(lblLinks);
+    const miSocialValidator = renderSocialLinks(card, 'mi_social_links', null, true);
+
+    // Dashboard?
+    const lblDash = document.createElement('div'); lblDash.className = 'section-label'; lblDash.textContent = 'Formato de entrega: *';
+    card.appendChild(lblDash);
+    const optsDash = mkOptions([
+      { key:'A', label:'Dashboard interativo', desc:'Visualização online dos dados com filtros' },
+      { key:'B', label:'Documento / Apresentação', desc:'PDF ou PPT com os achados' },
+      { key:'C', label:'Ambos', desc:'Dashboard + documento de análise' },
+    ], 'mi_formato', () => {});
+    card.appendChild(optsDash);
+
+    const lblApres = document.createElement('div'); lblApres.className = 'section-label'; lblApres.textContent = 'Quer apresentação oral dos principais achados? *';
+    card.appendChild(lblApres);
+    const optsApres = mkOptions([
+      { key:'A', label:'Sim, apresentação oral + documento', desc:'Reunião para apresentar os destaques' },
+      { key:'B', label:'Apenas o documento', desc:'Entrega do relatório sem reunião' },
+    ], 'mi_apresentacao', () => {});
+    card.appendChild(optsApres);
+
+    addBriefingNav(card, screen, 'mi_marca', 'mapa_influenciadores', () => {
+      if (!respostas.mi_plataformas_arr?.length) { toast('Selecione ao menos uma plataforma prioritária.'); return false; }
+      if (!respostas.mi_formato) { toast('Selecione o formato de entrega.'); return false; }
+      if (!respostas.mi_apresentacao) { toast('Indique se prefere apresentação oral.'); return false; }
+      if (!miSocialValidator.validate()) { toast('Verifique os links das redes sociais — algum parece inválido.'); return false; }
+      return true;
+    });
+  }
+
+  function renderProdNetnografia(screen) {
+    const card = mkCard('Netnografia — Briefing', 'Mergulho em <strong>Comunidades Digitais</strong>', 'Análise qualitativa do comportamento e percepções de audiências online.');
+    card.appendChild(mkProductIntro({
+      icon: '🔬',
+      titulo: 'Netnografia',
+      descricao: 'Analisamos comunidades digitais para entender como grupos específicos percebem, falam e se comportam em relação à sua marca ou tema — revelando percepções latentes que não aparecem em métricas tradicionais.',
+      bullets: ['Imersão em fóruns, grupos e comunidades digitais','Identificação de percepções, valores e linguagem do público','Mapeamento de barreiras, críticas e pontos de amor','Relatório qualitativo com insights estratégicos'],
+      tempo: '~4 minutos'
+    }));
+
+    [
+      ['Marca ou tema a pesquisar', 'net_tema', 'Ex: Marca XPTO, consumo consciente, fintech'],
+      ['Questões ou hipóteses centrais', 'net_hipoteses', 'Ex: Como o público percebe a embalagem? Existe resistência à marca?'],
+      ['Segmento ou perfil da comunidade', 'net_perfil', 'Ex: jovens adultos urbanos, mães de primeira viagem, investidores PJ'],
+      ['Objetivo da netnografia', 'net_objetivo', 'Ex: entender barreiras de adoção, mapear percepções latentes...'],
+    ].forEach(([lbl, key, ph]) => {
+      const d = document.createElement('div'); d.className = 'section-label'; d.style.marginTop='16px'; d.textContent = lbl;
+      card.appendChild(d); card.appendChild(makeTextarea(ph, key, 80).wrap);
+    });
+
+    // Redes sociais com links
+    const lblRedes = document.createElement('div'); lblRedes.className = 'section-label'; lblRedes.textContent = 'Comunidades e redes sociais a analisar:';
+    card.appendChild(lblRedes);
+    const infoRedes = document.createElement('div'); infoRedes.className = 'q-info';
+    infoRedes.textContent = 'Informe links de grupos, comunidades, subreddits, páginas ou perfis específicos onde a discussão acontece.';
+    card.appendChild(infoRedes);
+    // For netnografia, we allow adding custom platforms entirely
+    respostas.net_custom_platforms = respostas.net_custom_platforms || [];
+    const netPredefined = [
+      { label:'Reddit / Fórum', placeholder:'https://reddit.com/r/...' },
+      { label:'Grupo Facebook', placeholder:'https://facebook.com/groups/...' },
+      { label:'Instagram', placeholder:'https://instagram.com/...' },
+      { label:'YouTube', placeholder:'https://youtube.com/...' },
+    ];
+    const netSocialContainer = document.createElement('div');
+    card.appendChild(netSocialContainer);
+
+    function renderNetSocial() {
+      netSocialContainer.innerHTML = '';
+
+      // Predefined + custom platforms
+      const allPlatforms = [
+        ...netPredefined,
+        ...respostas.net_custom_platforms.map(p => ({ label: p, placeholder: 'https://...' }))
+      ];
+      renderSocialLinks(netSocialContainer, 'net_social_links', allPlatforms, true);
+
+      // Add custom platform
+      const addPlatRow = document.createElement('div');
+      addPlatRow.style.cssText = 'display:flex;gap:8px;margin-top:6px;margin-bottom:16px;';
+      const platInp = document.createElement('input');
+      platInp.className = 'social-link-inp';
+      platInp.placeholder = 'Nome da plataforma (ex: TikTok, Discord, Kwai...)';
+      platInp.style.maxWidth = '280px';
+      const platBtn = document.createElement('button');
+      platBtn.style.cssText = 'padding:7px 14px;background:hsla(var(--theme-h),90%,50%,0.08);border:1px dashed hsla(var(--theme-h),90%,50%,0.30);border-radius:8px;font-size:12px;color:var(--orange);cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .2s;';
+      platBtn.textContent = '+ Outra plataforma';
+      platBtn.addEventListener('click', () => {
+        const v = platInp.value.trim();
+        if (!v) { toast('Informe o nome da plataforma.'); return; }
+        if (respostas.net_custom_platforms.includes(v) || netPredefined.find(p=>p.label===v)) { toast('Plataforma já adicionada.'); return; }
+        respostas.net_custom_platforms.push(v);
+        platInp.value = '';
+        renderNetSocial();
+      });
+      addPlatRow.appendChild(platInp); addPlatRow.appendChild(platBtn);
+      netSocialContainer.appendChild(addPlatRow);
+    }
+    renderNetSocial();
+
+    addBriefingNav(card, screen, 'net_tema', 'netnografia', () => {
+      // At least one valid link required for netnografia
+      const links = respostas.net_social_links || {};
+      const allLinks = Object.values(links).flat().filter(v => v && v.trim());
+      if (!allLinks.length) { toast('Informe ao menos um link de comunidade ou rede social.'); return false; }
+      // Validate all filled links
+      const invalid = allLinks.find(v => !isValidUrl(v.trim()));
+      if (invalid) { toast(`Link inválido: "${invalid}" — deve começar com https://`); return false; }
+      return true;
+    });
+  }
+
+  // Social links renderer (reusável)
+  function isValidUrl(val) {
+    const v = val.trim();
+    if (!v) return true; // empty is ok (optional)
+    // Must start with http:// or https://
+    if (!/^https?:\/\//i.test(v)) return false;
+    try { new URL(v); return true; } catch(e) { return false; }
+  }
+
+  function renderSocialLinks(card, stateKey, customLinks, validateUrls) {
+    // stateKey stores: { 'Instagram': ['url1', 'url2'], 'LinkedIn': ['url1'], ... }
+    respostas[stateKey] = respostas[stateKey] || {};
+    const defaults = customLinks || [
+      { label:'Instagram', placeholder:'https://instagram.com/...' },
+      { label:'LinkedIn', placeholder:'https://linkedin.com/company/...' },
+      { label:'X / Twitter', placeholder:'https://x.com/...' },
+      { label:'Facebook', placeholder:'https://facebook.com/...' },
+      { label:'YouTube', placeholder:'https://youtube.com/...' },
+    ];
+
+    const wrap = document.createElement('div'); wrap.style.marginBottom = '20px';
+
+    defaults.forEach(item => {
+      // Migrate old string format to array
+      if (typeof respostas[stateKey][item.label] === 'string') {
+        respostas[stateKey][item.label] = respostas[stateKey][item.label]
+          ? [respostas[stateKey][item.label]] : [''];
+      }
+      if (!respostas[stateKey][item.label]) respostas[stateKey][item.label] = [''];
+
+      const groupEl = document.createElement('div');
+      groupEl.style.marginBottom = '10px';
+
+      function renderGroup() {
+        groupEl.innerHTML = '';
+        const arr = respostas[stateKey][item.label];
+        arr.forEach((val, idx) => {
+          const row = document.createElement('div'); row.className = 'social-link-row';
+          row.style.marginBottom = '4px';
+          const tag = document.createElement('div'); tag.className = 'social-platform-tag';
+          tag.textContent = idx === 0 ? item.label : '';
+          tag.style.opacity = idx === 0 ? '1' : '0';
+
+          const inp = document.createElement('input'); inp.className = 'social-link-inp';
+          inp.placeholder = item.placeholder; inp.value = val;
+          inp.addEventListener('input', () => {
+            respostas[stateKey][item.label][idx] = inp.value;
+            if (validateUrls && inp.value.trim() && !isValidUrl(inp.value.trim())) {
+              inp.style.borderColor = 'rgba(255,60,0,0.45)';
+              inp.title = 'Insira um link válido (ex: https://...)';
+            } else {
+              inp.style.borderColor = '';
+              inp.title = '';
+            }
+          });
+
+          row.appendChild(tag); row.appendChild(inp);
+
+          // Remove button (only if more than 1)
+          if (arr.length > 1) {
+            const del = document.createElement('button');
+            del.style.cssText = 'width:26px;height:26px;border-radius:6px;background:rgba(255,60,0,0.07);border:1px solid rgba(255,60,0,0.15);color:#cc3300;font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:inherit;';
+            del.textContent = '×';
+            del.addEventListener('click', () => { respostas[stateKey][item.label].splice(idx, 1); renderGroup(); });
+            row.appendChild(del);
+          }
+
+          groupEl.appendChild(row);
+        });
+
+        // "+ Adicionar" per platform
+        const addBtn = document.createElement('button');
+        addBtn.style.cssText = 'margin-left:98px;padding:3px 10px;background:hsla(var(--theme-h),90%,50%,0.06);border:1px dashed hsla(var(--theme-h),90%,50%,0.25);border-radius:6px;font-size:11px;color:var(--orange);cursor:pointer;font-family:inherit;transition:all .2s;';
+        addBtn.textContent = '+ Adicionar outro ' + item.label;
+        addBtn.onmouseenter = () => { addBtn.style.background = 'hsla(var(--theme-h),90%,50%,0.12)'; };
+        addBtn.onmouseleave = () => { addBtn.style.background = 'hsla(var(--theme-h),90%,50%,0.06)'; };
+        addBtn.addEventListener('click', () => { respostas[stateKey][item.label].push(''); renderGroup(); });
+        groupEl.appendChild(addBtn);
+      }
+
+      renderGroup();
+      wrap.appendChild(groupEl);
+    });
+
+    card.appendChild(wrap);
+
+    // Return a validate function callers can use
+    return {
+      validate: () => {
+        if (!validateUrls) return true;
+        let ok = true;
+        defaults.forEach(item => {
+          (respostas[stateKey][item.label] || []).forEach(val => {
+            if (val.trim() && !isValidUrl(val.trim())) ok = false;
+          });
+        });
+        return ok;
+      }
+    };
+  }
+
+  function addBriefingNav(card, screen, requiredKey, produtoId, extraValidator) {
+    const nav = document.createElement('div'); nav.className = 'nav-row';
+    nav.appendChild(mkBackBtn());
+    const next = mkNextBtn('Avançar');
+    next.addEventListener('click', () => {
+      if (!respostas[requiredKey]?.trim()) { toast('Preencha pelo menos o campo principal.'); return; }
+      if (extraValidator && extraValidator() === false) return;
+      respostas.trilha = produtoId;
+      goTo('captura_email');
+    });
+    nav.appendChild(next); card.appendChild(nav); screen.appendChild(card);
+  }
+
+  /* ══════════════════════════════════════════════
+     CAPTURA EMAIL (trilhas normais)
+  ══════════════════════════════════════════════ */
+  function renderCapturaEmail(screen) {
+    const card = mkCard('Quase lá! 🎉', 'Para onde enviamos sua <strong>recomendação personalizada</strong>?', 'Seus dados são confidenciais e usados apenas para personalizar nossa proposta.');
+    const { wrap: w1, ta: nome } = makeTextarea('Seu nome completo', null, 0, true);
+    nome.value = respostas._nome || ''; nome.addEventListener('input', () => { respostas._nome = nome.value; });
+    const { wrap: w2, ta: email } = makeTextarea('Seu e-mail corporativo', null, 0, true);
+    email.value = respostas._email || ''; email.addEventListener('input', () => { respostas._email = email.value; });
+    card.appendChild(w1); card.appendChild(w2);
+    const lock = document.createElement('p'); lock.style.cssText = 'font-size:11px;color:var(--muted);margin:12px 0 20px;text-align:center;';
+    lock.textContent = '🔒 Seus dados não serão compartilhados com terceiros.';
+    card.appendChild(lock);
+
+    // Botão Finalizar destacado
+    const btnFinalizar = document.createElement('button');
+    btnFinalizar.className = 'btn-finalizar';
+    btnFinalizar.innerHTML = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Finalizar e Enviar Briefing`;
+    btnFinalizar.addEventListener('click', () => {
+      if (!respostas._email || !respostas._email.includes('@')) { toast('⚠️ Digite um e-mail válido.'); return; }
+      salvarBriefing(respostas._email, respostas._nome); goTo('resultado');
+    });
+    card.appendChild(btnFinalizar);
+    const note = document.createElement('p'); note.className = 'finalizar-note';
+    note.textContent = 'Ao finalizar, seu briefing será enviado para a equipe HUB.nexus e você receberá um retorno em até 2 dias úteis.';
+    card.appendChild(note);
+
+    const nav = document.createElement('div'); nav.className = 'nav-row'; nav.style.marginTop = '16px';
+    nav.appendChild(mkBackBtn());
+    card.appendChild(nav);
+    screen.appendChild(card);
+  }
+
+  /* ══════════════════════════════════════════════
+     RESULTADO
+  ══════════════════════════════════════════════ */
+  function renderResultado(screen) {
+    document.getElementById('progressFill').style.width = '100%';
+    const card = document.createElement('div'); card.className = 'result-card';
+    card.innerHTML = `
+      <div class="result-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div class="result-eyebrow">Briefing enviado com sucesso</div>
+      <div class="result-title">Recebemos seu<br><strong>diagnóstico!</strong></div>
+      <div class="result-body">Nossa equipe vai analisar suas respostas e entrar em contato em até <strong>2 dias úteis</strong> com a proposta personalizada.</div>
+      <div class="result-box">
+        <div class="result-box-title">Próximos passos</div>
+        <div class="result-points">
+          <div class="result-point"><div class="rp-dot"></div><span>Suas respostas foram salvas com segurança no nosso sistema</span></div>
+          <div class="result-point"><div class="rp-dot"></div><span>Um especialista da equipe HUB.nexus revisará o briefing</span></div>
+          <div class="result-point"><div class="rp-dot"></div><span>Você receberá nossa proposta personalizada em breve</span></div>
+        </div>
+      </div>
+      <div class="result-footer">Dúvidas? <a href="mailto:contato@nexus.fsb.com.br">contato@nexus.fsb.com.br</a></div>`;
+    screen.appendChild(card);
+  }
+
+  /* ══════════════════════════════════════════════
+     SALVAR NO D1
+  ══════════════════════════════════════════════ */
+  async function salvarBriefing(email, nome) {
+    const TITULOS = {
+      'voxia_imagem': 'Vox.IA — Imagem & Autoridade',
+      'voxia_tema':   'Vox.IA — Análise Temática',
+      'mapa_narrativas': 'Mapa de Narrativas',
+      'mapa_influenciadores': 'Mapa de Influenciadores',
+      'netnografia': 'Netnografia',
+    };
+
+    // Determine effective product — in errata mode produtoParam is null,
+    // so we fall back to what was stored in respostas when the briefing was first created.
+    const produtoEfetivo = produtoParam
+      || respostas.produto
+      || (respostas.tipo_vox === 'imagem' ? 'voxia_imagem' : null)
+      || (respostas.tipo_vox === 'tema'   ? 'voxia_tema'   : null);
+
+    // In errata mode, vx/vxt are already populated from init() restore.
+    // Use the stored tipo_vox to decide which object to serialize.
+    const tipoVox = respostas.tipo_vox || (vxt.tema ? 'tema' : vx.empresa ? 'imagem' : null);
+    const isVoxTema   = produtoEfetivo === 'voxia_tema'   || tipoVox === 'tema';
+    const isVoxImagem = produtoEfetivo === 'voxia_imagem' || tipoVox === 'imagem';
+
+    const titulo = TITULOS[produtoEfetivo]
+      || (isVoxImagem ? 'Vox.IA — Imagem & Autoridade'
+        : isVoxTema   ? 'Vox.IA — Análise Temática'
+        : { imprensa:'Monitoramento de Imprensa', redes:'Inteligência de Redes Sociais',
+            diagnostico:'Diagnóstico Especial', bi:'Business Intelligence' }[respostas.trilha]
+        || 'Diagnóstico Estratégico');
+
+    let dadosRespostas;
+    if (isVoxTema) {
+      dadosRespostas = {
+        tema: vxt.tema, objetivo_diagnostico: vxt.objetivo_diagnostico,
+        aprofundamento: vxt.aprofundamento, partes_tema: vxt.partes_tema,
+        objetivos: vxt.objetivos, prompts: vxt.prompts, nuances: vxt.nuances,
+        produto: 'voxia_tema', tipo_vox: 'tema',
+      };
+    } else if (isVoxImagem) {
+      dadosRespostas = {
+        tipo: vx.tipo, empresa: vx.empresa, site: vx.site,
+        objetivo_diagnostico: vx.objetivo_diagnostico,
+        objetivos: vx.objetivos, narrativa: vx.narrativa,
+        concorrentes: vx.concorrentes.filter(c => c.nome),
+        atributos_pos: vx.atributos_pos.filter(a => a.nome),
+        atributos_neg: vx.atributos_neg.filter(a => a.nome),
+        prompts_b: vx.prompts_b, prompts_u: vx.prompts_u,
+        nuances: vx.nuances,
+        produto: 'voxia_imagem', tipo_vox: 'imagem',
+      };
+    } else {
+      // Generic / other products — just send respostas as-is
+      dadosRespostas = { ...respostas, produto: produtoEfetivo || respostas.produto };
+    }
+
+    const payload = {
+      nome:         nome || (email ? email.split('@')[0] : 'Cliente'),
+      email:        (email || '').toLowerCase().trim(),
+      recomendacao: titulo,
+      respostas:    dadosRespostas,
+    };
+
+    try {
+      const method = isErrataMode ? 'PUT' : 'POST';
+      const url    = isErrataMode ? `/api/briefing/${briefingId}` : '/api/briefing';
+      // In errata mode, send which fields were corrected so the API
+      // can build the historico snapshot even if errata was already cleared in D1
+      const body   = isErrataMode
+        ? { ...payload, errata: {}, lido: false, _errata_save: true, _campos_corrigidos: errataSequence }
+        : payload;
+
+
+      const resp = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!resp.ok) { const err = await resp.json().catch(()=>({})); console.warn('[salvarBriefing] error:', err); }
+    } catch(e) { console.warn('[salvarBriefing] fetch error:', e); }
+  }
+
+  /* ── RASCUNHO: salva/restaura via D1 com token persistente ── */
+  let rascunhoToken = null; // token do rascunho atual
+  const RASCUNHO_LS_KEY = 'hub_rascunho_token'; // localStorage p/ lembrar o token
+
+  function buildEstado() {
+    return {
+      current,
+      navHistory,
+      respostas: JSON.parse(JSON.stringify(respostas)),
+      vx:  JSON.parse(JSON.stringify(vx)),
+      vxt: JSON.parse(JSON.stringify(vxt)),
+      produtoParam,
+    };
+  }
+
+  function aplicarEstado(estado) {
+    if (!estado) return false;
+    current     = estado.current     || 'abertura';
+    navHistory  = estado.navHistory  || [];
+    respostas   = estado.respostas   || {};
+    if (estado.vx)  Object.assign(vx,  estado.vx);
+    if (estado.vxt) Object.assign(vxt, estado.vxt);
+    if (estado.produtoParam) produtoParam = estado.produtoParam;
+    return true;
+  }
+
+  async function salvarRascunho() {
+    const btn = document.getElementById('btnSalvarRascunho');
+    if (btn) { btn.textContent = '⏳ Salvando...'; btn.style.opacity = '.7'; btn.disabled = true; }
+
+    try {
+      const estado = buildEstado();
+      let res, data;
+
+      if (rascunhoToken) {
+        // Atualiza rascunho existente
+        res  = await fetch(`/api/rascunho/${rascunhoToken}`, {
+          method:  'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ produto: produtoParam || 'generico', estado }),
+        });
+        data = await res.json();
+      } else {
+        // Cria novo rascunho
+        res  = await fetch('/api/rascunho', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ produto: produtoParam || 'generico', estado }),
+        });
+        data = await res.json();
+        if (data.token) {
+          rascunhoToken = data.token;
+          try { localStorage.setItem(RASCUNHO_LS_KEY, JSON.stringify({ token: rascunhoToken, produto: produtoParam, ts: Date.now() })); } catch(e) {}
+        }
+      }
+
+      if (!data.ok) throw new Error(data.error || 'Erro desconhecido');
+
+      // Monta link de retomada
+      const base = window.location.origin + window.location.pathname;
+      const link = `${base}?produto=${produtoParam || ''}&rascunho=${rascunhoToken}`;
+
+      // Copia link e mostra modal
+      try { await navigator.clipboard.writeText(link); } catch(e) {}
+      mostrarModalRascunho(link);
+
+    } catch(e) {
+      toast('❌ Erro ao salvar. Verifique sua conexão.');
+      console.error('Rascunho save error:', e);
+    } finally {
+      if (btn) { btn.textContent = '💾 Salvar e continuar depois'; btn.style.opacity = '1'; btn.disabled = false; }
+    }
+  }
+
+  function mostrarModalRascunho(link) {
+    // Remove modal anterior se existir
+    document.getElementById('modalRascunho')?.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'modalRascunho';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;';
+
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:20px;padding:28px;width:min(480px,100%);box-shadow:0 24px 60px rgba(0,0,0,0.2);position:relative;">
+        <div style="font-size:28px;margin-bottom:12px;">✅</div>
+        <div style="font-size:16px;font-weight:700;color:#3a1200;margin-bottom:6px;">Progresso salvo!</div>
+        <div style="font-size:13px;color:#7a4a30;line-height:1.6;margin-bottom:20px;">
+          Guarde o link abaixo para continuar de onde parou — em qualquer dispositivo, a qualquer momento. O link é válido por <strong>7 dias</strong>.
+        </div>
+        <div style="background:#f5ece0;border:1px solid rgba(180,100,40,0.2);border-radius:10px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px;">
+          <code id="linkRascunho" style="font-size:11px;color:#3a1200;word-break:break-all;flex:1;line-height:1.5;">${link}</code>
+          <button onclick="copiarLinkRascunho()" style="flex-shrink:0;padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;" id="btnCopiarLink">Copiar</button>
+        </div>
+        <div style="font-size:11px;color:#c09070;margin-bottom:20px;">💡 O link já foi copiado para a área de transferência. Salve também por e-mail ou WhatsApp para não perder.</div>
+        <button onclick="document.getElementById('modalRascunho').remove()" style="width:100%;padding:12px;background:#3a1200;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Continuar preenchendo</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  }
+
+  function copiarLinkRascunho() {
+    const link = document.getElementById('linkRascunho')?.textContent;
+    if (!link) return;
+    navigator.clipboard.writeText(link).then(() => {
+      const btn = document.getElementById('btnCopiarLink');
+      if (btn) { btn.textContent = '✓ Copiado!'; btn.style.background = '#55aa66'; setTimeout(() => { btn.textContent = 'Copiar'; btn.style.background = 'var(--accent)'; }, 2000); }
+    });
+  }
+
+  async function restaurarRascunhoRemoto(token) {
+    try {
+      const res  = await fetch(`/api/rascunho/${token}`);
+      if (!res.ok) return false;
+      const data = await res.json();
+      if (!data.ok || !data.estado) return false;
+      rascunhoToken = token;
+      return aplicarEstado(data.estado);
+    } catch(e) { return false; }
+  }
+
+  /* ══════════════════════════════════════════════
+     AJUDA — Tutorial + FAQ
+  ══════════════════════════════════════════════ */
+  let _helpActiveTab = 'tutorial';
+
+  function openHelp() {
+    renderHelpPanel();
+  }
+
+  function closeHelp() {
+    const ov = document.getElementById('helpPanelOverlay');
+    ov.style.display = 'none';
+    ov.innerHTML = '';
+  }
+
+  function renderHelpPanel() {
+    const ov = document.getElementById('helpPanelOverlay');
+    ov.style.display = 'flex';
+    ov.innerHTML = `
+      <div class="help-panel-overlay" onclick="if(event.target===this)closeHelp()">
+        <div class="help-panel">
+          <div class="help-panel-header">
+            <span class="help-panel-title">💡 Ajuda</span>
+            <button class="help-close" onclick="closeHelp()">×</button>
+          </div>
+          <div class="help-tabs">
+            <button class="help-tab ${_helpActiveTab==='tutorial'?'active':''}" onclick="switchHelpTab('tutorial')">📖 Como preencher</button>
+            <button class="help-tab ${_helpActiveTab==='faq'?'active':''}" onclick="switchHelpTab('faq')">❓ Dúvidas frequentes</button>
+          </div>
+          <div id="helpTabContent"></div>
+        </div>
+      </div>`;
+    renderHelpTabContent();
+  }
+
+  function switchHelpTab(tab) {
+    _helpActiveTab = tab;
+    renderHelpPanel();
+  }
+
+  function renderHelpTabContent() {
+    const el = document.getElementById('helpTabContent');
+    if (!el) return;
+    if (_helpActiveTab === 'tutorial') {
+      el.innerHTML = `
+        <div class="tut-step">
+          <div class="tut-num">1</div>
+          <div class="tut-body">
+            <h4>Escolha seu caminho</h4>
+            <p>Na primeira tela, selecione se você já tem um escopo definido ou prefere um diagnóstico consultivo. Não tem resposta errada — escolha o que melhor descreve sua situação.</p>
+            <span class="tut-tip">💡 Dica: se estiver em dúvida, escolha "Preciso de ajuda para um desafio estratégico"</span>
+          </div>
+        </div>
+        <div class="tut-step">
+          <div class="tut-num">2</div>
+          <div class="tut-body">
+            <h4>Responda com o máximo de contexto</h4>
+            <p>As perguntas abertas (campos de texto) são as mais valiosas. Quanto mais contexto você der — histórico da marca, crises recentes, concorrentes — mais precisa será a proposta da nossa equipe.</p>
+            <span class="tut-tip">💡 Não precisa ser formal. Escreva como falaria numa reunião.</span>
+          </div>
+        </div>
+        <div class="tut-step">
+          <div class="tut-num">3</div>
+          <div class="tut-body">
+            <h4>Avance página a página</h4>
+            <p>Ao clicar em <strong>Avançar</strong>, você verá uma confirmação antes de ir para a próxima etapa. Isso é normal — você sempre pode voltar com o botão <strong>← Voltar</strong> e corrigir qualquer resposta.</p>
+          </div>
+        </div>
+        <div class="tut-step">
+          <div class="tut-num">4</div>
+          <div class="tut-body">
+            <h4>Seu progresso fica salvo</h4>
+            <p>Ao mudar de página, tudo é salvo automaticamente. Se precisar fechar o navegador, clique em <strong>"Salvar e continuar depois"</strong> no topo para gerar um link de retorno.</p>
+            <span class="tut-tip">🔒 Suas respostas são confidenciais e usadas apenas para personalizar a proposta.</span>
+          </div>
+        </div>
+        <div class="tut-step">
+          <div class="tut-num">5</div>
+          <div class="tut-body">
+            <h4>Finalize e aguarde contato</h4>
+            <p>Ao chegar na tela final, o briefing é enviado para nossa equipe. Um especialista revisará suas respostas e entrará em contato em até <strong>2 dias úteis</strong>.</p>
+          </div>
+        </div>`;
+    } else {
+      const faqs = [
+        { q: 'Posso voltar e alterar uma resposta que já dei?', a: 'Sim! Use o botão <strong>← Voltar</strong> em qualquer etapa para revisar e corrigir suas respostas anteriores. Suas edições são salvas ao avançar novamente.' },
+        { q: 'Meu progresso é salvo se eu fechar o navegador?', a: 'Se você usou o botão <strong>"Salvar e continuar depois"</strong>, sim — você receberá um link para retomar de onde parou. Caso contrário, ao reabrir a mesma URL, tentamos restaurar automaticamente.' },
+        { q: 'Preciso responder tudo de uma vez?', a: 'Não. Use o botão <strong>"Salvar e continuar depois"</strong> no topo da página para salvar e gerar um link de retorno. Você pode terminar em outro momento.' },
+        { q: 'O que acontece depois que envio o briefing?', a: 'Nossa equipe recebe suas respostas e prepara uma proposta personalizada. Em até <strong>2 dias úteis</strong> você receberá o contato de um especialista.' },
+        { q: 'Minhas respostas são confidenciais?', a: 'Sim. As informações fornecidas são usadas exclusivamente pela equipe HUB.nexus para elaborar sua proposta. Nada é compartilhado com terceiros.' },
+        { q: 'Não sei responder alguma pergunta. O que faço?', a: 'Responda com o que souber — não há certo ou errado. Se realmente não tiver a informação, deixe o campo em branco ou escreva "não sei" para sinalizarmos na proposta.' },
+        { q: 'Posso preencher por conta de outra pessoa ou empresa?', a: 'Sim. Preencha com as informações da empresa ou pessoa que você representa. Na etapa final, coloque seu e-mail de contato para receber a proposta.' },
+      ];
+      el.innerHTML = faqs.map((f, i) => `
+        <div class="faq-item" id="faq${i}">
+          <div class="faq-q" onclick="toggleFaq(${i})">
+            <span>${f.q}</span>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-a">${f.a}</div>
+        </div>`).join('');
+    }
+  }
+
+  function toggleFaq(i) {
+    const item = document.getElementById('faq' + i);
+    if (!item) return;
+    item.classList.toggle('open');
+  }
+
+  async function init() {
+    const params = new URLSearchParams(window.location.search);
+    briefingId = params.get('id');
+    isErrataMode = params.get('errata') === 'true' && !!briefingId;
+    produtoParam = params.get('produto') || null;
+
+    // Show save button for direct product links
+    if (produtoParam && !isErrataMode) {
+      const btn = document.getElementById('btnSalvarRascunho');
+      if (btn) btn.style.display = 'flex';
+    }
+
+    // Restore draft from D1 if ?rascunho=TOKEN present, or from localStorage token
+    if (!isErrataMode && !params.get('novo')) {
+      const tokenFromUrl = params.get('rascunho');
+      const tokenFromLS  = (() => {
+        try {
+          const saved = JSON.parse(localStorage.getItem(RASCUNHO_LS_KEY) || 'null');
+          // Only use LS token if produto matches and less than 7 days old
+          if (saved && saved.token && saved.produto === produtoParam && Date.now() - saved.ts < 7*24*60*60*1000) return saved.token;
+        } catch(e) {}
+        return null;
+      })();
+      const token = tokenFromUrl || tokenFromLS;
+      if (token) {
+        const restored = await restaurarRascunhoRemoto(token);
+        if (restored) {
+          const btn = document.getElementById('btnSalvarRascunho');
+          if (btn) btn.style.display = 'flex';
+          render();
+          return;
+        }
+        // Token inválido/expirado — limpa localStorage e segue normalmente
+        try { localStorage.removeItem(RASCUNHO_LS_KEY); } catch(e) {}
+      }
+    }
+
+    if (isErrataMode) {
+      try {
+        const res = await fetch(`/api/briefing/${briefingId}`);
+        if (!res.ok) throw new Error('Não foi possível carregar o briefing.');
+        const data = await res.json();
+        if (data.respostas) {
+          respostas = data.respostas;
+          const raw = data.respostas;
+          // Restore vx state from stored data so errata fields show previous answers
+          if (raw.empresa || raw.tipo || raw.tipo_vox === 'imagem') {
+            if (raw.tipo)           vx.tipo           = raw.tipo;
+            if (raw.empresa)        vx.empresa        = raw.empresa;
+            if (raw.site)           vx.site           = raw.site;
+            if (raw.objetivo_diagnostico) vx.objetivo_diagnostico = raw.objetivo_diagnostico;
+            if (raw.objetivos)      vx.objetivos      = raw.objetivos;
+            if (raw.narrativa)      vx.narrativa      = raw.narrativa;
+            if (raw.concorrentes)   vx.concorrentes   = raw.concorrentes;
+            if (raw.atributos_pos)  vx.atributos_pos  = raw.atributos_pos.map(a => typeof a === 'string' ? {nome:a,explicacao:''} : a);
+            if (raw.atributos_neg)  vx.atributos_neg  = raw.atributos_neg.map(a => typeof a === 'string' ? {nome:a,explicacao:''} : a);
+            if (raw.prompts_b)      vx.prompts_b      = raw.prompts_b;
+            if (raw.prompts_u)      vx.prompts_u      = raw.prompts_u;
+            if (raw.nuances)        vx.nuances        = raw.nuances;
+            if (raw.email)          vx.email          = raw.email;
+          }
+          if (raw.tipo_vox === 'tema' || raw.tema) {
+            if (raw.tema)                vxt.tema                = raw.tema;
+            if (raw.objetivo_diagnostico) vxt.objetivo_diagnostico = raw.objetivo_diagnostico;
+            if (raw.aprofundamento)      vxt.aprofundamento      = raw.aprofundamento;
+            if (raw.partes_tema)         vxt.partes_tema         = raw.partes_tema;
+            if (raw.objetivos)           vxt.objetivos           = raw.objetivos;
+            if (raw.prompts)             vxt.prompts             = raw.prompts;
+            if (raw.nuances)             vxt.nuances             = raw.nuances;
+            if (raw.email)               vxt.email               = raw.email;
+          }
+        }
+        errataFields = data.errata || {};
+        console.log('[errata init] data.errata recebido:', JSON.stringify(data.errata));
+        console.log('[errata init] data.respostas keys:', Object.keys(data.respostas || {}));
+        const fullSeq = ['abertura','vx_identificacao','vx_objetivos','vx_concorrentes','vx_atributos',
+          'vx_branded','vx_unbranded','vx_narrativa','vx_finalizacao',
+          'vxt_identificacao','vxt_aprofundamento','vxt_objetivos','vxt_prompts','vxt_finalizacao',
+          'captura_email'];
+        errataSequence = fullSeq.filter(s => errataFields[s]);
+        if (errataSequence.length > 0) {
+          current = errataSequence[0]; currentErrataIdx = 0;
+          const badge = document.getElementById('headerBadge');
+          if (badge) { badge.textContent = `✏ Correção solicitada (${errataSequence.length} campo${errataSequence.length > 1 ? 's' : ''})`; badge.style.color = '#cc4400'; }
+          document.title = 'Correção de briefing — HUB.nexus';
+        } else {
+          // errata field is empty — may have been already corrected or link is stale
+          isErrataMode = false;
+          toast('⚠️ Nenhuma correção pendente neste briefing. Carregando normalmente.');
+        }
+      } catch(e) { toast('Conexão instável. Modo padrão ativo.'); isErrataMode = false; }
+    }
+    render();
+  }
+
+  init();
+  </script>
+</body>
+</html>

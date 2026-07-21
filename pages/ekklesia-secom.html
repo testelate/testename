@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HUB.nexus — Ekklesia para SECOM</title>
+  <link rel="icon" href="../assets/logo.png" type="image/png"/>
+  <link rel="stylesheet" href="../css/global.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <style>
+    :root { --secom-blue: #183EFF; }
+    body { height:100vh; margin:0; overflow:hidden; background:var(--bg); color:var(--text-primary); font-family:Inter, var(--font-ui), system-ui, sans-serif; }
+    .multi-shell { height:100vh; display:flex; flex-direction:column; }
+    .tab-body { flex:1; overflow-y:auto; overflow-x:hidden; padding:20px; }
+    .multi-page { width:min(1180px, 100%); margin:0 auto; }
+    .multi-head { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:18px 4px 14px; border-bottom:1px solid rgba(255,255,255,.07); margin-bottom:18px; }
+    .multi-kicker { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--orange-2); margin-bottom:4px; }
+    .multi-h1 { font-size:22px; font-weight:700; line-height:1.15; margin:0; color:var(--text-primary); }
+    .multi-sub { margin:3px 0 0; font-size:12px; color:var(--text-muted); }
+    .multi-section { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09); border-radius:14px; padding:20px; margin-bottom:14px; }
+    .multi-section.compact { padding:14px 16px; }
+    .multi-panel-title { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:14px; color:var(--orange-2); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; }
+    .multi-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .multi-row.stretch > * { flex:1 1 180px; }
+    .multi-field { display:flex; flex-direction:column; gap:5px; margin-bottom:10px; min-width:0; }
+    .multi-label { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.45px; }
+    .multi-input, .multi-select, .multi-textarea { width:100%; box-sizing:border-box; border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.06); color:var(--text-primary); border-radius:8px; padding:8px 11px; font:12px Inter, var(--font-ui), sans-serif; outline:none; color-scheme:dark; }
+    .multi-select { color-scheme:dark; }
+    .multi-select option { background:#1a1d27; color:#e8e6f0; }
+    .multi-textarea { min-height:88px; resize:vertical; line-height:1.6; }
+    .multi-input:focus, .multi-select:focus, .multi-textarea:focus { border-color:hsla(var(--theme-h),90%,50%,.40); }
+    .multi-btn { border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.07); color:var(--text-secondary); border-radius:8px; padding:8px 14px; font:700 11px Inter, var(--font-ui), sans-serif; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; transition:all .18s; white-space:nowrap; }
+    .multi-btn:hover { background:rgba(255,255,255,.12); color:var(--text-primary); }
+    .multi-btn.primary { background:var(--orange); border-color:var(--orange); color:#fff; }
+    .multi-btn.primary:hover { background:var(--orange-2); transform:translateY(-1px); }
+    .multi-btn.danger { background:rgba(220,38,38,.15); border-color:rgba(220,38,38,.35); color:#f87171; }
+    .multi-btn.danger:hover { background:rgba(220,38,38,.25); }
+    .multi-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+    .multi-upload { position:relative; border:1.5px dashed rgba(255,255,255,.14); border-radius:10px; padding:18px 14px; text-align:center; color:var(--text-muted); font-size:12px; cursor:pointer; transition:all .18s; }
+    .multi-upload:hover, .multi-upload.drag { border-color:hsla(var(--theme-h),90%,50%,.40); background:hsla(var(--theme-h),90%,50%,.04); }
+    .multi-upload input { position:absolute; inset:0; width:100%; opacity:0; cursor:pointer; }
+    .multi-kpis { display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:10px; }
+    .multi-kpi { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); border-radius:10px; padding:12px 14px; min-height:68px; }
+    .multi-kpi span { display:block; font-size:9px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
+    .multi-kpi strong { display:block; font-size:22px; line-height:1; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .multi-split { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .multi-table-wrap { max-height:360px; overflow:auto; border:1px solid rgba(255,255,255,.08); border-radius:8px; }
+    .multi-table { width:100%; border-collapse:collapse; font-size:11px; }
+    .multi-table th, .multi-table td { padding:7px 10px; border-bottom:1px solid rgba(255,255,255,.05); text-align:left; vertical-align:top; color:var(--text-secondary); }
+    .multi-table tr:hover td { background:rgba(255,255,255,.025); }
+    .multi-table th { position:sticky; top:0; background:rgba(25,25,32,.96); color:var(--text-muted); font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; z-index:1; }
+    .multi-empty { color:var(--text-muted); font-size:12px; padding:32px 20px; text-align:center; opacity:.72; }
+    .multi-status { min-height:16px; font-size:11px; color:var(--text-muted); }
+    .vol-bars { display:flex; align-items:flex-end; gap:4px; height:52px; margin-top:8px; }
+    .vol-wrap { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; height:100%; justify-content:flex-end; }
+    .vol-bar { width:100%; border-radius:3px 3px 0 0; min-height:3px; }
+    .vol-lbl { font-size:8px; color:var(--text-muted); }
+    .sent-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:10px; font-size:11px; color:var(--text-secondary); }
+    .sent-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:999px; font-size:10px; font-weight:600; }
+    .sent-chip.pos { background:rgba(34,197,94,.12); color:#4ade80; }
+    .sent-chip.fav { background:rgba(59,130,246,.12); color:#93c5fd; }
+    .sent-chip.neg { background:rgba(239,68,68,.12); color:#f87171; }
+    .sent-chip.des { background:rgba(251,146,60,.12); color:#fb923c; }
+    .ia-box { background:linear-gradient(135deg,hsla(var(--theme-h),90%,50%,.06),transparent); border:1px solid hsla(var(--theme-h),90%,50%,.20); border-radius:12px; padding:16px 18px; margin-bottom:14px; }
+    .prompt-panel { display:none; }
+    .prompt-panel.open { display:block; }
+    .link-card { border:1px solid rgba(255,255,255,.09); border-radius:10px; padding:12px 14px; margin-bottom:8px; background:rgba(255,255,255,.03); display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:start; }
+    .link-card-desc { grid-column:1 / -1; }
+    .mini-item { display:flex; align-items:center; justify-content:space-between; gap:8px; border-bottom:1px solid rgba(255,255,255,.055); padding:7px 0; font-size:11px; color:var(--text-secondary); }
+    body.light .multi-section, body.light .multi-kpi { background:rgba(255,255,255,.72); border-color:rgba(160,80,20,.16); }
+    body.light .multi-input, body.light .multi-select, body.light .multi-textarea { background:#fff; border-color:rgba(160,80,20,.22); color:#2a0e00; color-scheme:light; }
+    body.light .multi-select option { background:#fff; color:#2a0e00; }
+    body.light .multi-table th { background:rgba(255,250,246,.96); }
+    body.light .ia-box { background:linear-gradient(135deg,hsla(var(--theme-h),90%,50%,.08),transparent); }
+    body.light .link-card { background:rgba(255,255,255,.6); border-color:rgba(160,80,20,.14); }
+    .secom-tabs-bar { display:flex; gap:2px; padding:0 20px; border-bottom:1px solid rgba(255,255,255,.07); flex-shrink:0; background:rgba(255,255,255,.02); overflow-x:auto; overflow-y:hidden; }
+    .secom-tab { padding:10px 16px; font-size:12px; color:var(--text-muted); cursor:pointer; border:none; background:transparent; font-family:Inter,var(--font-ui),sans-serif; transition:all .18s; border-bottom:2px solid transparent; margin-bottom:-1px; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+    .secom-tab:hover { color:var(--text-primary); }
+    .secom-tab.active { color:var(--orange); border-bottom-color:var(--orange); font-weight:700; }
+    body.light .secom-tabs-bar { border-bottom-color:rgba(160,80,20,.12); background:rgba(255,255,255,.5); }
+    body.light .secom-tab.active { color:var(--orange); }
+    .btn-voltar { display:inline-flex; align-items:center; gap:7px; padding:8px 16px; border:1px solid rgba(255,255,255,.13); border-radius:8px; background:rgba(255,255,255,.05); color:var(--text-secondary); font:600 12px Inter,var(--font-ui),sans-serif; text-decoration:none; transition:all .18s; }
+    .btn-voltar:hover { background:rgba(255,255,255,.10); color:var(--text-primary); border-color:rgba(255,255,255,.22); }
+    body.light .btn-voltar { border-color:rgba(160,80,20,.20); background:rgba(255,255,255,.6); color:#4a2000; }
+    body.light .btn-voltar:hover { background:rgba(255,255,255,.9); }
+    .ctrl-wrap { display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .ctrl-sel, .ctrl-input {
+      border:1px solid rgba(255,255,255,.13);
+      background:rgba(255,255,255,.05);
+      color:var(--text-secondary);
+      border-radius:8px;
+      padding:8px 11px;
+      font:600 12px Inter, var(--font-ui), sans-serif;
+      outline:none;
+      height: 33px;
+      box-sizing: border-box;
+      transition: all .18s;
+    }
+    .ctrl-sel { color-scheme:dark; cursor:pointer; }
+    .ctrl-sel option { background:#1a1d27; color:#e8e6f0; }
+    .ctrl-sel:hover, .ctrl-input:hover, .ctrl-input:focus { background:rgba(255,255,255,.10); color:var(--text-primary); border-color:rgba(255,255,255,.22); }
+    body.light .ctrl-sel, body.light .ctrl-input { border-color:rgba(160,80,20,.20); background:rgba(255,255,255,.6); color:#4a2000; }
+    body.light .ctrl-sel:hover, body.light .ctrl-input:hover, body.light .ctrl-input:focus { background:rgba(255,255,255,.9); }
+    body.light .ctrl-sel option { background:#fff; color:#2a0e00; }
+    .modal-backdrop { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.62); backdrop-filter:blur(8px); z-index:9995; padding:18px; }
+    .modal-backdrop.open { display:flex; }
+    .modal-panel { width:min(520px, 100%); border:1px solid rgba(255,255,255,.12); border-radius:10px; background:rgb(23,25,33); padding:18px; box-shadow:0 20px 80px rgba(0,0,0,.38); }
+    body.light .modal-panel { background:rgba(255,255,255,.95); border-color:rgba(160,80,20,.16); }
+    .icon-btn { width:32px; height:32px; border-radius:8px; border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.055); color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; font-weight:800; }
+    .icon-btn:hover { background:rgba(255,255,255,.10); color:var(--text-primary); }
+
+    /* Button for responsible */
+    .resp-btn-secom {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 99px;
+      border: 1px dashed hsla(var(--theme-h),90%,50%,0.25);
+      background: transparent;
+      transition: all .15s;
+      cursor: pointer;
+      font: 600 12px Inter, var(--font-ui), sans-serif;
+      height: 33px;
+      box-sizing: border-box;
+      color: var(--orange-2);
+    }
+    .resp-btn-secom:hover {
+      background: hsla(var(--theme-h),90%,50%,0.08);
+      border-color: hsla(var(--theme-h),90%,50%,0.45);
+    }
+    .resp-avatar-secom {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: hsla(var(--theme-h),90%,50%,0.15);
+      border: 1px solid hsla(var(--theme-h),90%,50%,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--orange-2);
+      flex-shrink: 0;
+    }
+    .resp-nome-secom {
+      font-size: 11px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 90px;
+    }
+
+    /* Modal User list */
+    .modal-user-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 9px;
+      border: 1px solid rgba(255,255,255,.07);
+      cursor: pointer;
+      transition: all .15s;
+      margin-bottom: 5px;
+    }
+    .modal-user-item:hover {
+      background: hsla(var(--theme-h),90%,50%,0.07);
+      border-color: hsla(var(--theme-h),90%,50%,0.22);
+    }
+    .modal-user-item.sel {
+      background: hsla(var(--theme-h),90%,50%,0.14);
+      border-color: hsla(var(--theme-h),90%,50%,0.45);
+    }
+    body.light .modal-user-item {
+      border-color: rgba(180,100,40,.12);
+      color: #3a1200;
+    }
+    body.light .modal-user-item.sel {
+      background: rgba(255,101,0,.10);
+    }
+
+    /* Clickable status buttons */
+    .status-btn-secom {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      border-radius: 99px;
+      border: 1px solid;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .15s;
+      white-space: nowrap;
+      background: transparent;
+      height: 33px;
+      box-sizing: border-box;
+    }
+    .status-btn-secom:hover { filter: brightness(1.25); transform: scale(1.02); }
+    .s-pendente { color: #ffb432; border-color: rgba(255,180,50,0.30); }
+    .s-em_producao { color: #65b6ff; border-color: rgba(101,182,255,0.30); }
+    .s-disponivel { color: var(--orange-2); border-color: hsla(var(--theme-h),90%,50%,0.30); }
+    .s-revisando { color: #a865ff; border-color: rgba(168,101,255,0.30); }
+    .s-aprovado { color: var(--green); border-color: rgba(102,221,136,0.30); }
+    .s-publicado { color: var(--green); border-color: rgba(102,221,136,0.50); font-weight: 700; }
+    @media (max-width:860px) {
+      .multi-head { align-items:flex-start; flex-direction:column; }
+      .multi-kpis { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+      .multi-split { grid-template-columns:1fr; }
+      .tab-body { padding:14px; }
+      .link-card { grid-template-columns:1fr; }
+    }
+    .dest-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px; margin-top:12px; }
+    .dest-card { border:1px solid rgba(255,255,255,.10); border-radius:10px; overflow:hidden; background:rgba(255,255,255,.04); position:relative; }
+    .dest-card-img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; background:rgba(255,255,255,.06); }
+    .dest-card-body { padding:8px 10px; }
+    .dest-card-title { font-size:11px; color:var(--text-secondary); line-height:1.4; margin:0; }
+    .dest-remove { position:absolute; top:6px; right:6px; border:none; background:rgba(0,0,0,.6); color:#fff; border-radius:50%; width:24px; height:24px; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1; padding:0; }
+    .dest-add { border:1.5px dashed rgba(255,255,255,.18); border-radius:10px; aspect-ratio:16/9; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer; color:var(--text-muted); font-size:11px; transition:border-color .15s,color .15s; position:relative; }
+    .dest-add input { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+    .dest-add:hover { border-color:var(--orange); color:var(--orange); }
+    body.light .dest-card { background:rgba(255,255,255,.7); border-color:rgba(160,80,20,.14); }
+  </style>
+</head>
+<body>
+  <div class="multi-shell" style="height:100vh;display:flex;flex-direction:column;">
+    <div id="navbar-container"></div>
+
+    <!-- ABAS TIPO — barra fixa igual Embratur -->
+    <div class="secom-tabs-bar">
+      <button class="secom-tab active" id="tab-diario" onclick="setTipo('diario')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Diário
+      </button>
+      <button class="secom-tab" id="tab-semanal" onclick="setTipo('semanal')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 3h18v4H3z"/><path d="M3 10h18v4H3z"/><path d="M3 17h18v4H3z"/></svg>
+        Semanal
+      </button>
+      <button class="secom-tab" id="tab-mensal" onclick="setTipo('mensal')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+        Mensal
+      </button>
+    </div>
+    <!-- select oculto mantido para compatibilidade -->
+    <select id="tipoSelect" style="display:none;" onchange="onTipoChange()">
+      <option value="diario">Diário</option>
+      <option value="semanal">Semanal</option>
+      <option value="mensal">Mensal</option>
+    </select>
+
+    <div class="tab-body">
+      <main class="multi-page">
+
+        <!-- CABEÇALHO -->
+        <div class="multi-head">
+          <div>
+            <div class="multi-kicker">SECOM · Secretaria de Comunicação Social</div>
+            <h1 class="multi-h1" id="secomPageTitle">Produção do Diário</h1>
+            <p class="multi-sub">Monitor de redes sociais — preparação e publicação do relatório.</p>
+          </div>
+          <div class="ctrl-wrap">
+            <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-right: 4px;">Produção:</span>
+            
+            <button class="status-btn-secom s-pendente" id="btn-secom-status" onclick="avancarSecomStatus()" title="Clique para avançar">Pendente →</button>
+            <div id="secom-resp-container" style="display:inline-flex;"></div>
+            
+            <a href="ekklesia-multi.html" class="btn-voltar">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
+              Voltar ao monitoramento
+            </a>
+          </div>
+        </div>
+
+        <!-- UPLOAD DA BASE -->
+        <section class="multi-section">
+          <div class="multi-panel-title">
+            <span>Upload da base</span>
+            <span id="rowsCount" class="multi-status" style="margin-bottom:0;"></span>
+          </div>
+          <div class="multi-row" style="margin-bottom:12px;flex-wrap:wrap;gap:6px;">
+            <button class="multi-btn danger" onclick="limparBase()">Limpar base</button>
+            <input id="dataRel" class="multi-input" type="date" style="max-width:160px;" onchange="render()" />
+            <span style="color:var(--text-muted);font-size:11px;align-self:center;padding:0 2px;">das</span>
+            <input id="horaInicio" class="multi-input" type="time" style="max-width:100px;" onchange="render()" title="Hora início do recorte" />
+            <span style="color:var(--text-muted);font-size:11px;align-self:center;padding:0 2px;">até</span>
+            <input id="horaFim" class="multi-input" type="time" style="max-width:100px;" onchange="render()" title="Hora fim (se menor que início, considera próximo dia)" />
+          </div>
+          <div class="multi-upload" id="uploadZone"
+            ondragover="event.preventDefault();this.classList.add('drag')"
+            ondragleave="this.classList.remove('drag')"
+            ondrop="handleDrop(event)">
+            <input type="file" accept=".csv,.xlsx,.xls" multiple onchange="handleFiles(this.files); this.value='';" />
+            <strong style="color:var(--orange-2);">Clique</strong> ou arraste CSV/XLSX do Reputation/hub
+          </div>
+          <div id="uploadStatus" class="multi-status" style="margin-top:8px;"></div>
+          <div style="margin-top:12px;">
+            <button class="multi-btn" onclick="openSocialModal()" style="gap:8px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              Abrir Ekklesia para Social
+            </button>
+          </div>
+        </section>
+
+        <!-- KPIs -->
+        <section class="multi-section" id="kpiSection" style="display:none;">
+          <div class="multi-panel-title">KPIs calculados automaticamente</div>
+          <div id="kpiArea"></div>
+        </section>
+
+        <!-- PRINTS DOS DESTAQUES -->
+        <section class="multi-section" id="destaquesSection" style="display:none;">
+          <div class="multi-panel-title">
+            <span>Prints dos destaques</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <button class="multi-btn" id="secomBuscarImgBtn" onclick="_secomBuscarImagensAuto()">🔍 Buscar imagens (og:image)</button>
+              <button class="multi-btn" id="secomRestaurarBtn" onclick="_secomRestaurarTop3()" style="display:none;">↩ restaurar excluídos</button>
+            </div>
+          </div>
+          <div id="destaquesGrid"></div>
+        </section>
+
+        <!-- PROMPT (colapsável) -->
+        <section class="multi-section">
+          <div class="multi-panel-title" style="cursor:pointer;user-select:none;" onclick="togglePromptPanel()">
+            <span>Análise editorial — Prompt</span>
+            <div class="multi-row" onclick="event.stopPropagation()">
+              <button class="multi-btn" onclick="copyPrompt()">Copiar prompt</button>
+              <button class="multi-btn" onclick="downloadPrompt()">Baixar TXT</button>
+              <button class="multi-btn" id="promptChevron" style="min-width:28px;">▼</button>
+            </div>
+          </div>
+          <div class="prompt-panel" id="promptPanel">
+            <div class="multi-split" style="margin-bottom:10px;">
+              <div class="multi-field" style="margin-bottom:0;">
+                <label class="multi-label">Contexto</label>
+                <textarea id="promptContexto" class="multi-textarea"
+                  placeholder="Você é um analista focado em monitoramento de narrativas para o governo federal..."
+                  onchange="savePromptLocal()"></textarea>
+              </div>
+              <div class="multi-field" style="margin-bottom:0;">
+                <label class="multi-label">Regras</label>
+                <textarea id="promptRegras" class="multi-textarea"
+                  placeholder="Ignore temas... foque em... responda em JSON..."
+                  onchange="savePromptLocal()"></textarea>
+              </div>
+            </div>
+            <textarea id="promptPreview" class="multi-textarea" style="min-height:260px;font-family:Consolas,monospace;font-size:11px;" readonly></textarea>
+          </div>
+        </section>
+
+        <!-- IMPORTAR IA -->
+        <section class="multi-section">
+          <div class="multi-panel-title">✦ Importar resposta da IA</div>
+          <div class="ia-box">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;line-height:1.6;">
+              Cole o JSON retornado pela IA. Os textos editoriais abaixo serão preenchidos automaticamente.
+            </div>
+            <textarea id="secomIAResp" class="multi-textarea" style="font-family:Consolas,monospace;font-size:11px;min-height:68px;"
+              placeholder='{"destaque":"...","atencao":"...","analise":"...","desafios":"...","oportunidades":"...","tendencias":"Termo — contexto\nTermo 2 — contexto","em_alta":"#Trend1 — contexto governamental\n#Trend2 — contexto","pontosAtencao":[{"titulo":"Assunto do risco em 5-8 palavras","texto":"Análise em 2-3 frases sobre o risco e recomendação."}]}'></textarea>
+            <div class="multi-row" style="margin-top:10px;">
+              <button class="multi-btn primary" onclick="importarRespostaIA()">⬆ Importar resposta</button>
+              <button class="multi-btn" onclick="limparTextosEditoriais()">↺ Limpar textos</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- TEXTOS EDITORIAIS -->
+        <section class="multi-section">
+          <div class="multi-panel-title">✏️ Textos editoriais</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;line-height:1.6;">
+            Cada campo corresponde a uma seção do relatório final. Importe a IA, revise e publique.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;">
+            <div class="multi-field">
+              <label class="multi-label">📰 Manchete do dia <span style="opacity:.55;font-size:9px;">→ título do Resumo do dia</span></label>
+              <textarea id="secom_txt_destaque" class="multi-textarea" onchange="saveTexto('destaque', this.value)" style="min-height:52px;" placeholder="1 frase curta — manchete do relatório"></textarea>
+            </div>
+            <div class="multi-field">
+              <label class="multi-label">📊 Resumo do dia <span style="opacity:.55;font-size:9px;">→ seção Resumo do dia</span></label>
+              <textarea id="secom_txt_analise" class="multi-textarea" onchange="saveTexto('analise', this.value)" style="min-height:110px;" placeholder="Análise narrativa do dia (3-4 parágrafos, sem markdown)"></textarea>
+            </div>
+            <div class="multi-field">
+              <label class="multi-label">🔥 Trending Topics X/Twitter <span style="opacity:.55;font-size:9px;">→ seção Em Alta</span></label>
+              <textarea id="secom_txt_em_alta" class="multi-textarea" onchange="saveTexto('em_alta', this.value)" placeholder="#Trend — contexto&#10;#Trend2 — contexto"></textarea>
+            </div>
+            <div class="multi-field">
+              <label class="multi-label">🔭 Tendências no Google <span style="opacity:.55;font-size:9px;">→ seção Tendências</span></label>
+              <textarea id="secom_txt_tendencias" class="multi-textarea" onchange="saveTexto('tendencias', this.value)" placeholder="Termo — contexto&#10;Termo2 — contexto"></textarea>
+            </div>
+          </div>
+          <div class="multi-field" style="margin-top:12px;">
+            <label class="multi-label">⚠️ Pontos de Atenção <span style="opacity:.55;font-size:9px;">→ seção Pontos de atenção · uma por linha: Título — Texto</span></label>
+            <textarea id="secom_txt_pontosAtencao" class="multi-textarea" onchange="savePontosAtencao(this.value)" style="min-height:80px;" placeholder="Risco de imagem em X — Análise e recomendação em 2-3 frases.&#10;Outro risco — Análise..."></textarea>
+          </div>
+          <!-- TEMAS: renderizado dinamicamente -->
+          <div style="margin-top:14px;border-top:1px solid rgba(255,255,255,.07);padding-top:12px;">
+            <div class="multi-label" style="margin-bottom:10px;">🎯 Análise por Tema <span style="opacity:.55;font-size:9px;">→ cards "Temas em alta" do relatório</span></div>
+            <div id="secom_temas_container"><p style="font-size:11px;color:var(--text-muted);">Importe a resposta da IA para editar os temas.</p></div>
+          </div>
+        </section>
+
+        <!-- PUBLICAÇÕES DO RECORTE -->
+        <section class="multi-section">
+          <div id="tableArea"><div class="multi-empty">Suba uma base para visualizar as publicações.</div></div>
+        </section>
+
+
+        <!-- AÇÕES FINAIS -->
+        <div class="multi-row" style="justify-content:flex-end;align-items:flex-end;margin-bottom:32px;gap:10px;flex-wrap:wrap;">
+          <button class="multi-btn" onclick="syncBase()">↺ Sincronizar</button>
+          <div class="multi-field" style="margin-bottom:0;">
+            <label class="multi-label" style="font-size:9px;">Comparar com</label>
+            <input id="compareDate" class="multi-input" type="date" style="max-width:150px;" onchange="render()" />
+          </div>
+          <button class="multi-btn primary" onclick="openRadarReport()">Abrir Radar SECOM</button>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script src="../js/utils.js"></script>
+  <script src="../js/theme.js"></script>
+  <script>
+    checkAuth();
+    if (typeof initMode === 'function') initMode();
+    if (typeof initTheme === 'function') initTheme();
+    const _nc = document.getElementById('navbar-container');
+    if (_nc && typeof renderSidebar === 'function') _nc.innerHTML = renderSidebar('ekklesia-secom');
+    if (typeof setNavLabel === 'function') setNavLabel('');
+
+    /* ─── Constantes ─── */
+    const API = '/api/ekklesia-multi';
+    const CLIENTE_ID = 'secom';
+    const CLIENTE_NOME = 'SECOM';
+
+    /* ─── Estado global ─── */
+    const state = {
+      rows: [],
+      tipo: localStorage.getItem('secom_tipo') || 'diario',
+      ignoredWords: new Set()
+    };
+
+    /* ─── Linhas removidas (por tipo) ─── */
+    function _ignoredKey() { return 'secom_ignored_' + getTipo(); }
+    function getIgnoredRows() {
+      try { return new Set(JSON.parse(localStorage.getItem(_ignoredKey()) || '[]')); } catch { return new Set(); }
+    }
+    function saveIgnoredRows(set) {
+      localStorage.setItem(_ignoredKey(), JSON.stringify([...set]));
+    }
+    function removeRow(id) {
+      const ignored = getIgnoredRows();
+      ignored.add(id);
+      saveIgnoredRows(ignored);
+      render();
+    }
+    function restoreRows() {
+      localStorage.removeItem(_ignoredKey());
+      render();
+      showToast('Publicações restauradas.');
+    }
+
+    /* ─── Utilitarios ─── */
+    const esc = v => String(v || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    const norm = v => String(v || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+    const slugify = v => norm(v).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64);
+
+    const num = v => {
+      if (v === null || v === undefined || v === '') return 0;
+      let raw = String(v).trim().toLowerCase();
+      const mult = raw.includes('mi') || raw.endsWith('m') ? 1000000 : raw.endsWith('k') || raw.includes('mil') ? 1000 : 1;
+      raw = raw.replace(/\s/g, '').replace(/mi|mil|k|m/g, '');
+      const hasComma = raw.includes(','), hasDot = raw.includes('.');
+      if (hasComma && hasDot) raw = raw.replace(/\./g, '').replace(',', '.');
+      else if (hasComma) raw = raw.replace(',', '.');
+      else if (/^-?\d{1,3}\.\d{3}(\.\d{3})*$/.test(raw)) raw = raw.replace(/\./g, '');
+      else if ((raw.match(/\./g) || []).length > 1) raw = raw.replace(/\./g, '');
+      const n = Number(raw.replace(/[^\d.-]/g, ''));
+      return Number.isFinite(n) ? n * mult : 0;
+    };
+
+    const fmt = v => {
+      const n = Number(v) || 0;
+      return n >= 1000000 ? (n / 1000000).toFixed(1).replace('.', ',') + ' mi'
+        : n >= 1000 ? (n / 1000).toFixed(1).replace('.', ',') + ' mil'
+        : String(Math.round(n));
+    };
+
+    const pick = (row, aliases) => {
+      const map = {};
+      Object.keys(row).forEach(k => { map[norm(k)] = k; });
+      for (const alias of aliases) {
+        const key = map[norm(alias)];
+        if (key !== undefined && row[key] !== undefined && row[key] !== '') return row[key];
+      }
+      return '';
+    };
+
+    // aliases pré-normalizados para parseRows — evita norm() por campo por linha
+    const FA = {
+      data:       ['data da mencao','data da publicacao','data','date','published','created'],
+      link:       ['link da mencao','link da publicacao','url','url','link','permalink'],
+      autor:      ['publicador','autor','veiculo','nome do perfil','author','full name','username'],
+      texto:      ['publicacao','conteudo','texto','snippet','titulo','full text','content'],
+      canal:      ['canal','rede','rede social','source','domain','page type'],
+      interacoes: ['total de interacoes','total interacoes','interacoes','engagement score','total','likes'],
+      seguidores: ['seguidores','followers','potential audience','alcance','reach'],
+      sentimento: ['polaridade','sentimento','classificacao','sentiment'],
+      tema:       ['tema','tema principal','assunto','grupo tema','grupo de tema','abordagem','topic','category','label'],
+    };
+
+    const canonSent = v => {
+      const raw = norm(v);
+      return { positivo:'positivo', positive:'positivo', favoravel:'favoravel', favorable:'favoravel',
+               negativo:'negativo', negative:'negativo', desfavoravel:'desfavoravel', unfavorable:'desfavoravel',
+               neutro:'neutro', neutral:'neutro' }[raw] || raw || '';
+    };
+
+    const parseDate = v => {
+      const raw = String(v || '').trim();
+      const br = raw.match(/^(\d{2})\/(\d{2})\/(\d{2,4})(?:\s+(\d{1,2}:\d{2}(?::\d{2})?))?/);
+      if (br) return (br[3].length === 2 ? '20' + br[3] : br[3]) + '-' + br[2] + '-' + br[1] + (br[4] ? 'T' + br[4] : '');
+      const iso = raw.match(/^(\d{4})[-/](\d{2})[-/](\d{2})(?:[ T](\d{1,2}:\d{2}(?::\d{2})?))?/);
+      if (iso) return iso[1] + '-' + iso[2] + '-' + iso[3] + (iso[4] ? 'T' + iso[4] : '');
+      return '';
+    };
+
+    /* ─── Tipo de relatório ─── */
+    const TIPO_LABELS = { diario: 'Produção do Diário', semanal: 'Produção do Semanal', mensal: 'Produção do Mensal' };
+
+    function getTipo() {
+      return document.getElementById('tipoSelect')?.value || state.tipo || 'diario';
+    }
+
+    function setTipo(tipo) {
+      const sel = document.getElementById('tipoSelect');
+      if (sel) sel.value = tipo;
+      ['diario','semanal','mensal'].forEach(t => {
+        document.getElementById('tab-' + t)?.classList.toggle('active', t === tipo);
+      });
+      const title = document.getElementById('secomPageTitle');
+      if (title) title.textContent = TIPO_LABELS[tipo] || 'Produção do Diário';
+      onTipoChange();
+    }
+
+    function onTipoChange() {
+      state.tipo = getTipo();
+      localStorage.setItem('secom_tipo', state.tipo);
+      loadBase().then(() => { render(); renderDestaques(); }).catch(e => showToast(e.message || 'Erro ao trocar tipo.'));
+    }
+
+    /* ─── Parsing de arquivos ─── */
+    function tableRowsFromAOA(aoa) {
+      let headerIndex = 0;
+      for (let i = 0; i < Math.min(aoa.length, 20); i++) {
+        const filled = (aoa[i] || []).filter(c => c !== '' && c !== null && c !== undefined);
+        if (filled.length >= 4) { headerIndex = i; break; }
+      }
+      const header = (aoa[headerIndex] || []).map(c => String(c || '').trim());
+      return aoa.slice(headerIndex + 1).map(row => {
+        const obj = {};
+        header.forEach((key, idx) => { if (key) obj[key] = row[idx] ?? ''; });
+        return obj;
+      }).filter(row => Object.values(row).some(Boolean));
+    }
+
+    function parseRows(rawRows) {
+      const tipo = getTipo();
+
+      // Planilha SECOM: coluna "CENA" contém PROTAGONISTA/CITAÇÃO/COADJUVANTE (papel, não tema).
+      // Colunas após "CENA" são grupos-tema; a célula preenchida em cada linha = subtema real.
+      const firstRowKeys = rawRows.length ? Object.keys(rawRows[0]) : [];
+      const cenaColIdx = firstRowKeys.findIndex(k => norm(k) === 'cena');
+      const themeColKeys = cenaColIdx >= 0 ? firstRowKeys.slice(cenaColIdx + 1) : [];
+      const hasCenaCol = cenaColIdx >= 0;
+
+      const base = rawRows.map((row, idx) => {
+        // monta keymap UMA vez por linha (não por campo)
+        const km = {};
+        Object.keys(row).forEach(k => { km[norm(k)] = k; });
+        const p = aliases => {
+          for (const a of aliases) {
+            const k = km[a]; // lookup direto, sem norm() extra
+            if (k !== undefined && row[k] !== undefined && row[k] !== '') return row[k];
+          }
+          return '';
+        };
+        const data = parseDate(p(FA.data));
+        const link = String(p(FA.link) || '').trim();
+        const autor = String(p(FA.autor) || '').replace(/^@+/, '').trim();
+        const texto = String(p(FA.texto) || '').trim();
+        const canal = String(p(FA.canal) || '').trim().toLowerCase();
+        const interacoes = num(p(FA.interacoes));
+        const seguidores = num(p(FA.seguidores));
+        const sentimento = canonSent(p(FA.sentimento));
+        // Se a planilha tem coluna CENA, o tema real está nas colunas-grupo após ela.
+        // Caso contrário, usa aliases padrão.
+        let tema = '';
+        if (hasCenaCol) {
+          for (const k of themeColKeys) {
+            const v = String(row[k] || '').trim();
+            if (v) { tema = v; break; }
+          }
+        } else {
+          tema = String(p(FA.tema) || '').split(';')[0].trim();
+        }
+        const id = link || [autor, texto.slice(0, 80), data, idx].join('|');
+        return { id, data, canal, nome_publicador: autor, conteudo: texto.slice(0, 600), link_publicacao: link,
+                 interacoes, seguidores, sentimento, tema, tipo_relatorio: tipo };
+      }).filter(r => r.data || r.conteudo || r.link_publicacao);
+      return base;
+    }
+
+
+    async function loadXlsx() {
+      if (typeof XLSX !== 'undefined') return;
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    async function readFile(file) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (ext !== 'csv') await loadXlsx();
+      const aoa = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = reject;
+        reader.onload = e => {
+          if (ext === 'csv') {
+            resolve(Papa.parse(e.target.result, { header:false, skipEmptyLines:true }).data);
+          } else {
+            const wb = XLSX.read(new Uint8Array(e.target.result), { type:'array' });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            resolve(XLSX.utils.sheet_to_json(ws, { header:1, defval:'', blankrows:false }));
+          }
+        };
+        if (ext === 'csv') reader.readAsText(file, 'UTF-8');
+        else reader.readAsArrayBuffer(file);
+      });
+      return tableRowsFromAOA(aoa);
+    }
+
+    /* ─── API ─── */
+    async function api(path, options) {
+      const res = await fetch(API + path, options);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error) throw new Error(data.error || 'Falha na API');
+      return data;
+    }
+
+    async function ensureCliente() {
+      try {
+        await api('/clientes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: CLIENTE_ID, nome: CLIENTE_NOME, ativo: true, favorito: false, possui_cena: false, workflow_status: 'producao' })
+        });
+      } catch (_) { /* cliente provavelmente ja existe */ }
+    }
+
+    async function fetchControleStatus() {
+      try {
+        const data = document.getElementById('dataRel')?.value;
+        const tipo = getTipo();
+        if (!data || !tipo) return;
+        localStorage.setItem('ekklesia_data_rel', data);
+        const res = await fetch(`/api/ekklesia/embratur-controle?data=${data}&tipo=${tipo}`);
+        if (!res.ok) return;
+        const rows = await res.json();
+        const row = rows.find(r => r.pais === 'secom');
+        
+        const status = row?.status || 'pendente';
+        const resp = row?.responsavel || '';
+        
+        state.secomStatus = status;
+        state.secomResp = resp;
+        
+        // Atualiza Botão de Status
+        const btn = document.getElementById('btn-secom-status');
+        if (btn) {
+          btn.className = `status-btn-secom s-${status}`;
+          const labels = {
+            'pendente': 'Pendente →',
+            'em_producao': 'Em Produção →',
+            'disponivel': 'Disponível p/ revisão →',
+            'revisando': 'Revisando →',
+            'aprovado': 'Aprovado →',
+            'publicado': 'Publicado ✓'
+          };
+          btn.textContent = labels[status] || status;
+        }
+        
+        // Atualiza Trigger de Responsável
+        updateRespTrigger(resp);
+      } catch (e) {
+        console.error('Erro ao buscar controle de produção:', e);
+      }
+    }
+
+    function updateRespTrigger(resp) {
+      const container = document.getElementById('secom-resp-container');
+      if (container) {
+        if (resp) {
+          const parts = resp.split(/[._-]/);
+          const initials = (parts.length > 1 ? parts.map(p => p[0]).join('') : resp.substring(0, 2)).toUpperCase();
+          container.innerHTML = `
+            <div class="resp-btn-secom" onclick="abrirModalSecom()" title="Alterar responsável">
+              <div class="resp-avatar-secom">${initials}</div>
+              <span class="resp-nome-secom">${resp.split('.')[0]}</span>
+            </div>
+          `;
+        } else {
+          container.innerHTML = `
+            <button class="resp-btn-secom" onclick="abrirModalSecom()" title="Atribuir responsável">
+              <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Atribuir</span>
+            </button>
+          `;
+        }
+      }
+    }
+
+    const STATUS_FLOW = ['pendente', 'em_producao', 'disponivel', 'revisando', 'aprovado', 'publicado'];
+    
+    function avancarSecomStatus() {
+      const current = state.secomStatus || 'pendente';
+      const idx = STATUS_FLOW.indexOf(current);
+      if (idx === -1 || idx === STATUS_FLOW.length - 1) {
+        saveSecomControle('pendente', state.secomResp || '');
+      } else {
+        saveSecomControle(STATUS_FLOW[idx + 1], state.secomResp || '');
+      }
+    }
+
+    async function saveSecomControle(newStatus, newResp) {
+      const data = document.getElementById('dataRel')?.value;
+      const tipo = getTipo();
+      if (!data || !tipo) return;
+      
+      state.secomStatus = newStatus;
+      state.secomResp = newResp;
+      
+      // Atualiza UI local do Status
+      const btn = document.getElementById('btn-secom-status');
+      if (btn) {
+        btn.className = `status-btn-secom s-${newStatus}`;
+        const labels = {
+          'pendente': 'Pendente →',
+          'em_producao': 'Em Produção →',
+          'disponivel': 'Disponível p/ revisão →',
+          'revisando': 'Revisando →',
+          'aprovado': 'Aprovado →',
+          'publicado': 'Publicado ✓'
+        };
+        btn.textContent = labels[newStatus] || newStatus;
+      }
+      
+      // Atualiza UI local do Responsável
+      updateRespTrigger(newResp);
+
+      fetch('/api/ekklesia/embratur-controle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo_relatorio: tipo,
+          data_ref: data,
+          pais: 'secom',
+          status: newStatus,
+          responsavel: newResp
+        })
+      }).catch(e => console.error('Erro ao atualizar controle:', e));
+
+      // Mapeia o status da produção para o workflow_status do cliente
+      let workflowStatus = 'producao';
+      if (newStatus === 'disponivel' || newStatus === 'revisando') {
+        workflowStatus = 'revisao';
+      } else if (newStatus === 'aprovado' || newStatus === 'publicado') {
+        workflowStatus = 'finalizado';
+      }
+
+      // Atualiza o workflow_status do cliente na base principal sem sobrescrever favorito/possui_cena/ativo
+      try {
+        const res = await api('/clientes?id=' + CLIENTE_ID);
+        const current = res?.clientes?.[0] || {
+          id: CLIENTE_ID,
+          nome: CLIENTE_NOME,
+          ativo: true,
+          favorito: false,
+          possui_cena: false
+        };
+        
+        await api('/clientes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: CLIENTE_ID,
+            nome: CLIENTE_NOME,
+            ativo: current.ativo !== false,
+            favorito: !!current.favorito,
+            possui_cena: !!current.possui_cena,
+            workflow_status: workflowStatus
+          })
+        });
+      } catch (e) {
+        console.error('Erro ao atualizar workflow_status do cliente:', e);
+      }
+    }
+
+    let _usuariosCached = null;
+    
+    async function abrirModalSecom() {
+      const modal = document.getElementById('modalResp');
+      if (!modal) return;
+      
+      document.getElementById('modal-tarefa-meta').innerHTML = `
+        <span><b>Relatório:</b> SECOM (${getTipo().toUpperCase()})</span>
+        <br>
+        <span><b>Data:</b> ${document.getElementById('dataRel')?.value || ''}</span>
+      `;
+      modal.classList.add('open');
+      
+      const grid = document.getElementById('modal-users-grid');
+      if (grid) grid.innerHTML = '<div style="text-align:center; padding:12px; font-size:11px; color:var(--text-muted);">Carregando usuários…</div>';
+      
+      try {
+        if (!_usuariosCached) {
+          const r = await fetch('/api/usuarios');
+          if (r.ok) {
+            _usuariosCached = await r.json();
+          }
+        }
+        renderUsersGrid(state.secomResp || '');
+      } catch (e) {
+        if (grid) grid.innerHTML = '<div style="text-align:center; padding:12px; font-size:11px; color:red;">Erro ao carregar usuários</div>';
+      }
+    }
+
+    function fecharModal() {
+      document.getElementById('modalResp')?.classList.remove('open');
+    }
+
+    function renderUsersGrid(selectedUser) {
+      const grid = document.getElementById('modal-users-grid');
+      if (!grid || !_usuariosCached) return;
+      
+      let html = '';
+      _usuariosCached.forEach(u => {
+        const username = u.email.split('@')[0];
+        const isSel = username === selectedUser || u.email === selectedUser;
+        const initials = u.nome.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        html += `
+          <div class="modal-user-item ${isSel ? 'sel' : ''}" onclick="atribuirResp('${username}')">
+            <div class="resp-avatar-secom">${initials}</div>
+            <div style="flex:1;">
+              <div style="font-weight:600; font-size:11px;">${u.nome}</div>
+              <div style="font-size:9px; color:var(--text-muted);">${u.email}</div>
+            </div>
+          </div>
+        `;
+      });
+      grid.innerHTML = html;
+    }
+
+    function atribuirResp(username) {
+      fecharModal();
+      saveSecomControle(state.secomStatus || 'pendente', username || '');
+    }
+
+    async function loadBase() {
+      try {
+        const tipo = getTipo();
+        const data = await api('/base?' + new URLSearchParams({ cliente_id: CLIENTE_ID, tipo_relatorio: tipo, dias: '180' }));
+        state.rows = data.rows || [];
+        syncReportDateWithBase();
+        updateUploadStatus();
+      } catch (e) {
+        state.rows = [];
+        showToast('Erro ao carregar base: ' + (e.message || 'falha na API'));
+      }
+    }
+
+    function mostFrequentDate(rows = state.rows) {
+      const counts = {};
+      rows.forEach(r => {
+        const d = String(r._dataRel || r.data_rel || r.data || '').slice(0, 10);
+        if (d) counts[d] = (counts[d] || 0) + 1;
+      });
+      return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+    }
+
+    function latestBaseDate(rows = state.rows) {
+      return rows.map(r => String(r._dataRel || r.data_rel || r.data || '').slice(0, 10)).filter(Boolean).sort().pop() || '';
+    }
+
+    function syncReportDateWithBase() {
+      const input = document.getElementById('dataRel');
+      if (!input || !state.rows.length) return;
+      const freq = mostFrequentDate();
+      if (freq) input.value = freq;
+    }
+
+    function updateUploadStatus() {
+      const el = document.getElementById('uploadStatus');
+      if (!el) return;
+      const dataRef = mostFrequentDate();
+      el.textContent = state.rows.length
+        ? `${state.rows.length.toLocaleString('pt-BR')} publicações acumuladas · data ref: ${dataRef || 'N/D'}`
+        : '';
+    }
+
+    async function handleFiles(files) {
+      const status = document.getElementById('uploadStatus');
+      const CHUNK = 350;
+      let salvas = 0, ignoradas = 0;
+      for (let i = 0; i < files.length; i++) {
+        status.textContent = `Lendo ${files[i].name}…`;
+        try {
+          const rawRows = await readFile(files[i]);
+          const rows = parseRows(rawRows);
+          if (!rows.length) { showToast('Nenhuma linha válida em ' + files[i].name); continue; }
+
+          // Limpa datas do arquivo antes de subir — evita acúmulo de uploads anteriores
+          const datas = [...new Set(rows.map(r => String(r.data || '').slice(0, 10)).filter(Boolean))];
+          status.textContent = `Limpando ${datas.length} data(s) da base…`;
+          for (const d of datas) {
+            await api('/base?' + new URLSearchParams({ cliente_id: CLIENTE_ID, data_rel: d }), { method: 'DELETE' });
+          }
+
+          // Upload em chunks com progresso
+          for (let b = 0; b < rows.length; b += CHUNK) {
+            const chunk = rows.slice(b, b + CHUNK);
+            const pct = Math.round((b + chunk.length) / rows.length * 100);
+            status.textContent = `Enviando ${(b + chunk.length).toLocaleString('pt-BR')} / ${rows.length.toLocaleString('pt-BR')} linhas… ${pct}%`;
+            await new Promise(r => setTimeout(r, 0));
+            const result = await api('/base', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ cliente_id: CLIENTE_ID, tipo_relatorio: getTipo(), rows: chunk, force: true })
+            });
+            salvas += Number(result.salvas || 0);
+            ignoradas += Number(result.ignoradas || 0);
+          }
+        } catch (e) {
+          showToast('Erro em ' + files[i].name + ': ' + (e.message || 'falha'));
+        }
+      }
+      await loadBase();
+      syncReportDateWithBase();
+      status.textContent = `${salvas.toLocaleString('pt-BR')} salvas`;
+      if (!salvas && !state.rows.length) showToast('Nenhuma linha válida. Confira se a planilha tem data e conteúdo/link.');
+      else if (salvas) showToast(`${salvas.toLocaleString('pt-BR')} linhas salvas.`);
+      render();
+    }
+
+    function handleDrop(event) {
+      event.preventDefault();
+      document.getElementById('uploadZone').classList.remove('drag');
+      handleFiles(event.dataTransfer.files);
+    }
+
+    async function limparBase() {
+      if (!confirm('Limpar toda a base local de SECOM? Esta acao nao pode ser desfeita.')) return;
+      state.rows = [];
+      document.getElementById('uploadStatus').textContent = '';
+      render();
+      showToast('Base limpa.');
+    }
+
+    async function syncBase() {
+      showToast('Sincronizando...');
+      await loadBase();
+      render();
+      showToast('Base sincronizada.');
+    }
+
+    /* ─── Filtro de data ─── */
+    function dateInScope(rowDate, refDate, tipo) {
+      if (!refDate) return true;
+      const v = String(rowDate || '').slice(0, 10);
+      if (!v) return false;
+      tipo = tipo || getTipo();
+      if (tipo === 'diario') {
+        const hIni = document.getElementById('horaInicio')?.value || '';
+        const hFim = document.getElementById('horaFim')?.value || '';
+        if (hIni || hFim) {
+          // compara datetime completo; suporta janela que atravessa meia-noite
+          const rowFull = String(rowDate || '').replace('T', ' ').slice(0, 16);
+          if (rowFull.length < 16) return v === refDate; // row sem horário: só data
+          const start = refDate + ' ' + (hIni || '00:00');
+          const nextD = new Date(refDate + 'T12:00:00Z');
+          nextD.setUTCDate(nextD.getUTCDate() + 1);
+          const nextDate = nextD.toISOString().slice(0, 10);
+          // se horaFim <= horaInicio a janela cruza meia-noite (ex: 06:01→06:00)
+          const endDate = (hFim && hIni && hFim <= hIni) ? nextDate : refDate;
+          const end = endDate + ' ' + (hFim || '23:59');
+          return rowFull >= start && rowFull <= end;
+        }
+        return v === refDate;
+      }
+      const ref = new Date(refDate + 'T00:00:00Z');
+      const cur = new Date(v + 'T00:00:00Z');
+      const diff = Math.floor((ref - cur) / 86400000);
+      if (tipo === 'semanal') return diff >= 0 && diff < 7;
+      return v.slice(0, 7) === refDate.slice(0, 7);
+    }
+
+    function currentRows() {
+      const refDate = document.getElementById('dataRel')?.value || '';
+      const tipo = getTipo();
+      const ignored = getIgnoredRows();
+      return state.rows.filter(r =>
+        dateInScope(r._dataRel || r.data_rel || r.data, refDate, tipo) &&
+        !ignored.has(r.id || r._id)
+      );
+    }
+
+    /* ─── KPIs ─── */
+    function normSent(v) {
+      const s = norm(v || '');
+      if (s.startsWith('pos')) return 'positivo';
+      if (s.startsWith('fav')) return 'favoravel';
+      if (s.startsWith('neg')) return 'negativo';
+      if (s.startsWith('des') || s.startsWith('unf')) return 'desfavoravel';
+      if (s === 'neutral' || s === 'neutro') return 'neutro';
+      return s || 'sem classif.';
+    }
+
+    function calcKpis(rows) {
+      const total = rows.length;
+      const interacoes = rows.reduce((s, r) => s + num(r.interacoes), 0);
+      // alcance: 20% dos seguidores únicos por publicador (máx por publisher)
+      const pubSeg = {};
+      rows.forEach(r => {
+        const pub = r.nome_publicador || r.canal || '_anon';
+        const seg = num(r.seguidores);
+        if (seg > (pubSeg[pub] || 0)) pubSeg[pub] = seg;
+      });
+      const alcance = Math.round(Object.values(pubSeg).reduce((s, v) => s + v, 0) * 0.2);
+      const canais = {}, sentimentos = {};
+      rows.forEach(r => {
+        const c = r.canal || 'sem canal';
+        canais[c] = (canais[c] || 0) + 1;
+        const s = normSent(r.sentimento);
+        sentimentos[s] = (sentimentos[s] || 0) + 1;
+      });
+      const topCanal = Object.entries(canais).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
+      // sentimento dominante: exclui "sem classif." para mostrar o classificado mais frequente
+      const topSent = Object.entries(sentimentos)
+        .filter(([k]) => k !== 'sem classif.' && k !== '' && k !== '-')
+        .sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
+      const pct = (sent) => total ? Math.round((sentimentos[sent] || 0) / total * 100) : 0;
+      // vol7: contagem dos ultimos 7 dias usando TODAS as datas carregadas,
+      // não apenas o recorte atual (currentRows filtra por data selecionada)
+      const refDate = document.getElementById('dataRel')?.value || new Date().toISOString().slice(0, 10);
+      const allStateRows = state?.rows || rows;
+      const vol7 = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(refDate + 'T00:00:00Z');
+        d.setUTCDate(d.getUTCDate() - (6 - i));
+        const ds = d.toISOString().slice(0, 10);
+        return allStateRows.filter(r => String(r._dataRel || r.data_rel || r.data || '').slice(0, 10) === ds).length;
+      });
+      return { total, interacoes, alcance, topCanal, topSent,
+               sentPos: pct('positivo'), sentFav: pct('favoravel'), sentNeg: pct('negativo'), sentDes: pct('desfavoravel'), vol7 };
+    }
+
+    function frequency(rows, key, limit = 8) {
+      const count = {};
+      rows.forEach(r => {
+        const v = String(typeof key === 'function' ? key(r) : r[key] || '').trim() || 'sem classif.';
+        count[v] = (count[v] || 0) + 1;
+      });
+      return Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, limit);
+    }
+
+    function wordFrequency(rows, limit = 24) {
+      const stop = new Set('para com uma que por dos das aos nas nos nao mais como sobre entre pelo pela esta esse essa isso suas seus voce eles elas'.split(' '));
+      const count = {};
+      rows.forEach(r => {
+        norm(r.conteudo).split(/[^a-z0-9]+/).forEach(w => {
+          if (w.length < 4 || stop.has(w)) return;
+          count[w] = (count[w] || 0) + 1;
+        });
+      });
+      return Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, limit);
+    }
+
+    /* ─── Render KPIs ─── */
+    function renderKpis(rows) {
+      const sec = document.getElementById('kpiSection');
+      const area = document.getElementById('kpiArea');
+      const cnt = document.getElementById('rowsCount');
+      const destSec = document.getElementById('destaquesSection');
+      if (!rows.length) {
+        sec.style.display = 'none';
+        if (destSec) destSec.style.display = 'none';
+        if (cnt) cnt.textContent = '';
+        return;
+      }
+      sec.style.display = '';
+      if (destSec) destSec.style.display = '';
+      if (cnt) cnt.textContent = `${rows.length} no recorte`;
+      const k = calcKpis(rows);
+      const mx = Math.max(...k.vol7, 1);
+      area.innerHTML = `
+        <div class="multi-kpis">
+          <div class="multi-kpi"><span>Menções</span><strong>${fmt(k.total)}</strong></div>
+          <div class="multi-kpi"><span>Interações</span><strong>${fmt(k.interacoes)}</strong></div>
+          <div class="multi-kpi"><span>Alcance estimado</span><strong>${fmt(k.alcance)}</strong></div>
+          <div class="multi-kpi"><span>Top Canal</span><strong style="font-size:14px;white-space:normal;line-height:1.3;">${esc(k.topCanal)}</strong></div>
+          <div class="multi-kpi"><span>Sentimento dominante</span><strong style="font-size:14px;white-space:normal;line-height:1.3;">${esc(k.topSent)}</strong></div>
+        </div>
+        <div style="margin-top:12px;">
+          <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Volume 7 dias</div>
+          <div class="vol-bars">
+            ${k.vol7.map((v, i) => `
+              <div class="vol-wrap">
+                <div class="vol-bar" style="height:${Math.round((v/mx)*44)+4}px;background:${i===6?'var(--orange)':'rgba(255,255,255,0.15)'}"></div>
+                <div class="vol-lbl">D-${6-i}</div>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div class="sent-row" style="margin-top:12px;">
+          <span class="sent-chip pos">Positivo ${k.sentPos}%</span>
+          <span class="sent-chip fav">Favoravel ${k.sentFav}%</span>
+          <span class="sent-chip neg">Negativo ${k.sentNeg}%</span>
+          <span class="sent-chip des">Desfavoravel ${k.sentDes}%</span>
+        </div>
+      `;
+    }
+
+    /* ─── Render tabela de publicações ─── */
+    function renderTable(rows) {
+      const area = document.getElementById('tableArea');
+      const ignored = getIgnoredRows();
+      const removedCount = ignored.size;
+      const header = `<div class="multi-panel-title" style="margin-bottom:8px;">
+        <span>Publicações do recorte</span>
+        <div class="multi-row" style="gap:8px;">
+          ${removedCount ? `<span style="font-size:10px;color:var(--text-muted);">${removedCount} removida${removedCount > 1 ? 's' : ''}</span>
+          <button class="multi-btn" style="font-size:10px;padding:4px 10px;" onclick="restoreRows()">Restaurar</button>` : ''}
+        </div>
+      </div>`;
+      if (!rows.length) {
+        area.innerHTML = header + '<div class="multi-empty">Nenhuma publicação carregada para este recorte.</div>';
+        return;
+      }
+      area.innerHTML = header + `
+        <div class="multi-table-wrap">
+          <table class="multi-table">
+            <thead><tr><th>Data</th><th>Canal</th><th>@Publicador</th><th>Sentimento</th><th>Int.</th><th>Texto</th><th style="width:32px;"></th></tr></thead>
+            <tbody>${rows.slice(0, 80).map(r => {
+              const id = r.id || r._id || '';
+              return `<tr>
+                <td>${esc(String(r._dataRel || r.data_rel || r.data || '').slice(0, 10))}</td>
+                <td>${esc(r.canal || '')}</td>
+                <td>${esc(r.nome_publicador ? '@' + r.nome_publicador : '')}</td>
+                <td>${esc(r.sentimento || '')}</td>
+                <td>${fmt(r.interacoes)}</td>
+                <td style="max-width:340px;">${esc(String(r.conteudo || '').slice(0, 120))}</td>
+                <td><button onclick="removeRow('${esc(id)}')" title="Remover publicação" style="background:none;border:none;cursor:pointer;color:rgba(255,96,96,.5);font-size:13px;padding:2px 4px;line-height:1;" onmouseover="this.style.color='rgba(255,96,96,1)'" onmouseout="this.style.color='rgba(255,96,96,.5)'">✕</button></td>
+              </tr>`;
+            }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    /* ─── Prompt ─── */
+    function savePromptLocal() {
+      const ctx = document.getElementById('promptContexto')?.value || '';
+      const reg = document.getElementById('promptRegras')?.value || '';
+      localStorage.setItem('secom_prompt_contexto', ctx);
+      localStorage.setItem('secom_prompt_regras', reg);
+    }
+
+    function loadPromptLocal() {
+      const ctx = document.getElementById('promptContexto');
+      const reg = document.getElementById('promptRegras');
+      if (ctx) ctx.value = localStorage.getItem('secom_prompt_contexto') || '';
+      if (reg) reg.value = localStorage.getItem('secom_prompt_regras') || '';
+    }
+
+    function buildPrompt() {
+      const rows = currentRows();
+      const tipo = getTipo();
+      const kpis = calcKpis(rows);
+      const ctx = document.getElementById('promptContexto')?.value || '';
+      const regras = document.getElementById('promptRegras')?.value || '';
+      const dataRef = document.getElementById('dataRel')?.value || 'periodo carregado';
+
+      // TODAS as publicações do período, ordenadas por interações (conteúdo completo)
+      const todasRows = rows.slice().sort((a, b) => num(b.interacoes) - num(a.interacoes));
+      const linhasTodas = todasRows.map((r, i) =>
+        `[${i+1}] @${r.nome_publicador||'-'} | ${r.canal||'-'} | ${fmt(r.interacoes)} inter | ${fmt(num(r.seguidores))} seg | ${r.sentimento||'-'} | ${r.tema||'-'} | ${r.link_publicacao||'sem link'} | "${String(r.conteudo||'').replace(/\s+/g,' ')}"`
+      ).join('\n');
+
+      // Distribuição por canal (volume e interações)
+      const canalMap = {};
+      rows.forEach(r => {
+        const c = String(r.canal||'outros').trim()||'outros';
+        if (!canalMap[c]) canalMap[c] = { qtd:0, inter:0 };
+        canalMap[c].qtd++;
+        canalMap[c].inter += num(r.interacoes);
+      });
+      const totalInter = rows.reduce((s,r) => s + num(r.interacoes), 0) || 1;
+      const canalBreak = Object.entries(canalMap)
+        .sort((a,b) => b[1].inter - a[1].inter)
+        .map(([c,d]) => `- ${c}: ${d.qtd} posts (${rows.length ? Math.round(d.qtd/rows.length*100) : 0}% do volume) | ${fmt(d.inter)} inter (${Math.round(d.inter/totalInter*100)}% das interacoes)`)
+        .join('\n');
+
+      // Temas com post de destaque por tema
+      const temaMap = {};
+      rows.forEach(r => {
+        const t = String(r.tema||'').split(';')[0].trim() || 'Sem classificacao';
+        if (!temaMap[t]) temaMap[t] = { qtd:0, inter:0, pos:0, neg:0, top:null };
+        temaMap[t].qtd++;
+        temaMap[t].inter += num(r.interacoes);
+        const s = String(r.sentimento||'').toLowerCase();
+        if (s.includes('pos')||s.includes('fav')) temaMap[t].pos++;
+        else if (s.includes('neg')||s.includes('desfav')) temaMap[t].neg++;
+        if (!temaMap[t].top || num(r.interacoes) > num(temaMap[t].top.interacoes)) temaMap[t].top = r;
+      });
+      const temas = Object.entries(temaMap)
+        .sort((a,b) => b[1].inter - a[1].inter)
+        .slice(0, 10)
+        .map(([t,d]) => {
+          const ex = d.top ? ` | destaque: @${d.top.nome_publicador||'-'} (${fmt(d.top.interacoes)} inter): "${String(d.top.conteudo||'').replace(/\s+/g,' ').slice(0,130)}"` : '';
+          return `- ${t}: ${d.qtd} posts | ${fmt(d.inter)} inter | ${d.pos} pos / ${d.neg} neg${ex}`;
+        })
+        .join('\n');
+
+      // Top 8 negativos/desfavoráveis com link
+      const negRows = rows.filter(r => {
+        const s = String(r.sentimento||'').toLowerCase();
+        return s.includes('neg') || s.includes('desfav');
+      }).sort((a,b) => num(b.interacoes) - num(a.interacoes)).slice(0, 8);
+      const linhasNeg = negRows.length
+        ? negRows.map((r,i) =>
+            `[N${i+1}] @${r.nome_publicador||'-'} | ${fmt(r.interacoes)} inter | ${fmt(num(r.seguidores))} seg | ${r.link_publicacao||'sem link'} | "${String(r.conteudo||'').replace(/\s+/g,' ').slice(0,200)}"`
+          ).join('\n')
+        : '(sem publicacoes negativas no recorte)';
+
+      const prompt = `Você é um analista sênior de inteligência de comunicação governamental com experiência em gestão de narrativas digitais para o Governo Federal Brasileiro.
+
+CONTEXTO OPERACIONAL:
+Seu relatório é lido por gestores e técnicos da SECOM (Secretaria de Comunicação Social da Presidência da República). Eles precisam de inteligência acionável para as próximas horas:
+- Saber o que viralizou, por que viralizou e quem moveu — não apenas o que a imprensa noticiou
+- Identificar riscos narrativos antes de escalarem, com recomendação prática do que fazer
+- Reconhecer onde há espaço para amplificação de narrativas positivas
+- Ter subsídios concretos para orientar porta-vozes, agências e equipes de redes sociais
+
+DIRETRIZES DE TOM E RIGOR ANALÍTICO (siga atentamente):
+- Seja específico, nunca genérico. Troque "gerou grande repercussão" por "gerou 103 mil interações, 4x a média do período". Todo número vem dos dados — nunca invente números, handles ou URLs.
+- Vá além do óbvio: não reescreva a manchete da imprensa. Explique o mecanismo — quem amplificou, com que estratégia (orgânica, coordenada, oportunista), qual narrativa aquele grupo quer construir, e por que aquele conteúdo específico (e não outro sobre o mesmo tema) foi o que viralizou.
+- Não suavize riscos: se o conteúdo negativo dominou o engajamento do período, diga isso sem rodeio e explique o risco real para a imagem do governo.
+- Evite jargão vazio e superlativos sem número por trás — corte palavras como "expressivo", "significativo", "diversos", "importante destacar" quando não vierem acompanhadas de um dado concreto.
+- Adote postura consultiva, não apenas descritiva: toda vez que apontar um risco ou padrão, feche com o que a SECOM pode fazer de concreto a respeito — não repita o problema com outras palavras.
+- Leitura técnica, não partidária: análise o fluxo de comunicação, o padrão de amplificação e o risco reputacional — nunca faça juízo de valor político-ideológico sobre atores ou pautas. O papel é diagnosticar a narrativa, não validar ou refutar posicionamentos políticos.
+- Cada campo tem uma função única no relatório — não repita a mesma informação (mesmo handle, mesmo número, mesmo fato) em mais de uma seção.
+- Links: use sempre o formato markdown [@handle](link_publicacao), detalhado na REGRA GLOBAL DE LINKS abaixo. Nunca use URL pura solta no meio do texto nem construa/adivinhe um link que não esteja nos dados.
+
+CLIENTE: ${CLIENTE_NOME} | TIPO: ${tipo} | DATA: ${dataRef}
+
+MÉTRICAS GERAIS DO PERÍODO:
+- Total de menções: ${kpis.total}
+- Interações totais: ${fmt(kpis.interacoes)}
+- Alcance estimado: ${fmt(kpis.alcance)}
+- Sentimento por volume: Positivo ${kpis.sentPos}% | Favorável ${kpis.sentFav}% | Negativo ${kpis.sentNeg}% | Desfavorável ${kpis.sentDes}%
+
+DISTRIBUIÇÃO POR CANAL:
+${canalBreak || '(canal não informado na base)'}
+
+TEMAS — por interações, com post de destaque de cada tema:
+${temas || '(classificação temática indisponível)'}
+
+TODAS AS PUBLICAÇÕES DO PERÍODO — ${todasRows.length} publicações, ordenadas por interações (conteúdo completo):
+${linhasTodas || '(sem publicações no recorte)'}
+
+TOP 8 NEGATIVOS / DESFAVORÁVEIS:
+${linhasNeg}
+
+${ctx ? 'CONTEXTO ADICIONAL:\n' + ctx + '\n\n' : ''}${regras ? 'REGRAS ESPECIFICAS:\n' + regras + '\n\n' : ''}---
+Escreva os 5 campos abaixo. Cada um vai para uma seção específica do relatório. Não repita informações entre eles.
+
+1. MANCHETE DO DIA (destaque)
+Papel: título da seção "Resumo do dia". Uma frase que captura o fato ou narrativa de maior tração do período.
+Critério: priorize o conteúdo com maior impacto orgânico — mesmo que seja negativo. A manchete deve ser factual.
+Não comece com "O governo". Prefira o sujeito real da narrativa (pessoa, evento, revelação).
+Exemplo de qualidade: "Vídeo de torcedores xingando Lula ao vivo na Globo domina engajamento do período"
+Formato: 1 frase. Sem ponto final.
+
+2. RESUMO DO DIA (análise)
+Papel: corpo da seção "Resumo do dia" — briefing estratégico para gestores da SECOM.
+LIMITE ABSOLUTO: 4 parágrafos curtos, máximo 3 frases por parágrafo, total até 280 palavras.
+Seja denso e preciso, mas não raso: cada frase precisa acrescentar informação nova (número, mecanismo ou implicação) — nada de frase de transição que só repete o que já foi dito. Corte adjetivos, corte o óbvio, corte o que não gera ação.
+
+Parágrafo 1 — PANORAMA (3 frases):
+Canal com maior volume (%) e canal com maior engajamento (%). Polaridade dominante com números. Se algum número destoar da média do período (pico ou queda), diga isso explicitamente.
+
+Parágrafo 2 — DESTAQUES POSITIVOS (3 frases):
+Os 1-2 temas positivos/favoráveis de maior tração: @handle, interações, e por que esse conteúdo específico (não só o tema em geral) repercutiu — qual gatilho ou contexto explica a tração.
+
+Parágrafo 3 — RISCO PRINCIPAL (3 frases):
+O conteúdo negativo de maior engajamento: quem (@handle + interações), POR QUE viralizou (mecanismo — emoção mobilizada, estratégia de oposição, erro de comunicação, coincidência de agenda) e o risco concreto e específico para a imagem do governo — não genérico como "pode prejudicar a imagem".
+
+Parágrafo 4 — AÇÃO ESTRATÉGICA (2 frases):
+O que o padrão do dia revela sobre a conversa em curso (não apenas sobre o post isolado). O que fazer nas próximas horas — ação específica, não genérica como "monitorar de perto".
+
+REGRAS:
+- Quando citar uma publicação específica, use o formato [@handle](link_publicacao) — o link deve ser o link_publicacao exato dos dados. Exemplo: [@nikolasferreirabr](https://x.com/nikolasferreirabr/status/123) (103,0 mil interações)
+- Se a publicação não tiver link_publicacao, cite apenas @handle sem link.
+- Sem markdown adicional (sem asteriscos, sem subtítulos). Parágrafos separados por linha em branco dupla.
+- Não repita informação entre parágrafos nem entre este campo e os Pontos de Atenção.
+
+3. TRENDING TOPICS X/TWITTER (em_alta)
+Papel: preenche a seção "Em Alta / Trending Topics" do relatório.
+Fonte: pesquise "trending topics Twitter Brasil ${dataRef}" ou acesse https://trends24.in/brazil/. Se não tiver acesso, use conhecimento sobre o contexto político brasileiro da data e informe isso.
+Filtro: apenas trends com relação direta ao governo federal, política, economia ou programas sociais.
+IMPORTANTE: não use nomes de temas classificadores da planilha (PROTAGONISTA, CITAÇÃO, COADJUVANTE etc.).
+Formato: 1 item por linha — "#NomeTrend — o que está em alta e por que é relevante para SECOM". De 3 a 5 itens.
+
+4. TENDÊNCIAS NO GOOGLE (tendencias)
+Papel: preenche a seção "Tendências no Google" do relatório.
+Fonte: pesquise "Google Trends Brasil ${dataRef}" ou acesse https://trends.google.com.br/trends/trendingsearches/daily?geo=BR. Se não tiver acesso, use conhecimento da data e informe.
+Filtro: apenas termos com relação ao governo federal, política, economia ou programas sociais.
+IMPORTANTE: não use nomes de temas classificadores da planilha.
+Formato: 1 item por linha — "Termo (+variação%) — contexto de por que está sendo buscado e relevância para SECOM". De 3 a 5 itens.
+
+REGRA GLOBAL DE LINKS (vale para os campos 5 e 6 abaixo):
+Sempre que citar uma publicação específica, use OBRIGATORIAMENTE o formato [@handle](link_publicacao) usando o link_publicacao exato dos dados. Nunca escreva @handle sem link quando o link_publicacao estiver disponível nos dados. Exemplo correto: "[@nikolasferreirabr](https://www.instagram.com/reel/DaN0Gk3OxOx/) (103,0 mil interações)". Apenas omita o link se o campo link_publicacao estiver ausente ou vazio nos dados.
+
+5. PONTOS DE ATENÇÃO (pontosAtencao)
+Papel: preenche a seção "Pontos de Atenção" — riscos narrativos com potencial de escalar nas próximas horas.
+Fonte: baseie-se exclusivamente nos dados negativos/desfavoráveis do recorte. Não invente cenários.
+Ordem: do risco mais grave (maior interações + alcance) ao menos grave. Limite: 3 a 5 pontos.
+Formato: array JSON, cada objeto com:
+- "titulo": nome do risco em 5 a 8 palavras — substantivo claro, não genérico (evite títulos como "Críticas ao governo"; prefira "Vídeo de X viraliza com acusação de Y")
+- "texto": 3 frases — (1) o que foi publicado, por quem com links no formato [@handle](link_publicacao) e com que números de interações e alcance; (2) o mecanismo — que narrativa esse conteúdo constrói, que emoção mobiliza, e por que representa risco real (não genérico) para a imagem do governo; (3) ação concreta e específica que a SECOM pode tomar nas próximas 24h — nunca "monitorar" sozinho, sempre com um próximo passo tangível.
+
+6. ANÁLISE ESTRATÉGICA POR TEMA (temas)
+Papel: preenche o card de cada tema na seção "Temas em alta" do relatório — substitui o texto bruto da publicação por uma análise estratégica.
+Cobertura: os 6 temas com maior volume de interações listados acima.
+Por tema, escreva 2 frases:
+- Frase 1: por que esse tema se destacou — contexto político ou social, quem o moveu (cite OBRIGATORIAMENTE os principais publicadores com o formato [@handle](link_publicacao)), que narrativa constrói
+- Frase 2: ação estratégica específica que a SECOM pode tomar para capitalizar (temas positivos) ou neutralizar (temas negativos) nas próximas horas — evite recomendações genéricas como "reforçar comunicação" sem dizer o canal, formato ou porta-voz
+Formato: array JSON, cada objeto com:
+- "nome": nome exato do tema conforme listado nos dados acima
+- "analise": as 2 frases com links embutidos conforme a REGRA GLOBAL DE LINKS acima
+
+Responda APENAS em JSON valido, sem markdown, sem texto fora das chaves:
+{
+  "destaque": "...",
+  "analise": "...",
+  "em_alta": "...",
+  "tendencias": "...",
+  "pontosAtencao": [{"titulo": "...", "texto": "..."}],
+  "temas": [{"nome": "...", "analise": "..."}]
+}`;
+
+      const preview = document.getElementById('promptPreview');
+      if (preview) preview.value = prompt;
+      return prompt;
+    }
+
+    function togglePromptPanel() {
+      const panel = document.getElementById('promptPanel');
+      const chevron = document.getElementById('promptChevron');
+      panel.classList.toggle('open');
+      if (chevron) chevron.textContent = panel.classList.contains('open') ? '▲' : '▼';
+      if (panel.classList.contains('open')) buildPrompt();
+    }
+
+    async function copyPrompt() {
+      const txt = buildPrompt();
+      await navigator.clipboard.writeText(txt);
+      showToast('Prompt copiado.');
+    }
+
+    function downloadPrompt() {
+      const txt = buildPrompt();
+      const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ekklesia_secom_${getTipo()}_${document.getElementById('dataRel')?.value || 'prompt'}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    /* ─── Textos editoriais ─── */
+    function _textosKey() {
+      return 'secom_textos_' + getTipo();
+    }
+
+    function getTextos() {
+      try { return JSON.parse(localStorage.getItem(_textosKey()) || '{}'); } catch (_) { return {}; }
+    }
+
+    function saveTexto(id, val) {
+      const textos = getTextos();
+      textos[id] = val;
+      localStorage.setItem(_textosKey(), JSON.stringify(textos));
+      const el = document.getElementById('secom_txt_' + id);
+      if (el && el.value !== val) el.value = val;
+    }
+
+    function renderTextosEditoriais() {
+      const textos = getTextos();
+      ['destaque','analise','em_alta','tendencias'].forEach(id => {
+        const el = document.getElementById('secom_txt_' + id);
+        if (el) el.value = textos[id] || '';
+      });
+      // pontosAtencao: JSON → "Título — Texto" por linha
+      const elPa = document.getElementById('secom_txt_pontosAtencao');
+      if (elPa) {
+        try {
+          const arr = JSON.parse(textos.pontosAtencao || '[]');
+          elPa.value = Array.isArray(arr) && arr.length
+            ? arr.map(p => `${(p.titulo || '').trim()} — ${(p.texto || '').trim()}`).join('\n')
+            : '';
+        } catch (_) { elPa.value = ''; }
+      }
+      renderTemasEditoriais();
+    }
+
+    function savePontosAtencao(val) {
+      const arr = val.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+        const sep = l.indexOf(' — ');
+        return sep !== -1
+          ? { titulo: l.slice(0, sep).trim(), texto: l.slice(sep + 3).trim() }
+          : { titulo: l, texto: '' };
+      });
+      saveTexto('pontosAtencao', JSON.stringify(arr));
+    }
+
+    function renderTemasEditoriais() {
+      const container = document.getElementById('secom_temas_container');
+      if (!container) return;
+      let arr = [];
+      try { arr = JSON.parse(getTextos().temas || '[]'); } catch(_) {}
+      if (!arr.length) {
+        container.innerHTML = '<p style="font-size:11px;color:var(--text-muted);">Importe a resposta da IA para editar os temas.</p>';
+        return;
+      }
+      container.innerHTML = arr.map((t, i) => `
+        <div class="multi-field" style="margin-bottom:12px;">
+          <label class="multi-label" style="font-size:10px;font-weight:700;color:var(--orange-2);">${(t.nome || 'Tema ' + (i+1)).toUpperCase()}</label>
+          <textarea class="multi-textarea" style="min-height:64px;" onchange="saveTemaField(${i},'analise',this.value)">${(t.analise || '').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea>
+        </div>`).join('');
+    }
+
+    function saveTemaField(idx, campo, value) {
+      const textos = getTextos();
+      let arr = [];
+      try { arr = JSON.parse(textos.temas || '[]'); } catch(_) {}
+      if (arr[idx]) {
+        if (campo === 'urls') {
+          arr[idx].urls = value.split('\n').map(u => u.trim()).filter(u => u.startsWith('http'));
+        } else {
+          arr[idx][campo] = value;
+        }
+      }
+      saveTexto('temas', JSON.stringify(arr));
+    }
+
+    function limparTextosEditoriais() {
+      localStorage.removeItem(_textosKey());
+      renderTextosEditoriais();
+      showToast('Textos editoriais limpos.');
+    }
+
+    function _tryParseJson(text) {
+      // 1) bloco de código ```json ... ```
+      const block = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+      if (block) { try { return JSON.parse(block[1].trim()); } catch (_) {} }
+      // 2) texto já é JSON puro
+      try { return JSON.parse(text); } catch (_) {}
+      // 3) extrai o primeiro { ... } de maior alcance
+      const first = text.indexOf('{'), last = text.lastIndexOf('}');
+      if (first !== -1 && last > first) {
+        const slice = text.slice(first, last + 1);
+        try { return JSON.parse(slice); } catch (_) {
+          // 4) remove trailing commas antes de } ou ]
+          const fixed = slice.replace(/,\s*([}\]])/g, '$1');
+          try { return JSON.parse(fixed); } catch (_) {}
+        }
+      }
+      return null;
+    }
+
+    function importarRespostaIA() {
+      const raw = document.getElementById('secomIAResp')?.value?.trim();
+      if (!raw) { showToast('Cole a resposta da IA antes de importar.'); return; }
+      const json = _tryParseJson(raw);
+      if (!json) {
+        showToast('JSON invalido. Verifique a resposta da IA.');
+        return;
+      }
+      // Desembrulha redirect de busca (grounding da IA): https://www.google.com/search?q=<url-encoded> → url real
+      const unwrapGoogleRedirect = s => String(s).replace(
+        /https?:\/\/(?:www\.)?google\.com\/search\?q=([^)\s"'<>]+)/g,
+        (m, enc) => {
+          try {
+            const decoded = decodeURIComponent(enc);
+            return decoded.startsWith('http') ? decoded : m;
+          } catch { return m; }
+        }
+      );
+      // Preserva markdown [texto](url) — linkifyMentions converte no radar
+      // Remove apenas padrões duplos ((url)) gerados por alguns modelos
+      const normLinks = s => unwrapGoogleRedirect(String(s))
+        .replace(/\(\(https?:\/\/[^)]+\)\)/g, m => m.slice(1, -1));
+      // Extrai URL plana de string que pode ser "[texto](url)" ou "https://..."
+      const extractUrl = u => {
+        const s = unwrapGoogleRedirect(String(u || '').trim());
+        const md = s.match(/^\[.*?\]\((https?:\/\/[^)]+)\)$/);
+        if (md) return md[1];
+        if (s.startsWith('http')) return s;
+        return null;
+      };
+      const campos = ['destaque','analise','em_alta','tendencias'];
+      campos.forEach(c => { if (json[c] !== undefined) saveTexto(c, normLinks(json[c])); });
+      if (Array.isArray(json.pontosAtencao) && json.pontosAtencao.length) {
+        saveTexto('pontosAtencao', JSON.stringify(json.pontosAtencao.map(p => ({
+          titulo: normLinks(p.titulo || ''),
+          texto: normLinks(p.texto || ''),
+          urls: Array.isArray(p.urls) ? p.urls.map(extractUrl).filter(Boolean) : (p.url ? [extractUrl(p.url)].filter(Boolean) : [])
+        }))));
+      }
+      if (Array.isArray(json.temas) && json.temas.length) {
+        saveTexto('temas', JSON.stringify(json.temas.map(t => ({
+          nome: normLinks(t.nome || ''),
+          analise: normLinks(t.analise || ''),
+          urls: Array.isArray(t.urls) ? t.urls.map(extractUrl).filter(Boolean) : (t.url ? [extractUrl(t.url)].filter(Boolean) : [])
+        }))));
+      }
+      renderTextosEditoriais();
+      showToast('Textos editoriais preenchidos com sucesso.');
+    }
+
+    /* ─── Links externos ─── */
+    /* ─── Destaques Top 3 (igual Embratur) ─── */
+    function _excludedKey()      { return 'secom_excluded_' + getTipo(); }
+    function _imgKey()           { return 'secom_images_'   + getTipo(); }
+    function getExcluded()       { try { return JSON.parse(localStorage.getItem(_excludedKey()) || '[]'); } catch { return []; } }
+    function saveExcluded(arr)   { localStorage.setItem(_excludedKey(), JSON.stringify(arr)); }
+    function getImagensManuais() { try { return JSON.parse(localStorage.getItem(_imgKey()) || '{}'); } catch { return {}; } }
+    function saveImagensManuais(m){ localStorage.setItem(_imgKey(), JSON.stringify(m)); }
+
+    function _secomChavePost(handle, texto, link) {
+      return link || ((handle || '') + '|' + (texto || '').substring(0, 40));
+    }
+
+    function _secomCalcTop3(rows) {
+      const excluded = new Set(getExcluded());
+      const imgs = getImagensManuais();
+      const num = v => { const n = parseFloat(String(v || 0).replace(/[^\d.]/g, '')); return isNaN(n) ? 0 : n; };
+      const items = rows.map(r => {
+        const handle = '@' + (r.nome_publicador || r.handle || r.autor || '');
+        const texto  = String(r.conteudo || r.texto || '').replace(/\s+/g, ' ').slice(0, 160);
+        const link   = r.link_publicacao || r.link || r.url || '';
+        const chave  = _secomChavePost(handle, texto, link);
+        return { handle, texto, link, chave, alcance: num(r.seguidores), inter: num(r.interacoes), imagem: imgs[chave] || r.imagem || '' };
+      }).filter(it => !excluded.has(it.chave));
+      const fmtV = v => v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(1)+'k' : String(v);
+      const top3 = (arr, key) => {
+        const seen = new Set();
+        return arr.slice().sort((a,b) => b[key]-a[key])
+          .filter(it => { if (seen.has(it.chave)) return false; seen.add(it.chave); return true; })
+          .slice(0,3).map(it => ({ ...it, val: fmtV(it[key]) }));
+      };
+      return { top3alcance: top3(items,'alcance'), top3interacao: top3(items,'inter'), hasExcluded: excluded.size > 0 };
+    }
+
+    /* encoda chave para uso seguro em onclick — evita quebrar string com aspas/apostrofes */
+    function _secomEncChave(s) { return encodeURIComponent(s || ''); }
+    function _secomDecChave(s) { try { return decodeURIComponent(s); } catch { return s; } }
+
+    function _secomTop3CardHTML(it, metricLabel, cor) {
+      const ce = _secomEncChave(it.chave);   // safe para onclick
+      const temImg = !!it.imagem;
+      const fotoStyle = temImg
+        ? `background-image:url('${esc(it.imagem)}');background-size:cover;background-position:center;`
+        : `background:linear-gradient(150deg,${cor}26,${cor}11,rgba(255,255,255,.03));`;
+      const iid = 'si_' + Math.random().toString(36).slice(2);
+      const btnImg = temImg
+        ? `<button type="button" onclick="_secomRemoverImagem(_secomDecChave('${ce}'))" title="Remover imagem" style="position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:6px;border:none;background:rgba(0,0,0,.55);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
+        : `<input type="file" accept="image/*" id="${iid}" style="display:none;" onchange="_secomAnexarImagem(_secomDecChave('${ce}'),this)"><button type="button" onclick="document.getElementById('${iid}').click()" title="Anexar print" style="position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:6px;border:none;background:rgba(0,0,0,.55);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>`;
+      const legenda = it.link ? `<a href="${esc(it.link)}" target="_blank" style="color:inherit;text-decoration:none;">${esc(it.texto)}</a>` : esc(it.texto);
+      return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;overflow:hidden;">
+        <div style="height:88px;position:relative;${fotoStyle}">
+          <span style="position:absolute;top:6px;left:6px;font-size:10px;color:#fff;background:rgba(0,0,0,.45);padding:2px 6px;border-radius:5px;font-weight:600;max-width:calc(100% - 40px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(it.handle)}</span>
+          ${btnImg}
+        </div>
+        <div style="padding:8px 9px;">
+          <p style="font-size:10.5px;color:var(--text-secondary);margin:0 0 7px;line-height:1.4;height:30px;overflow:hidden;">${legenda}</p>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;">
+            <span style="font-size:9px;color:var(--text-muted);">${metricLabel}</span>
+            <span style="font-size:13px;font-weight:700;color:${cor};">${esc(it.val)}</span>
+          </div>
+          <div style="margin-top:6px;border-top:1px solid rgba(255,255,255,.06);padding-top:5px;display:flex;justify-content:flex-end;">
+            <button onclick="_secomExcluirTop3(_secomDecChave('${ce}'))" style="background:none;border:none;cursor:pointer;font-size:9px;color:rgba(255,96,96,.55);padding:0;display:flex;align-items:center;gap:3px;">
+              <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              excluir do ranking
+            </button>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function _secomExcluirTop3(chave) {
+      const ex = getExcluded(); if (!ex.includes(chave)) ex.push(chave); saveExcluded(ex); renderDestaques();
+    }
+    function _secomRestaurarTop3() { saveExcluded([]); renderDestaques(); }
+
+    function _secomAnexarImagem(chave, input) {
+      const file = input.files?.[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 900;
+          const ratio = Math.min(MAX / img.width, MAX / img.height, 1);
+          const canvas = document.createElement('canvas');
+          canvas.width  = Math.round(img.width  * ratio);
+          canvas.height = Math.round(img.height * ratio);
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.78);
+          try {
+            const m = getImagensManuais();
+            m[chave] = compressed;
+            saveImagensManuais(m);
+            renderDestaques();
+          } catch (_) {
+            showToast('Imagem muito grande. Tente uma imagem menor ou comprima antes de subir.');
+          }
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    function _secomRemoverImagem(chave) { const m = getImagensManuais(); delete m[chave]; saveImagensManuais(m); renderDestaques(); }
+
+    async function _secomBuscarImagensAuto() {
+      const rows = currentRows();
+      if (!rows.length) { showToast('Suba a base primeiro.'); return; }
+      const t3 = _secomCalcTop3(rows);
+      const vistos = new Set();
+      const unicos = [...(t3.top3alcance||[]), ...(t3.top3interacao||[])].filter(it => {
+        if (!it.link || it.imagem || vistos.has(it.chave)) return false; vistos.add(it.chave); return true;
+      });
+      if (!unicos.length) { showToast('Todos os posts já têm imagem.'); return; }
+      const btn = document.getElementById('secomBuscarImgBtn');
+      if (btn) btn.disabled = true;
+      const m = getImagensManuais(); let achadas = 0, falhas = 0;
+      for (const it of unicos) {
+        try {
+          const res = await fetch('/api/ekklesia/embratur-preview?url=' + encodeURIComponent(it.link));
+          const data = await res.json();
+          if (data.ok && data.imagem) { m[it.chave] = data.imagem; achadas++; } else falhas++;
+        } catch { falhas++; }
+      }
+      saveImagensManuais(m); renderDestaques();
+      showToast(`${achadas} imagem(ns) encontrada(s)${falhas ? ` — ${falhas} sem og:image` : ''}.`);
+      if (btn) btn.disabled = false;
+    }
+
+    function renderDestaques() {
+      const grid = document.getElementById('destaquesGrid');
+      const restBtn = document.getElementById('secomRestaurarBtn');
+      if (!grid) return;
+      const rows = currentRows();
+      if (!rows.length) { grid.innerHTML = '<div class="multi-empty">Suba uma base para ver os destaques.</div>'; return; }
+      const t3 = _secomCalcTop3(rows);
+      if (restBtn) restBtn.style.display = t3.hasExcluded ? '' : 'none';
+      grid.innerHTML = `
+        <div style="font-size:9px;color:var(--orange-2);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">TOP 3 ALCANCE</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">${t3.top3alcance.map(it=>_secomTop3CardHTML(it,'Alcance','#9B59B6')).join('')||'<span style="font-size:11px;color:var(--text-muted);">Sem dados</span>'}</div>
+        <div style="font-size:9px;color:var(--orange-2);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px;">TOP 3 INTERACAO</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">${t3.top3interacao.map(it=>_secomTop3CardHTML(it,'Interacoes','#C0396E')).join('')||'<span style="font-size:11px;color:var(--text-muted);">Sem dados</span>'}</div>`;
+    }
+
+    /* ─── Ekklesia Social modal ─── */
+    function openSocialIframe() { /* noop — modal abre via botão */ }
+    function openSocialModal() {
+      let modal = document.getElementById('secomSocialModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'secomSocialModal';
+        modal.style.cssText = 'position:fixed;inset:0;z-index:9990;background:rgba(0,0,0,.65);display:flex;flex-direction:column;';
+        modal.innerHTML = `
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--bg);border-bottom:1px solid rgba(255,255,255,.09);flex-shrink:0;flex-wrap:wrap;">
+            <strong style="font-size:13px;color:var(--orange-2);flex-shrink:0;">Ekklesia para Social</strong>
+            <span style="font-size:11px;color:var(--text-muted);flex:1;min-width:200px;">Trate e combine as fontes, depois clique em <strong style="color:var(--text-secondary);">Usar esta base</strong> para importar para o SECOM.</span>
+            <div id="secomSocialStatus" style="font-size:11px;color:var(--text-muted);"></div>
+            <button id="secomUsarBaseBtn" onclick="_secomUsarBase()" style="border:none;background:var(--orange);color:#fff;border-radius:8px;padding:8px 16px;font:700 12px Inter,sans-serif;cursor:pointer;flex-shrink:0;">✅ Usar esta base</button>
+            <button onclick="closeSocialModal()" style="border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:var(--text-secondary);border-radius:8px;padding:8px 14px;font:700 12px Inter,sans-serif;cursor:pointer;flex-shrink:0;">✕ Fechar</button>
+          </div>
+          <iframe id="secomSocialIframe" style="flex:1;width:100%;border:none;background:#0a0a0a;"></iframe>`;
+        document.body.appendChild(modal);
+      }
+      modal.style.display = 'flex';
+      const iframe = document.getElementById('secomSocialIframe');
+      if (iframe) iframe.src = 'ekklesia.html?_t=' + Date.now();
+    }
+    function closeSocialModal() {
+      const modal = document.getElementById('secomSocialModal');
+      if (modal) modal.style.display = 'none';
+      clearTimeout(window._secomBaseTimeout);
+    }
+    function _secomUsarBase() {
+      const iframe = document.getElementById('secomSocialIframe');
+      const btn    = document.getElementById('secomUsarBaseBtn');
+      const status = document.getElementById('secomSocialStatus');
+      if (!iframe || !iframe.contentWindow) return;
+      if (btn)    { btn.disabled = true; btn.textContent = '⏳ Buscando base…'; }
+      if (status) status.textContent = '';
+      iframe.contentWindow.postMessage({ type: 'embratur:solicitar-base' }, '*');
+      clearTimeout(window._secomBaseTimeout);
+      window._secomBaseTimeout = setTimeout(() => {
+        if (btn) { btn.disabled = false; btn.textContent = '✅ Usar esta base'; }
+        if (status) status.textContent = '⚠️ Sem resposta — carregue uma base no Ekklesia primeiro.';
+      }, 6000);
+    }
+    window.addEventListener('message', function(ev) {
+      if (!ev.data) return;
+      const btn    = document.getElementById('secomUsarBaseBtn');
+      const status = document.getElementById('secomSocialStatus');
+      if (ev.data.type === 'embratur:base-pronta') {
+        clearTimeout(window._secomBaseTimeout);
+        if (btn) { btn.disabled = false; btn.textContent = '✅ Usar esta base'; }
+        const rows = Array.isArray(ev.data.rows) ? ev.data.rows : [];
+        if (!rows.length) { if (status) status.textContent = '⚠️ Base vazia — adicione publicações no Ekklesia.'; return; }
+        const mapped = rows.map((r, i) => ({
+          id: r.link_publicacao || r.link || r.url || [r.nome_publicador, (r.conteudo||'').slice(0,40), i].join('|'),
+          data: r.data || r._dataRel || '', canal: r.canal || '', nome_publicador: r.nome_publicador || r.autor || '',
+          conteudo: r.conteudo || r.texto || '', link_publicacao: r.link_publicacao || r.link || '',
+          interacoes: num(r.interacoes || r.total_interacoes || 0),
+          seguidores: num(r.seguidores || r.followers || 0),
+          sentimento: normSent(r.sentimento || r.polaridade || ''),
+          tema: r.tema || '', tipo_relatorio: getTipo()
+        }));
+        const antes = state.rows.length;
+        mapped.forEach(r => { if (!state.rows.find(x => x.id === r.id)) state.rows.push(r); });
+        syncReportDateWithBase();
+        updateUploadStatus();
+        render();
+        const novas = state.rows.length - antes;
+        if (status) status.textContent = `✅ ${novas.toLocaleString('pt-BR')} publicações importadas.`;
+        showToast(`${novas.toLocaleString('pt-BR')} publicações importadas do Ekklesia.`);
+        closeSocialModal();
+      }
+      if (ev.data.type === 'embratur:base-erro') {
+        clearTimeout(window._secomBaseTimeout);
+        if (btn) { btn.disabled = false; btn.textContent = '✅ Usar esta base'; }
+        if (status) status.textContent = '⚠️ Erro ao buscar base: ' + (ev.data.erro || '');
+      }
+    });
+
+    /* ─── Render principal ─── */
+    function render() {
+      const rows = currentRows();
+      renderKpis(rows);
+      renderTable(rows);
+      buildPrompt();
+      renderTextosEditoriais();
+      renderDestaques();
+      fetchControleStatus();
+    }
+
+    /* ─── Abrir Radar ─── */
+    function openRadarReport() {
+      if (!state.rows.length) { showToast('Suba uma base antes de abrir o Radar.'); return; }
+      const rows = currentRows();
+      if (!rows.length) { showToast('Nenhuma publicação no recorte. Ajuste a data ou tipo.'); return; }
+      const key = 'radar-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+      try {
+        sessionStorage.setItem('ekklesia_multi_radar_' + key, JSON.stringify({
+          cliente: { id: CLIENTE_ID, nome: CLIENTE_NOME },
+          textos_editoriais: getTextos(),
+          imagens_posts: getImagensManuais(),
+        }));
+      } catch (_) {}
+      const dataRelVal = document.getElementById('dataRel')?.value || latestBaseDate() || new Date().toISOString().slice(0, 10);
+      // Auto-detecta o dia anterior na base quando compareDate não está preenchido
+      let compareDateVal = document.getElementById('compareDate')?.value || '';
+      if (!compareDateVal) {
+        const datesInBase = [...new Set(
+          state.rows.map(r => String(r._dataRel || r.data_rel || r.data || '').slice(0, 10)).filter(Boolean)
+        )].sort();
+        const idx = datesInBase.indexOf(dataRelVal);
+        if (idx > 0) compareDateVal = datesInBase[idx - 1];
+      }
+      const params = new URLSearchParams({
+        draft: key,
+        cliente_id: CLIENTE_ID,
+        tipo_relatorio: getTipo(),
+        data_rel: dataRelVal,
+        compare_date: compareDateVal,
+      });
+      const win = window.open('ekklesia-multi-radar.html?' + params.toString(), '_blank');
+      if (!win) location.href = 'ekklesia-multi-radar.html?' + params.toString();
+    }
+
+    /* ─── Init ─── */
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Restaurar tipo e ativar aba
+      const tipoEl = document.getElementById('tipoSelect');
+      if (tipoEl) tipoEl.value = state.tipo;
+      ['diario','semanal','mensal'].forEach(t => {
+        document.getElementById('tab-' + t)?.classList.toggle('active', t === state.tipo);
+      });
+      const title = document.getElementById('secomPageTitle');
+      if (title) title.textContent = TIPO_LABELS[state.tipo] || 'Producao do Diario';
+
+      // Data definida automaticamente pela data mais frequente nos dados carregados
+
+      loadPromptLocal();
+      renderDestaques();
+
+      try {
+        await ensureCliente();
+        await loadBase();
+        render();
+      } catch (e) {
+        showToast('Erro ao inicializar: ' + (e.message || 'falha'));
+        render();
+      }
+    });
+  </script>
+  <!-- Modal: Atribuir Responsável -->
+  <div class="modal-backdrop" id="modalResp" onclick="if(event.target===this)fecharModal()">
+    <div class="modal-panel" style="width:380px;">
+      <div class="multi-panel-title">
+        <span>Atribuir Responsável</span>
+        <button class="icon-btn" onclick="fecharModal()">✕</button>
+      </div>
+      <div style="margin-bottom:12px; font-size:11px; color:var(--text-muted);" id="modal-tarefa-meta"></div>
+      <div style="max-height:220px; overflow-y:auto; margin-bottom:14px;" id="modal-users-grid">
+        <div style="text-align:center; padding:12px; font-size:11px; color:var(--text-muted);">Carregando usuários…</div>
+      </div>
+      <div class="multi-row" style="justify-content:space-between;">
+        <button class="multi-btn danger" onclick="atribuirResp(null)">✕ Remover</button>
+        <button class="multi-btn" onclick="fecharModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

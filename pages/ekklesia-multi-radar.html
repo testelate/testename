@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HUB.nexus — Ekklesia para SECOM</title>
+<link rel="icon" href="../assets/logo.png" type="image/png"/>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap');
+  :root {
+    --bg-page:#EFEFEC; --bg-surface:#FFFFFF; --bg-card:#F6F6F3; --bg-topbar:#FFFFFF; --bg-pill:#F6F6F3;
+    --border:#E0DFD9; --text-primary:#161616; --text-secondary:#3C3C3C; --text-muted:#8A8A85;
+    --gf-verde:#00B300; --gf-amarelo:#FFD000; --gf-vermelho:#E10000; --gf-azul:#183EFF; --gf-cinza:#3C3C3C;
+    --accent:#183EFF; --accent-dark:#0E2BBE; --accent-tint:#EAF0FF;
+    --sent-pos:#00B300; --sent-fav:#7FDD63; --sent-neg:#FF4D4D; --sent-desfav:#A30000;
+    --highlight-bg:#EAF0FF; --highlight-border:#183EFF; --highlight-text:#0B1E66;
+    --attention-bg:#FFF6D9; --attention-border:#E8B400; --attention-text:#4D3B00;
+    --post-card-bg:#FFFFFF;
+  }
+  body.dark {
+    --bg-page:#0E1016; --bg-surface:#171A22; --bg-card:#1E222D; --bg-topbar:#12141B; --bg-pill:#1E222D;
+    --border:#2B303D; --text-primary:#ECECE8; --text-secondary:#A8A8A2; --text-muted:#6E6E68;
+    --accent:#5C7CFF; --accent-dark:#3955D9; --accent-tint:#18204A;
+    --sent-pos:#2FCB5A; --sent-fav:#8FE36B; --sent-neg:#FF6B6B; --sent-desfav:#C73030;
+    --highlight-bg:#161E40; --highlight-border:#5C7CFF; --highlight-text:#C3D0FF;
+    --attention-bg:#2C2406; --attention-border:#E8B400; --attention-text:#FFE49A; --post-card-bg:#1E222D;
+  }
+  * { box-sizing:border-box; }
+  body { font-family:'Montserrat',-apple-system,"Segoe UI",Helvetica,Arial,sans-serif; font-size:16px; background:var(--bg-page); margin:0; color:var(--text-primary); transition:background .2s,color .2s; }
+  #bgCanvas { position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:0; }
+  .topbar { background:#0a0e1c; border-bottom:3px solid #FF5800; padding:10px 24px; display:flex; align-items:center; justify-content:space-between; gap:12px; position:sticky; top:0; z-index:100; }
+  .topbar-left { display:flex; align-items:center; gap:20px; }
+  .topbar-right { display:flex; align-items:center; gap:10px; }
+  .brand-mark { font-size:11px; font-weight:900; letter-spacing:.08em; color:var(--accent); }
+  .logo-slot { display:flex; align-items:center; justify-content:center; height:32px; padding:0 8px; font-size:9px; font-weight:700; letter-spacing:.04em; color:rgba(255,255,255,.55); border:1px dashed rgba(255,255,255,.25); border-radius:4px; white-space:nowrap; }
+  .topbar-sep { width:1px; height:22px; background:rgba(255,255,255,.18); }
+  .btn-copy,.btn-theme,.btn-pdf { padding:7px 14px; background:var(--bg-surface); border:1px solid var(--border); border-radius:6px; font-size:12px; font-weight:600; color:var(--text-secondary); cursor:pointer; font-family:inherit; transition:all .15s; }
+  .btn-theme { width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; font-size:15px; }
+  .btn-copy:hover,.btn-theme:hover { border-color:var(--text-muted); }
+  .btn-pdf { border:none; color:#fff; background:var(--accent); }
+  .state { min-height:70vh; display:flex; align-items:center; justify-content:center; color:var(--text-secondary); text-align:center; padding:30px; position:relative; z-index:1; }
+  .report-wrap { padding:16px 20px 60px; position:relative; z-index:1; }
+  .page { background:var(--bg-surface); border:.5px solid var(--border); border-radius:12px; overflow:hidden; max-width:980px; margin:0 auto; box-shadow:0 8px 40px rgba(0,0,0,.08); }
+  .report-hero { position:relative; overflow:hidden; min-height:230px; background:#0A1340; display:flex; align-items:center; }
+  #heroCanvas { position:absolute; inset:0; width:100%; height:100%; }
+  .hero-overlay { position:absolute; inset:0; z-index:1; background:linear-gradient(100deg,rgba(8,12,40,.86) 0%,rgba(8,12,40,.78) 30%,rgba(8,12,40,.40) 52%,rgba(8,12,40,.12) 100%); }
+  .hero-top { position:relative; z-index:2; width:100%; display:flex; align-items:center; justify-content:space-between; gap:20px; padding:0 2rem; }
+  .hero-bracket-top { position:absolute; top:18px; left:22px; z-index:3; width:20px; height:20px; border-top:3px solid #11D11A; border-left:3px solid #11D11A; }
+  .hero-bracket-bottom { position:absolute; bottom:18px; right:22px; z-index:3; width:20px; height:20px; border-bottom:3px solid rgba(255,255,255,.7); border-right:3px solid rgba(255,255,255,.7); }
+  .hero-label { font-size:11px; font-weight:700; letter-spacing:.12em; color:rgba(255,255,255,.6); text-transform:uppercase; margin:0 0 6px; }
+  .hero-line1 { font-size:32px; font-weight:800; color:#fff; line-height:1.1; margin:0; }
+  .hero-line2 { font-size:16px; font-weight:700; color:#11D11A; line-height:1.3; margin:6px 0 0; }
+  .hero-meta { font-size:12px; color:rgba(255,255,255,.62); margin:10px 0 0; }
+  .hero-logos { display:flex; flex-direction:row; align-items:center; gap:20px; flex-shrink:0; }
+  .hero-logos-row { display:flex; align-items:center; gap:20px; }
+  .hero-logo-slot { height:32px; min-width:70px; display:flex; align-items:center; justify-content:center; padding:0 8px; font-size:9px; font-weight:700; letter-spacing:.04em; color:rgba(255,255,255,.72); border:1px dashed rgba(255,255,255,.4); border-radius:4px; white-space:nowrap; }
+  .hero-logo-img { height:38px; object-fit:contain; max-width:140px; filter:brightness(0) invert(1); }
+  .hero-logo-img-gov { height:38px; object-fit:contain; max-width:160px; filter:brightness(0) invert(1); }
+  .hero-logo-sep { width:1px; height:28px; background:rgba(255,255,255,.25); }
+  .rf-badge { font-size:10px; font-weight:700; padding:3px 9px; border-radius:4px; color:#fff; letter-spacing:.02em; }
+  .rf-x { background:#000; } .rf-fb { background:#1877F2; } .rf-ig { background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); } .rf-yt { background:#FF0000; }
+  .body { padding:0 2rem 1.5rem; }
+  .sent-top-row { margin-top:18px; }
+  .sent-compare { background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:18px 22px; }
+  .sent-cmp-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:8px; }
+  .sent-cmp-legend { display:flex; gap:16px; font-size:14px; color:var(--text-muted); flex-wrap:wrap; }
+  .sent-cmp-leg { display:flex; align-items:center; gap:5px; }
+  .sent-cmp-row { display:grid; grid-template-columns:90px 1fr; gap:14px; align-items:center; margin-bottom:12px; }
+  .sent-cmp-row:last-child { margin-bottom:0; }
+  .sent-cmp-cat { display:flex; align-items:center; gap:7px; font-size:14px; font-weight:700; color:var(--text-secondary); }
+  .sent-stack-track { display:flex; height:26px; border-radius:6px; overflow:hidden; background:rgba(128,128,128,.12); }
+  .sent-stack-seg { height:100%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff; white-space:nowrap; transition:width .5s cubic-bezier(.4,0,.2,1); }
+  .kpi-grid-4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:10px; margin-top:14px; }
+  @media (max-width:760px) { .kpi-grid-4 { grid-template-columns:1fr 1fr; } .sent-top-row { grid-template-columns:1fr; } }
+  .kpi-row { display:grid; grid-template-columns:1.7fr 1fr; gap:14px; margin-top:18px; }
+  .kpi-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .kpi-card,.sentiment-card,.manchete-card,.tema-card,.nuvem-card,.volume-card,.info-card { background:var(--bg-card); border:1px solid var(--border); border-radius:10px; }
+  .kpi-card { padding:12px 14px; }
+  .kpi-label { font-size:14px; color:var(--text-secondary); margin:0 0 6px; font-weight:600; }
+  .kpi-value-row { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .kpi-value { font-size:24px; font-weight:800; margin:0; color:var(--text-primary); }
+  .kpi-delta { font-size:14px; font-weight:700; } .kpi-delta--up { color:var(--gf-verde); } .kpi-delta--down { color:var(--gf-vermelho); } .kpi-delta--neutral { color:var(--text-muted); }
+  .sentiment-card { padding:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; }
+  .sentiment-title { font-size:13px; font-weight:700; color:var(--text-secondary); margin:0; text-transform:uppercase; letter-spacing:.04em; }
+  .sentiment-row { display:flex; align-items:center; gap:14px; }
+  .donut-wrap { position:relative; width:78px; height:78px; flex-shrink:0; }
+  .donut-value { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; color:var(--text-primary); }
+  .legend { display:flex; flex-direction:column; gap:4px; font-size:14px; color:var(--text-secondary); }
+  .legend-item { display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .dot { width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; }
+  .section-title { display:flex; align-items:center; gap:8px; margin:26px 0 12px; }
+  .section-title h2 { font-size:16px; font-weight:800; margin:0; color:var(--text-primary); }
+  .section-icon { width:27px; height:27px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#fff; }
+  .section-icon svg { width:14px; height:14px; }
+  .manchete-card { border-left:4px solid var(--accent); padding:16px 18px; }
+  .mention-link { color:var(--accent); font-weight:700; text-decoration:none; border-bottom:1px dashed var(--accent); }
+  .manchete-text { font-size:16px; line-height:1.6; color:var(--text-secondary); margin:0 0 10px; }
+  .manchete-metrics { display:flex; gap:16px; font-size:14px; color:var(--text-muted); flex-wrap:wrap; }
+  .manchete-metrics b { color:var(--text-primary); }
+  .top3-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+  .post-card { background:var(--post-card-bg); border:1px solid var(--border); border-radius:10px; overflow:hidden; display:block; text-decoration:none; color:inherit; transition:transform .15s, box-shadow .15s; }
+  .post-card:hover { transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,.12); border-color:var(--accent); }
+  .post-avatar { height:84px; position:relative; display:flex; align-items:flex-end; padding:8px 10px; background-image:repeating-linear-gradient(135deg,var(--border) 0px,var(--border) 1px,transparent 1px,transparent 11px); background-color:var(--bg-card); }
+  .post-handle { font-size:14px; font-weight:800; color:#fff; background:rgba(0,0,0,.35); padding:3px 8px; border-radius:5px; }
+  .post-info { padding:10px 12px; }
+  .post-caption { font-size:14px; line-height:1.45; color:var(--text-secondary); margin:0 0 8px; min-height:34px; }
+  .post-metric-row { display:flex; align-items:center; justify-content:space-between; }
+  .post-metric-label { font-size:13px; color:var(--text-muted); }
+  .post-metric-value { font-size:16px; font-weight:800; color:var(--accent); }
+  .nuvem-card { padding:18px 20px; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:10px 14px; }
+  .nuvem-card span { font-weight:800; line-height:1; }
+  .volume-card { padding:14px 16px 10px; }
+  .vol-bars { display:flex; align-items:flex-end; gap:8px; height:110px; }
+  .vol-bar-wrap { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end; }
+  .vol-bar-val { font-size:14px; font-weight:700; color:var(--text-secondary); }
+  .vol-bar-stack { width:100%; max-width:26px; border-radius:3px 3px 0 0; overflow:hidden; display:flex; flex-direction:column-reverse; }
+  .vol-bar-label { font-size:14px; color:var(--text-muted); }
+  .vol-legend { display:flex; gap:14px; margin-top:10px; font-size:14px; color:var(--text-secondary); justify-content:center; }
+  .vol-legend-item { display:flex; align-items:center; gap:5px; }
+  .temas-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+  .tema-card { padding:12px 14px; }
+  .tema-head { display:flex; align-items:center; gap:7px; margin-bottom:6px; }
+  .tema-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .tema-nome { font-size:16px; font-weight:800; color:var(--text-primary); margin:0; }
+  .tema-texto { font-size:16px; line-height:1.5; color:var(--text-secondary); margin:0 0 8px; }
+  .tema-metrics { font-size:14px; color:var(--text-muted); }
+  .tema-metrics b { color:var(--text-primary); }
+  .tema-link { display:inline-block; margin-top:6px; font-size:13px; font-weight:700; color:var(--accent); text-decoration:none; word-break:break-all; }
+  .tema-link:hover { text-decoration:underline; }
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .info-card { padding:14px 16px; }
+  .info-card-header { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .info-card-header svg { width:17px; height:17px; }
+  .info-card-title { font-size:16px; font-weight:800; margin:0; color:var(--text-primary); }
+  .info-list { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:8px; }
+  .info-list li { font-size:16px; line-height:1.5; color:var(--text-secondary); padding-bottom:8px; border-bottom:1px solid var(--border); }
+  .info-list li:last-child { border-bottom:none; padding-bottom:0; }
+  .callout-attention { display:flex; gap:12px; align-items:flex-start; padding:14px 16px; border-radius:10px; margin:10px 0 0; font-size:16px; line-height:1.55; background:var(--attention-bg); border:1px solid var(--attention-border); color:var(--attention-text); }
+  .redes-footer { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:16px 0 0; border-top:1px solid var(--border); margin-top:22px; }
+  .redes-footer-label { font-size:14px; color:var(--text-secondary); font-weight:600; }
+  .brand-footer { display:flex; align-items:center; justify-content:space-between; padding:18px 2rem 20px; border-top:1px solid var(--border); gap:12px; flex-wrap:wrap; }
+  .brand-footer-logos { display:flex; align-items:center; gap:14px; }
+  .brand-footer-text,.source-note { font-size:13px; color:var(--text-muted); }
+  .source-note { line-height:1.6; padding:0 2rem 16px; }
+  @media (max-width:760px) {
+    .kpi-row,.two-col { grid-template-columns:1fr; }
+    .kpi-grid,.temas-grid,.top3-grid { grid-template-columns:1fr; }
+    .top3-grid { grid-template-columns:1fr; }
+    .hero-top { flex-direction:column; align-items:flex-start; }
+    .hero-logos { align-items:flex-start; }
+  }
+  @media print {
+    .topbar,#bgCanvas,.state { display:none !important; }
+    .report-wrap { padding:0; }
+    .page { box-shadow:none; border:none; max-width:none; border-radius:0; }
+    body { background:#fff; }
+  }
+
+  /* ── Gate de senha ── */
+  .gate-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:24px; position:relative; z-index:1; }
+  .gate-card { background:var(--bg-surface); border:.5px solid var(--border); border-radius:14px; padding:2rem 2rem 1.75rem; width:100%; max-width:360px; display:flex; flex-direction:column; gap:16px; align-items:center; text-align:center; box-shadow:0 8px 40px rgba(0,0,0,.08); }
+  .gate-title { font-size:20px; font-weight:800; color:var(--text-primary); margin:0; }
+  .gate-sub { font-size:13px; color:var(--text-muted); margin:0; }
+  .gate-field { display:flex; flex-direction:column; gap:6px; width:100%; text-align:left; }
+  .gate-label { font-size:12px; font-weight:600; color:var(--text-secondary); }
+  .gate-input { padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:15px; font-family:inherit; background:var(--bg-page); color:var(--text-primary); outline:none; transition:border-color .15s; letter-spacing:.12em; }
+  .gate-input:focus { border-color:var(--accent); }
+  .gate-input.error { border-color:#E10000; }
+  .gate-error { font-size:12px; color:#E10000; min-height:16px; margin:0; }
+  .gate-btn { padding:11px; border:none; border-radius:8px; font-size:14px; font-weight:700; color:#fff; background:var(--accent); cursor:pointer; font-family:inherit; transition:opacity .15s; width:100%; }
+  .gate-btn:hover { opacity:.88; }
+  .gate-btn:disabled { opacity:.5; cursor:default; }
+</style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+
+<div id="gateWrap" class="gate-wrap" style="display:none;">
+  <div class="gate-card">
+    <img src="../assets/logo-secom.png" alt="SECOM" style="height:28px;object-fit:contain;" onerror="this.style.display='none'" />
+    <h1 class="gate-title">Relatório Ekklesia</h1>
+    <p class="gate-sub">Digite o código de acesso para visualizar o relatório.</p>
+    <div class="gate-field">
+      <label class="gate-label" for="gateInput">Código de acesso</label>
+      <input class="gate-input" id="gateInput" type="password" placeholder="••••••••"
+             autocomplete="current-password" inputmode="text"
+             onkeydown="if(event.key==='Enter')gateSubmit()">
+      <p class="gate-error" id="gateError"></p>
+    </div>
+    <button class="gate-btn" id="gateBtn" onclick="gateSubmit()">Acessar</button>
+  </div>
+</div>
+
+<div id="topbarAndReport" style="display:none;">
+<div class="topbar">
+  <div class="topbar-left">
+    <img src="../assets/logo-governo-brasil.png" alt="Governo do Brasil" style="height:32px;object-fit:contain;filter:brightness(0) invert(1);" onerror="this.style.display='none'" />
+    <span class="topbar-sep"></span>
+    <img src="../assets/logo-secom.png" alt="SECOM" style="height:32px;object-fit:contain;filter:brightness(0) invert(1);" onerror="this.style.display='none'" />
+    <span class="topbar-sep"></span>
+    <img src="../assets/logo-nexus-white.png" alt="Nexus" style="height:28px;object-fit:contain;" onerror="this.outerHTML='<span class=brand-mark style=color:#fff>NEXUS</span>'" />
+  </div>
+  <div class="topbar-right">
+    <button class="btn-copy" onclick="copiarLink()">Copiar link</button>
+    <button class="btn-theme" id="btnFont" onclick="cycleFontSize()" title="Tamanho da fonte" style="font-weight:800;font-size:13px;">A+</button>
+    <button class="btn-theme" id="btnTheme" onclick="toggleTheme()">🌙</button>
+    <button class="btn-pdf" onclick="window.print()">Exportar PDF</button>
+  </div>
+</div>
+<div id="state" class="state" style="display:none;">Carregando relatorio...</div>
+<main id="reportWrap" class="report-wrap" style="display:none;"></main>
+</div>
+
+<script src="../js/utils.js"></script>
+<script>
+const SENT_COLOR = { pos:'#00B300', fav:'#7FDD63', neg:'#FF4D4D', desfav:'#A30000' };
+const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
+const norm = value => String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+const titleCase = value => String(value || '').replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+const TIPO_LABEL = { diario:'Diário', semanal:'Semanal', mensal:'Mensal', quinzenal:'Quinzenal', anual:'Anual' };
+function num(value) {
+  if (value === null || value === undefined || value === '') return 0;
+  let raw = String(value).trim().toLowerCase();
+  const mult = raw.includes('mi') || raw.endsWith('m') ? 1000000 : raw.endsWith('k') || raw.includes('mil') ? 1000 : 1;
+  raw = raw.replace(/\s/g, '').replace(/mi|mil|k|m/g, '');
+  const hasComma = raw.includes(','), hasDot = raw.includes('.');
+  if (hasComma && hasDot) raw = raw.replace(/\./g, '').replace(',', '.');
+  else if (hasComma) raw = raw.replace(',', '.');
+  else if (/^-?\d{1,3}\.\d{3}(\.\d{3})*$/.test(raw)) raw = raw.replace(/\./g, '');
+  const n = Number(raw.replace(/[^\d.-]/g, ''));
+  return Number.isFinite(n) ? n * mult : 0;
+}
+function fmt(value) {
+  const n = Number(value) || 0;
+  return n >= 1000000 ? (n / 1000000).toFixed(1).replace('.', ',') + ' mi'
+    : n >= 1000 ? (n / 1000).toFixed(1).replace('.', ',') + ' mil'
+    : String(Math.round(n));
+}
+function fmtData(str) {
+  if (!str) return '';
+  const [y,m,d] = String(str).slice(0,10).split('-');
+  return d && m && y ? `${d}/${m}/${y}` : str;
+}
+function deltaClass(v) {
+  if (!v || v === '0%') return 'kpi-delta--neutral';
+  return String(v).startsWith('-') ? 'kpi-delta--down' : 'kpi-delta--up';
+}
+// Transforma menções no texto da IA em hiperlinks clicáveis — mesmo padrão de
+// robustez do embratur-diario-share.html, adaptado pro formato markdown
+// [@handle](url) que o prompt do SECOM pede (mantém o @handle como label).
+// A normalização abaixo cobre as variações que a IA costuma gerar quando não
+// segue o formato à risca (parênteses duplicados, colchetes dentro dos
+// parênteses, espaço entre "]" e "("), que antes faziam o link "quebrar" e
+// aparecer cru na tela.
+function linkifyMentions(text) {
+  if (!text) return '';
+  let t = String(text);
+  t = t.replace(/https?:\/\/(?:www\.)?google\.com\/search\?q=([^)\s"'<>]+)/g, (m, enc) => { // desembrulha redirect de busca da IA
+    try { const d = decodeURIComponent(enc); return d.startsWith('http') ? d : m; } catch { return m; }
+  });
+  t = t.replace(/\(\[(https?:\/\/[^\]]+)\]\)/g, '($1)');   // ([url]) → (url)
+  t = t.replace(/\(\((https?:\/\/[^)]+)\)\)/g, '($1)');    // ((url)) → (url)
+  t = t.replace(/\]\s+\(/g, '](');                          // [texto] (url) → [texto](url)
+  t = t.replace(/\(\s+(https?:\/\/)/g, '($1');              // ( https://... → (https://...
+  t = t.replace(/(https?:\/\/\S*?)\s+\)/g, '$1)');          // https://...  ) → https://...)
+
+  const safe = esc(t);
+  // Um único passe (evita relinkificar dentro de um <a> já criado):
+  // 1) markdown [label](url) — formato oficial pedido no prompt do SECOM
+  // 2) @handle (url) — formato do Embratur, caso a IA reverta pro padrão antigo
+  // 3) URL solta — fallback final
+  return safe.replace(
+    /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|@([A-Za-z0-9_.]{2,30})\s*\((https?:\/\/[^\s<>"')]+)\)|(https?:\/\/[^\s<>"']+)/g,
+    (m, mdLabel, mdUrl, handle, handleUrl, rawUrl) => {
+      if (mdUrl)     return `<a class="mention-link" href="${mdUrl}" target="_blank" rel="noopener">${mdLabel}</a>`;
+      if (handleUrl) return `<a class="mention-link" href="${handleUrl}" target="_blank" rel="noopener">@${handle}</a>`;
+      return `<a class="mention-link" href="${rawUrl}" target="_blank" rel="noopener">${rawUrl}</a>`;
+    }
+  );
+}
+function sentimentKey(value) {
+  const v = norm(value);
+  if (v.includes('desfavor')) return 'desfav';
+  if (v.includes('favor')) return 'fav';
+  if (v.includes('neg')) return 'neg';
+  if (v.includes('pos')) return 'pos';
+  return 'fav';
+}
+function frequency(rows, key, limit = 8) {
+  const count = {};
+  rows.forEach(row => {
+    const value = String(typeof key === 'function' ? key(row) : row[key] || '').trim() || 'Sem classificacao';
+    count[value] = (count[value] || 0) + 1;
+  });
+  return Object.entries(count).sort((a,b) => b[1] - a[1]).slice(0, limit);
+}
+function wordFrequency(rows, limit = 18) {
+  const stop = new Set('para com uma que por dos das aos nas nos nao mais como sobre entre pelo pela esta esse essa isso suas seus voce eles elas governo federal brasil ainda muito'.split(' '));
+  const count = {};
+  rows.forEach(row => {
+    norm(row.tema || row.conteudo || '').split(/[^a-z0-9]+/).forEach(word => {
+      if (word.length < 4 || stop.has(word)) return;
+      count[word] = (count[word] || 0) + 1;
+    });
+  });
+  return Object.entries(count).sort((a,b) => b[1] - a[1]).slice(0, limit).map(([t,p]) => ({ t:titleCase(t), p }));
+}
+function rowDate(row) {
+  return String(row?._dataRel || row?.data_rel || row?.data || '').slice(0,10);
+}
+function dateInScope(rowDateValue, refDate, reportType) {
+  if (!refDate) return true;
+  const value = String(rowDateValue || '').slice(0,10);
+  if (!value) return false;
+  if (reportType === 'diario') return value === refDate;
+  const ref = new Date(refDate + 'T00:00:00Z');
+  const cur = new Date(value + 'T00:00:00Z');
+  const diff = Math.floor((ref - cur) / 86400000);
+  if (reportType === 'semanal') return diff >= 0 && diff < 7;
+  return value.slice(0,7) === refDate.slice(0,7);
+}
+async function api(path) {
+  const response = await fetch('/api/ekklesia-multi' + path);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.error) throw new Error(data.error || 'Erro na API do multi-cliente.');
+  return data;
+}
+function pctDelta(value, base) {
+  if (!base) return '+0%';
+  const p = Math.round(((value - base) / Math.max(1, base)) * 100);
+  return (p > 0 ? '+' : '') + p + '%';
+}
+function topCard(row, metric, imgs) {
+  const handle = (row.nome_publicador || row.publicador || row.canal || 'Publicador').replace(/^@/,'');
+  const texto = String(row.conteudo || row.titulo || '').replace(/\s+/g,' ').trim();
+  const link = row.link_publicacao || row.link || '';
+  const chave = link || ('@' + handle + '|' + texto.slice(0, 40));
+  const imagem = (imgs || {})[chave] || '';
+  return { handle:'@' + handle, texto:texto.slice(0,130) || 'Publicacao monitorada no periodo.', val:fmt(metric), link, imagem };
+}
+function adaptPayload(raw) {
+  const rows = raw.rows || [];
+  const compare = raw.compareRows || [];
+  const total = rows.length;
+  const totalCmp = compare.length;
+  const inter = rows.reduce((s,r) => s + num(r.interacoes), 0);
+  const interCmp = compare.reduce((s,r) => s + num(r.interacoes), 0);
+  const alcance = Math.round(rows.reduce((s,r) => s + num(r.seguidores || r.alcance), 0) * 0.2);
+  const alcanceCmp = Math.round(compare.reduce((s,r) => s + num(r.seguidores || r.alcance), 0) * 0.2);
+  const byCanal = frequency(rows, 'canal', 1)[0] || ['-', 0];
+  const sentCounts = { pos:0, fav:0, neg:0, desfav:0 };
+  const sentInter = { pos:0, fav:0, neg:0, desfav:0 };
+  rows.forEach(r => {
+    const sk = sentimentKey(r.sentimento || r.polaridade);
+    sentCounts[sk]++;
+    sentInter[sk] += num(r.interacoes);
+  });
+  const sentPct = key => total ? Math.round((sentCounts[key] / total) * 100) : 0;
+  const totalInter = Object.values(sentInter).reduce((s,v) => s+v, 0);
+  const sentInterPct = key => totalInter ? Math.round((sentInter[key] / totalInter) * 100) : 0;
+  const topEng = rows.slice().sort((a,b) => num(b.interacoes) - num(a.interacoes));
+  const topAlc = rows.slice().sort((a,b) => num(b.seguidores || b.alcance) - num(a.seguidores || a.alcance));
+  const topPost = topEng[0] || rows[0] || {};
+  const temaMap = new Map();
+  rows.forEach(r => {
+    const rawTema = String(r.tema || r.grupo_tema || r.assunto || r.abordagem || '').split(';')[0].trim();
+    const nome = rawTema && rawTema.toLowerCase() !== 'tema nao classificado' ? rawTema : (r.canal ? titleCase(r.canal) : 'Sem classificacao');
+    const cur = temaMap.get(nome) || { nome, qtd:0, inter:0, alcance:0, posts:[], sent:{ pos:0, fav:0, neg:0, desfav:0 } };
+    cur.qtd++; cur.inter += num(r.interacoes); cur.alcance += Math.round(num(r.seguidores || r.alcance) * 0.2); cur.posts.push(r); cur.sent[sentimentKey(r.sentimento)]++;
+    temaMap.set(nome, cur);
+  });
+  const temasAgg = [...temaMap.values()].sort((a,b) => b.inter - a.inter);
+  // histRows = todas as datas carregadas da API (dias:'180');
+  // rows/compare = apenas o recorte selecionado. volumeMap usa histRows
+  // para mostrar os 7 dias reais, não só o dia selecionado.
+  const histSource = Array.isArray(raw.histRows) && raw.histRows.length ? raw.histRows : rows.concat(compare);
+  const volumeMap = new Map();
+  histSource.forEach(r => {
+    const key = rowDate(r); if (!key) return;
+    const cur = volumeMap.get(key) || { dia:key.slice(5), pos:0, neg:0 };
+    const v = num(r.interacoes) || 1;
+    if (['neg','desfav'].includes(sentimentKey(r.sentimento))) cur.neg += v; else cur.pos += v;
+    volumeMap.set(key, cur);
+  });
+  const vol = [...volumeMap.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .slice(-7)
+    .map(entry => entry[1]);
+  const emAlta = temasAgg.slice(0,3).map(t => `<b>${esc(t.nome)}</b> concentrou ${fmt(t.inter)} interacoes em ${t.qtd} mencoes no recorte.`);
+  const tendencias = wordFrequency(rows, 5).map(w => `<b>${esc(w.t)}</b> aparece como termo recorrente no monitoramento do dia.`);
+  const textos = raw.textos_editoriais || {};
+  // Análise estratégica por tema gerada pela IA e importada no SECOM
+  const temasAnalise = (() => { try { return JSON.parse(textos.temas || '[]'); } catch { return []; } })();
+  const getTemaAnalise = nome => temasAnalise.find(a => {
+    const n1 = String(a.nome||'').toLowerCase().trim();
+    const n2 = String(nome||'').toLowerCase().trim();
+    return n1 === n2 || n2.includes(n1) || n1.includes(n2);
+  });
+  const linksExt = Array.isArray(raw.links_externos) ? raw.links_externos.filter(l => l.url || l.titulo) : [];
+  const autoPontos = topEng.filter(r => ['neg','desfav'].includes(sentimentKey(r.sentimento))).slice(0,3).map(r => ({
+    titulo: String(r.tema || r.canal || 'Ponto de atencao').split(';')[0],
+    texto: String(r.conteudo || '').replace(/\s+/g,' ').slice(0,230),
+    interacoes: fmt(num(r.interacoes)),
+    alcance: fmt(num(r.seguidores || r.alcance) * 0.2),
+    url: ''
+  }));
+  return {
+    data: raw.meta?.data_rel || rowDate(rows[0]) || '',
+    periodo: raw.meta?.tipo_relatorio || 'diario',
+    cliente: raw.cliente?.nome || 'SECOM',
+    mencoes: fmt(total),
+    mencoesDelta: pctDelta(total, totalCmp),
+    interacoes: fmt(inter),
+    interacoesDelta: pctDelta(inter, interCmp),
+    alcance: fmt(alcance),
+    alcanceDelta: pctDelta(alcance, alcanceCmp),
+    topCanal: titleCase(byCanal[0]),
+    topCanalPct: total ? Math.round((byCanal[1] / total) * 100) : 0,
+    sentimento: { pos:sentPct('pos'), fav:sentPct('fav'), neg:sentPct('neg'), desfav:sentPct('desfav') },
+    sentimentoInteracao: { pos:sentInterPct('pos'), fav:sentInterPct('fav'), neg:sentInterPct('neg'), desfav:sentInterPct('desfav') },
+    vol: vol.length ? vol : [{dia:'-',pos:1,neg:0}],
+    manchete: {
+      titulo: textos.destaque || temasAgg[0]?.nome || 'Resumo do monitoramento diario',
+      texto: textos.analise || String(topPost.conteudo || topPost.titulo || 'Publicacoes monitoradas consolidam o recorte de maior repercussao do periodo.').replace(/\s+/g,' ').slice(0,420),
+      interacoes: fmt(inter),
+      alcance: fmt(alcance)
+    },
+    topAlcance: topAlc.slice(0,3).map(r => topCard(r, num(r.seguidores || r.alcance) * 0.2, raw.imagens_posts)),
+    topEngajamento: topEng.slice(0,3).map(r => topCard(r, num(r.interacoes), raw.imagens_posts)),
+    nuvem: wordFrequency(rows, 16),
+    temas: (() => {
+      // Pondera por interações (não contagem de posts) — posts neutros/sem-classif.
+      // retornam 'fav' em sentimentKey mas têm interações baixas, ficando abaixo
+      // de posts genuinamente positivos/negativos na classificação ponderada.
+      const interPor = (t, keys) => t.posts.reduce((s, r) => {
+        return keys.includes(sentimentKey(r.sentimento)) ? s + num(r.interacoes) : s;
+      }, 0);
+      const isNeg = t => interPor(t, ['neg','desfav']) > interPor(t, ['pos','fav']);
+      const mkTema = (t, sent) => {
+        const post = t.posts.slice().sort((a,b) => num(b.interacoes) - num(a.interacoes))[0] || {};
+        const ai = getTemaAnalise(t.nome);
+        const texto = ai?.analise || String(post.conteudo || '').replace(/\s+/g,' ').slice(0,190);
+        return { nome:t.nome, sentimento:sent === 'desfav' ? 'neg' : sent, texto, interacoes:fmt(t.inter), alcance:fmt(t.alcance) };
+      };
+      return {
+        pos: temasAgg.filter(t => !isNeg(t)).slice(0,3).map(t => {
+          const pi = interPor(t, ['pos','fav']);
+          return mkTema(t, pi > 0 ? (t.sent.pos > t.sent.fav ? 'pos' : 'fav') : 'fav');
+        }),
+        neg: temasAgg.filter(t => isNeg(t)).slice(0,3).map(t => {
+          return mkTema(t, t.sent.desfav > t.sent.neg ? 'desfav' : 'neg');
+        })
+      };
+    })(),
+    emAlta: textos.em_alta
+      ? textos.em_alta.split('\n').map(l => l.trim()).filter(Boolean).slice(0,5).map(linkifyMentions)
+      : (textos.oportunidades
+          ? textos.oportunidades.split('\n').map(l => l.trim()).filter(Boolean).slice(0,4).map(linkifyMentions)
+          : emAlta),
+    tendenciasGoogle: textos.tendencias
+      ? textos.tendencias.split('\n').map(l => l.trim()).filter(Boolean).slice(0,4).map(linkifyMentions)
+      : (tendencias.length ? tendencias : ['Sem tendencias suficientes no recorte atual.']),
+    pontosAtencao: linksExt.length > 0
+      ? linksExt.map(l => ({ titulo: l.titulo || 'Ponto de atencao', texto: l.descricao || '', url: l.url || '', interacoes: '-', alcance: '-' }))
+      : (() => {
+          const ai = textos.pontosAtencao;
+          if (ai) { try { const a = JSON.parse(ai); if (Array.isArray(a) && a.length) return a.map(p => ({ titulo: p.titulo || 'Ponto de atencao', texto: p.texto || '', urls: Array.isArray(p.urls) ? p.urls : (p.url ? [p.url] : []), interacoes: '-', alcance: '-' })); } catch (_) {} }
+          return autoPontos;
+        })()
+  };
+}
+function donut(sent) {
+  const pos = sent.pos || 0, fav = sent.fav || 0, neg = sent.neg || 0, desfav = sent.desfav || 0;
+  let acc = 0;
+  const seg = (value, color) => {
+    const dash = `${value} ${100 - value}`;
+    const out = `<circle cx="39" cy="39" r="31" fill="none" stroke="${color}" stroke-width="12" stroke-dasharray="${dash}" stroke-dashoffset="${25 - acc}" pathLength="100"/>`;
+    acc += value; return out;
+  };
+  return `<svg viewBox="0 0 78 78">${seg(pos,SENT_COLOR.pos)}${seg(fav,SENT_COLOR.fav)}${seg(neg,SENT_COLOR.neg)}${seg(desfav,SENT_COLOR.desfav)}<circle cx="39" cy="39" r="23" fill="var(--bg-card)"/></svg>`;
+}
+function mkTop3(items) {
+  const filler = [{ handle:'@-', texto:'Sem publicador suficiente no recorte.', val:'-', imagem:'' }];
+  return (items.length ? items : filler).map(p => {
+    const avatarStyle = p.imagem
+      ? `style="background-image:url('${esc(p.imagem)}');background-size:cover;background-position:center;background-color:var(--bg-card);"`
+      : '';
+    return `
+    <a class="post-card" href="${esc(p.link || '#')}" target="_blank" rel="noopener">
+      <div class="post-avatar" ${avatarStyle}><span class="post-handle">${esc(p.handle)}</span></div>
+      <div class="post-info"><p class="post-caption">${esc(p.texto)}</p>
+      <div class="post-metric-row"><span class="post-metric-label">Metricas</span><span class="post-metric-value">${esc(p.val)}</span></div></div>
+    </a>`;
+  }).join('');
+}
+function renderPage(d) {
+  const posTotal = (d.sentimento.pos || 0) + (d.sentimento.fav || 0);
+  const posInterTotal = (d.sentimentoInteracao.pos || 0) + (d.sentimentoInteracao.fav || 0);
+  const volMax = Math.max(...d.vol.map(v => v.pos + v.neg), 1);
+  const mkSentComparison = (vol, inter) => {
+    const cats = [
+      { key:'pos',    label:'Positivo',     color:SENT_COLOR.pos    },
+      { key:'fav',    label:'Favoravel',    color:SENT_COLOR.fav    },
+      { key:'neg',    label:'Negativo',     color:SENT_COLOR.neg    },
+      { key:'desfav', label:'Desfavoravel', color:SENT_COLOR.desfav },
+    ];
+    const stack = data => cats.map(c => data[c.key] > 0
+      ? `<div class="sent-stack-seg" style="width:${data[c.key]}%;background:${c.color};" title="${c.label} ${data[c.key]}%">${data[c.key] >= 8 ? data[c.key] + '%' : ''}</div>`
+      : '').join('');
+    const rows = [
+      { label:'Volume',    data:vol   },
+      { label:'Interacao', data:inter },
+    ].map(r => `
+      <div class="sent-cmp-row">
+        <div class="sent-cmp-cat">${r.label}</div>
+        <div class="sent-stack-track">${stack(r.data)}</div>
+      </div>`).join('');
+    return `<div class="sent-compare">
+      <div class="sent-cmp-head">
+        <p class="sentiment-title">Sentimento — Volume vs Interacao</p>
+        <div class="sent-cmp-legend">
+          ${cats.map(c => `<div class="sent-cmp-leg"><span class="dot" style="background:${c.color}"></span>${c.label}</div>`).join('')}
+        </div>
+      </div>
+      ${rows}
+    </div>`;
+  };
+  document.getElementById('reportWrap').innerHTML = `
+  <section class="page">
+    <div class="report-hero">
+      <canvas id="heroCanvas"></canvas><div class="hero-overlay"></div><span class="hero-bracket-top"></span><span class="hero-bracket-bottom"></span>
+      <div class="hero-top">
+        <div>
+          <h1 class="hero-line1">SECOM</h1>
+          <p class="hero-line2">Panorama das conversas digitais</p>
+          <p class="hero-meta">${fmtData(d.data)} &middot; ${esc(TIPO_LABEL[d.periodo] || titleCase(d.periodo))} &middot; ${esc(d.cliente)}</p>
+        </div>
+        <div class="hero-logos">
+          <img src="../assets/logo-governo-brasil.png" alt="Governo do Brasil" class="hero-logo-img-gov" onerror="this.style.display='none'" />
+          <span class="hero-logo-sep"></span>
+          <img src="../assets/logo-secom.png" alt="SECOM" class="hero-logo-img" onerror="this.style.display='none'" />
+          <span class="hero-logo-sep"></span>
+          <img src="../assets/logo-nexus-white.png" alt="Nexus" class="hero-logo-img" onerror="this.outerHTML='<span style=&quot;color:#fff;font-size:13px;font-weight:900;letter-spacing:.06em&quot;>NEXUS</span>'" />
+        </div>
+      </div>
+    </div>
+    <div class="body">
+      <!-- Sentimento: barras horizontais agrupadas Volume vs Interacao -->
+      <div class="sent-top-row">
+        ${mkSentComparison(d.sentimento, d.sentimentoInteracao)}
+      </div>
+      <!-- KPIs full-width -->
+      <div class="kpi-grid-4" style="margin-top:14px;">
+        <div class="kpi-card"><p class="kpi-label">Mencoes capturadas</p><div class="kpi-value-row"><p class="kpi-value">${d.mencoes}</p><span class="kpi-delta ${deltaClass(d.mencoesDelta)}">${d.mencoesDelta}</span></div></div>
+        <div class="kpi-card"><p class="kpi-label">Interacoes totais</p><div class="kpi-value-row"><p class="kpi-value">${d.interacoes}</p><span class="kpi-delta ${deltaClass(d.interacoesDelta)}">${d.interacoesDelta}</span></div></div>
+        <div class="kpi-card"><p class="kpi-label">Potencial de alcance</p><div class="kpi-value-row"><p class="kpi-value">${d.alcance}</p><span class="kpi-delta ${deltaClass(d.alcanceDelta)}">${d.alcanceDelta}</span></div></div>
+        <div class="kpi-card"><p class="kpi-label">Top canal</p><div class="kpi-value-row"><p class="kpi-value">${d.topCanal}</p><span class="kpi-delta kpi-delta--neutral">${d.topCanalPct}% das mencoes</span></div></div>
+      </div>
+      <div class="section-title"><div class="section-icon" style="background:#183EFF;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19h16M4 15l4-4 4 3 4-6 4 3"/></svg></div><h2>Resumo do dia</h2></div>
+      <div class="manchete-card"><p class="manchete-text"><strong>${esc(d.manchete.titulo)}.</strong></p>${d.manchete.texto.split(/\n\n+/).map(par => `<p class="manchete-text" style="margin-top:10px;">${linkifyMentions(par.trim())}</p>`).join('')}<div class="manchete-metrics" style="margin-top:10px;"><span>Interacoes: <b>${d.manchete.interacoes}</b></span><span>Alcance: <b>${d.manchete.alcance}</b></span></div></div>
+      <div class="section-title"><div class="section-icon" style="background:#183EFF;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div><h2>Volume - ultimos 7 dias</h2></div>
+      <div class="volume-card"><div class="vol-bars">${d.vol.map(v => { const total = v.pos + v.neg || 1; const hTotal = Math.round((total/volMax)*88)+4; const hPos = Math.round((v.pos/total)*hTotal); const hNeg = hTotal-hPos; return `<div class="vol-bar-wrap"><div class="vol-bar-val">${fmt(total)}</div><div class="vol-bar-stack" style="height:${hTotal}px;"><div style="height:${hNeg}px;background:${SENT_COLOR.neg};"></div><div style="height:${hPos}px;background:${SENT_COLOR.pos};"></div></div><div class="vol-bar-label">${esc(v.dia)}</div></div>`; }).join('')}</div><div class="vol-legend"><div class="vol-legend-item"><span class="dot" style="background:${SENT_COLOR.pos}"></span>Engajamento positivo</div><div class="vol-legend-item"><span class="dot" style="background:${SENT_COLOR.neg}"></span>Engajamento negativo</div></div></div>
+      <div class="section-title"><div class="section-icon" style="background:#00B300;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><h2>Principais publicadores - maior alcance</h2></div>
+      <div class="top3-grid">${mkTop3(d.topAlcance)}</div>
+      <div class="section-title"><div class="section-icon" style="background:#E10000;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6"/></svg></div><h2>Principais publicadores - maior engajamento</h2></div>
+      <div class="top3-grid">${mkTop3(d.topEngajamento)}</div>
+      <div class="section-title"><div class="section-icon" style="background:#FFD000;color:#1A1A1A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div><h2>Temas em alta</h2></div>
+      ${d.temas.pos.length ? `<p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#00B300;text-transform:uppercase;letter-spacing:.5px;">▲ Positivos / Favoraveis</p><div class="temas-grid">${d.temas.pos.map(t => `<div class="tema-card"><div class="tema-head"><span class="tema-dot" style="background:${SENT_COLOR[t.sentimento] || SENT_COLOR.fav}"></span><p class="tema-nome">${esc(t.nome)}</p></div><p class="tema-texto">${linkifyMentions(t.texto)}</p><div class="tema-metrics">Interacoes: <b>${t.interacoes}</b> - Alcance: <b>${t.alcance}</b></div></div>`).join('')}</div>` : '<p style="font-size:11px;opacity:.6;padding:4px 0;">Nenhum tema positivo identificado no recorte.</p>'}
+      ${d.temas.neg.length ? `<p style="margin:14px 0 8px;font-size:14px;font-weight:700;color:#E10000;text-transform:uppercase;letter-spacing:.5px;">▼ Negativos / Desfavoraveis</p><div class="temas-grid">${d.temas.neg.map(t => `<div class="tema-card"><div class="tema-head"><span class="tema-dot" style="background:${SENT_COLOR[t.sentimento] || SENT_COLOR.fav}"></span><p class="tema-nome">${esc(t.nome)}</p></div><p class="tema-texto">${linkifyMentions(t.texto)}</p><div class="tema-metrics">Interacoes: <b>${t.interacoes}</b> - Alcance: <b>${t.alcance}</b></div></div>`).join('')}</div>` : '<p style="font-size:11px;opacity:.6;padding:4px 0;margin-top:14px;">Nenhum tema negativo identificado no recorte.</p>'}
+      <div class="two-col" style="margin-top:24px;"><div class="info-card"><div class="info-card-header"><svg viewBox="0 0 24 24" fill="none" stroke="#1DA1F2" stroke-width="2"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.7 5.5 4.3 9 4-.9-4.2 4-6.5 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg><h4 class="info-card-title">Trending Topics X/Twitter</h4></div><ul class="info-list">${d.emAlta.map(t => `<li>${t}</li>`).join('')}</ul></div><div class="info-card"><div class="info-card-header"><svg viewBox="0 0 24 24" fill="none" stroke="#183EFF" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg><h4 class="info-card-title">Tendencias no Google</h4></div><ul class="info-list">${d.tendenciasGoogle.map(t => `<li>${t}</li>`).join('')}</ul></div></div>
+      <div class="section-title"><div class="section-icon" style="background:#E8B400;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg></div><h2>Pontos de atencao</h2></div>
+      ${(d.pontosAtencao.length ? d.pontosAtencao : [{ titulo:'Sem alertas relevantes', texto:'Nao foram identificadas publicacoes negativas de maior tracao no recorte atual.', urls:[], interacoes:'-', alcance:'-' }]).map(p => `<div class="callout-attention"><i>!</i><div><strong>${esc(p.titulo)}:</strong> ${linkifyMentions(p.texto)}${p.interacoes !== '-' ? `<br><span style="font-size:12px;opacity:.75;">Interacoes: ${p.interacoes} &middot; Alcance: ${p.alcance}</span>` : ''}</div></div>`).join('')}
+      <div class="redes-footer"><span class="redes-footer-label">Redes monitoradas:</span><span class="rf-badge rf-x">X</span><span class="rf-badge rf-fb">Facebook</span><span class="rf-badge rf-ig">Instagram</span><span class="rf-badge rf-yt">YouTube</span></div>
+    </div>
+    <p class="source-note">(*) Graficos gerados a partir das mencoes coletadas via Reputaition (Stilingue) no periodo analisado. (**) Textos analiticos produzidos com apoio de IA a partir dos dados quantitativos, com revisao da equipe Nexus. Sentimento por interacao calculado com base no peso de cada publicacao.</p>
+    <div class="brand-footer"><div class="brand-footer-logos"><img src="../assets/logo-governo-brasil.png" alt="Governo do Brasil" style="height:28px;object-fit:contain;" onerror="this.outerHTML='<span class=logo-slot>GOVERNO DO BRASIL</span>'" /><span class="topbar-sep"></span><img src="../assets/logo-secom.png" alt="SECOM" style="height:28px;object-fit:contain;" onerror="this.outerHTML='<span class=logo-slot>SECOM</span>'" /><span class="topbar-sep"></span><img src="../assets/logo-nexus.png" alt="Nexus" style="height:20px;object-fit:contain;" onerror="this.outerHTML='<span class=brand-mark>NEXUS</span>'" /></div><span class="brand-footer-text">Ekklesia para SECOM - Monitor Diario - ${fmtData(d.data)}</span></div>
+  </section>`;
+  document.getElementById('state').style.display = 'none';
+  document.getElementById('reportWrap').style.display = 'block';
+  startHeroCanvas();
+}
+function copiarLink() {
+  navigator.clipboard.writeText(location.href).then(() => {
+    const btn = document.querySelector('.btn-copy'); const orig = btn.textContent;
+    btn.textContent = 'Copiado'; setTimeout(() => btn.textContent = orig, 1600);
+  });
+}
+function applyTheme(dark) {
+  document.body.classList.toggle('dark', dark);
+  document.getElementById('btnTheme').textContent = dark ? '☀️' : '🌙';
+}
+function toggleTheme() {
+  const dark = !document.body.classList.contains('dark');
+  localStorage.setItem('secom_theme', dark ? 'dark' : 'light');
+  applyTheme(dark);
+}
+const FONT_SIZES = [16, 18, 20];
+function cycleFontSize() {
+  const saved = parseInt(localStorage.getItem('secom_fontsize')) || 16;
+  const idx = FONT_SIZES.indexOf(saved);
+  const next = FONT_SIZES[(idx < 0 ? 0 : idx + 1) % FONT_SIZES.length];
+  document.getElementById('topbarAndReport').style.zoom = next / 16;
+  localStorage.setItem('secom_fontsize', next);
+  document.getElementById('btnFont').textContent = next === 16 ? 'A+' : next === 18 ? 'A++' : 'A';
+}
+function loadFontSize() {
+  const saved = parseInt(localStorage.getItem('secom_fontsize'));
+  if (saved && FONT_SIZES.includes(saved) && saved !== 16) {
+    document.getElementById('topbarAndReport').style.zoom = saved / 16;
+    document.getElementById('btnFont').textContent = saved === 18 ? 'A++' : 'A';
+  }
+}
+function startBgCanvas() {
+  const canvas = document.getElementById('bgCanvas'); const ctx = canvas.getContext('2d');
+  let W, H, cw, ch, t0 = performance.now();
+  const colors = ['#00B300','#FFD000','#E10000','#183EFF']; const cols = 9, rows = 6;
+  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; cw = W / cols; ch = H / rows; }
+  function draw(now) {
+    const t = (now - t0) / 1000; const dark = document.body.classList.contains('dark'); ctx.clearRect(0,0,W,H);
+    for (let r=-1; r<=rows+1; r++) for (let c=-1; c<=cols+1; c++) {
+      const x = c*cw - (t*5.5)%cw, y = r*ch - (t*3.5)%ch, wave = Math.sin(t*.55 - (r+c)*.35)*.5+.5;
+      ctx.globalAlpha = (dark ? .05 : .07) + wave * (dark ? .10 : .14);
+      ctx.fillStyle = colors[(Math.abs(r+c)) % colors.length]; ctx.fillRect(x,y,cw,ch);
+    }
+    ctx.globalAlpha = 1; requestAnimationFrame(draw);
+  }
+  resize(); requestAnimationFrame(draw); window.addEventListener('resize', resize);
+}
+function startHeroCanvas() {
+  const canvas = document.getElementById('heroCanvas'); if (!canvas) return;
+  const ctx = canvas.getContext('2d'); let W, H, t0 = performance.now();
+  const shapes = [
+    { type:'rect', x:-.05, y:-.35, w:1.15, h:1.9, color:'#FFD000', a:.95 },
+    { type:'triangle', x:-.05, y:-.55, w:.62, h:2.3, color:'#00B300', a:.95 },
+    { type:'ellipse', x:.17, y:-.65, w:.50, h:1.85, color:'#11D11A', a:.95 },
+    { type:'rect', x:.50, y:0, w:.27, h:1.55, color:'#E10000', a:.95 },
+    { type:'rect', x:.84, y:-.4, w:.32, h:1.05, color:'#183EFF', a:.95 },
+    { type:'ellipse', x:-.22, y:.10, w:.58, h:2.1, color:'#183EFF', a:.95 },
+  ];
+  function resize() { const rect = canvas.parentElement.getBoundingClientRect(); W = canvas.width = rect.width; H = canvas.height = rect.height; }
+  function shape(type, pw, ph) { if (type === 'rect') ctx.fillRect(-pw/2,-ph/2,pw,ph); else if (type === 'ellipse') { ctx.beginPath(); ctx.ellipse(0,0,pw/2,ph/2,0,0,Math.PI*2); ctx.fill(); } else { ctx.beginPath(); ctx.moveTo(0,-ph/2); ctx.lineTo(pw/2,ph/2); ctx.lineTo(-pw/2,ph/2); ctx.closePath(); ctx.fill(); } }
+  function draw(now) {
+    const t = (now - t0) / 1000; ctx.clearRect(0,0,W,H);
+    shapes.forEach((sh,i) => { const wave = Math.sin(t*.45 - i*.65)*.5+.5, pw = sh.w*W, ph = sh.h*H, cx = sh.x*W+pw/2, cy = sh.y*H+ph/2; ctx.save(); ctx.translate(cx + Math.sin(t*.16+i)*.014*W, cy + Math.cos(t*.13+i)*.014*H); ctx.rotate(Math.sin(t*.10+i*.9)*.045); ctx.globalAlpha = sh.a*(.45+wave*.55); ctx.fillStyle = sh.color; shape(sh.type,pw,ph); ctx.restore(); });
+    ctx.globalAlpha = 1; requestAnimationFrame(draw);
+  }
+  resize(); requestAnimationFrame(draw); window.addEventListener('resize', resize);
+}
+async function buildPayloadFromParams(params, sessionDraft) {
+  const clienteId = params.get('cliente_id');
+  if (!clienteId) throw new Error('Cliente nao informado para o Radar.');
+  const tipoRelatorio = params.get('tipo_relatorio') || 'diario';
+  const dataRel = params.get('data_rel') || '';
+  const compareDate = params.get('compare_date') || '';
+  const base = await api('/base?' + new URLSearchParams({ cliente_id: clienteId, tipo_relatorio: tipoRelatorio, dias:'180' }));
+  const cliente = sessionDraft?.cliente || (await api('/clientes?' + new URLSearchParams({ id: clienteId }))).cliente;
+  const allRows = Array.isArray(base.rows) ? base.rows : [];
+  return {
+    cliente,
+    meta: { tipo_relatorio: tipoRelatorio, data_rel: dataRel, compare_date: compareDate },
+    rows: allRows.filter(row => dateInScope(rowDate(row), dataRel, tipoRelatorio)),
+    compareRows: compareDate ? allRows.filter(row => dateInScope(rowDate(row), compareDate, tipoRelatorio)) : [],
+    histRows: allRows,
+    imagens_posts: sessionDraft?.imagens_posts || {},
+    textos_editoriais: sessionDraft?.textos_editoriais || {},
+  };
+}
+async function startReport() {
+  const params = new URLSearchParams(location.search);
+  const key = params.get('draft');
+  const raw = key ? sessionStorage.getItem('ekklesia_multi_radar_' + key) : '';
+  let sessionDraft = null;
+  if (raw) { try { sessionDraft = JSON.parse(raw); } catch (error) {} }
+  try {
+    const data = params.get('cliente_id') ? await buildPayloadFromParams(params, sessionDraft) : sessionDraft;
+    if (!data) throw new Error('Relatorio nao encontrado nesta sessao.');
+    if (!Array.isArray(data.rows) || !data.rows.length) {
+      document.getElementById('state').innerHTML = '<div>Nenhuma linha encontrada para este recorte.<br>Volte ao Ekklesia Multi-Cliente, confira a Data do relatorio e tente abrir o Radar novamente.</div>';
+      return;
+    }
+    renderPage(adaptPayload(data));
+  } catch (error) {
+    document.getElementById('state').textContent = 'Erro ao carregar relatorio: ' + error.message;
+  }
+}
+
+/* ── Gate de senha ──────────────────────────────────────────────── */
+const GATE_KEY    = 'secom_session';
+const GATE_TTL_MS = 8 * 60 * 60 * 1000; // deve bater com o TTL do Worker
+
+function _gateValido() {
+  try {
+    const raw = sessionStorage.getItem(GATE_KEY);
+    if (!raw) return false;
+    const { ts, ttl } = JSON.parse(raw);
+    return (Date.now() - ts) < (ttl || GATE_TTL_MS);
+  } catch { return false; }
+}
+
+async function gateSubmit() {
+  const inp = document.getElementById('gateInput');
+  const err = document.getElementById('gateError');
+  const btn = document.getElementById('gateBtn');
+  const val = (inp.value || '').trim();
+
+  if (!val) { err.textContent = 'Por favor, digite o código.'; inp.classList.add('error'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Verificando…';
+
+  try {
+    const res  = await fetch('/api/ekklesia/secom-auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ senha: val }),
+    });
+    const data = await res.json();
+
+    if (res.ok && data.ok) {
+      const { ts, ttl } = JSON.parse(atob(data.session_token.split('.')[0]));
+      sessionStorage.setItem(GATE_KEY, JSON.stringify({ ts, ttl, token: data.session_token }));
+      document.getElementById('gateWrap').style.display = 'none';
+      document.getElementById('topbarAndReport').style.display = '';
+      document.getElementById('state').style.display = '';
+      startReport();
+    } else {
+      err.textContent = data.error || 'Código incorreto. Tente novamente.';
+      inp.classList.add('error');
+      inp.value = '';
+      inp.focus();
+      setTimeout(() => { btn.disabled = false; btn.textContent = 'Acessar'; }, 2000);
+    }
+  } catch {
+    err.textContent = 'Erro de conexão. Tente novamente.';
+    btn.disabled = false;
+    btn.textContent = 'Acessar';
+  }
+}
+
+function gateBoot() {
+  const saved = localStorage.getItem('secom_theme');
+  applyTheme(saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches);
+  loadFontSize();
+  startBgCanvas();
+  if (_gateValido()) {
+    document.getElementById('topbarAndReport').style.display = '';
+    document.getElementById('state').style.display = '';
+    startReport();
+  } else {
+    document.getElementById('gateWrap').style.display = '';
+    setTimeout(() => document.getElementById('gateInput')?.focus(), 80);
+  }
+}
+gateBoot();
+</script>
+</body>
+</html>

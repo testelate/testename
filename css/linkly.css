@@ -1,0 +1,487 @@
+/* css/linkly.css — Estilos modulares encapsulados do Linkly */
+
+.linkly-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: linkly-fade-in 0.5s ease-out;
+  min-height: calc(100vh - 120px);
+}
+
+@keyframes linkly-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.linkly-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 10px 0;
+  box-shadow: none;
+  transition: all var(--t-slow);
+}
+
+body.light .linkly-header {
+  border: none;
+  background: transparent;
+}
+
+.mascot-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  position: relative;
+  z-index: 5;
+}
+
+.mascot-bubble {
+  position: relative;
+  max-width: 250px;
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  border-radius: 4px 18px 18px 18px;
+  padding: 10px 14px;
+  margin-left: 14px;
+  box-shadow: 0 4px 20px hsla(var(--theme-h), 70%, 50%, 0.2), var(--clay-shadow-sm);
+  cursor: pointer;
+  z-index: 1;
+  animation: linkly-fade-in 0.5s ease-out;
+}
+
+body.light .mascot-bubble {
+  border-color: var(--accent);
+  background: #fff;
+}
+
+.bubble-tail-border {
+  position: absolute;
+  top: 18px;
+  left: -11px;
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 11px solid var(--accent);
+}
+
+.bubble-tail-bg {
+  position: absolute;
+  top: 19px;
+  left: -8px;
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-right: 9px solid var(--surface);
+}
+
+body.light .bubble-tail-bg {
+  border-right-color: #fff;
+}
+
+.bubble-text {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-primary);
+  font-family: var(--font-body), sans-serif;
+}
+
+.mascot-img {
+  height: 140px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 24px rgba(0,0,0,0.22)) drop-shadow(0 0 36px hsla(var(--theme-h),80%,55%,0.30));
+  animation: linkly-mascot-float 3s ease-in-out infinite alternate;
+  cursor: pointer;
+  display: block;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.mascot-img:hover {
+  transform: scale(1.15) rotate(8deg);
+}
+
+@keyframes linkly-mascot-float {
+  from { transform: translateY(3px); }
+  to { transform: translateY(-4px); }
+}
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.linkly-title {
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', var(--font-ui), sans-serif;
+  font-size: 26px;
+  font-weight: 850;
+  background: linear-gradient(135deg, var(--accent), #FF8A3D);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+
+.linkly-subtitle {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+}
+
+.linkly-card {
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--r-xl);
+  padding: 24px;
+  box-shadow: var(--clay-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: border-color var(--t-normal), background var(--t-normal);
+}
+
+body.light .linkly-card {
+  border-color: rgba(160, 80, 20, 0.12);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 750;
+  color: var(--text-primary);
+  border-left: 4px solid var(--accent);
+  padding-left: 10px;
+  font-family: var(--font-ui), sans-serif;
+}
+
+.input-group {
+  display: flex;
+  gap: 10px;
+}
+
+.input-group input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--r-md);
+  padding: 12px 16px;
+  color: var(--text-primary);
+  font-size: 13.5px;
+  outline: none;
+  font-family: inherit;
+  transition: all var(--t-fast);
+}
+
+body.light .input-group input {
+  background: #fff;
+  border-color: rgba(160, 80, 20, 0.2);
+}
+
+.input-group input:focus {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+body.light .input-group input:focus {
+  background: #fff;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-md);
+  padding: 12px 24px;
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  font-family: var(--font-ui), sans-serif;
+  box-shadow: var(--clay-shadow-accent);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1.5px);
+}
+
+.btn-primary:active {
+  transform: translateY(0.5px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.result-box {
+  background: rgba(var(--accent-rgb, 255, 101, 0), 0.04);
+  border: 1px dashed var(--accent);
+  border-radius: var(--r-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: linkly-slide-down 0.3s ease-out;
+}
+
+@keyframes linkly-slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.result-label {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.result-field {
+  display: flex;
+  gap: 8px;
+}
+
+.result-field input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  color: var(--text-primary);
+  font-size: 13.5px;
+  font-family: Consolas, Monaco, monospace;
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--t-fast);
+}
+
+body.light .result-field input {
+  background: #fff;
+  border-color: rgba(160, 80, 20, 0.18);
+}
+
+.result-field input:focus {
+  border-color: var(--accent);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--r-md);
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  font-family: var(--font-ui), sans-serif;
+}
+
+body.light .btn-secondary {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(160, 80, 20, 0.15);
+  color: #4a2000;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+body.light .btn-secondary:hover {
+  background: rgba(160, 80, 20, 0.06);
+}
+
+.table-wrapper {
+  margin-top: 12px;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 290px;
+  border-radius: var(--r-lg);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+body.light .table-wrapper {
+  border-color: rgba(160, 80, 20, 0.08);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 12.5px;
+}
+
+.history-table th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 2;
+  padding: 12px 16px;
+  color: var(--text-muted);
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.08);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 10.5px;
+}
+
+body.light .history-table th {
+  background: #fff;
+  border-bottom-color: rgba(160, 80, 20, 0.12);
+}
+
+.history-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body.light .history-table td {
+  border-bottom-color: rgba(160, 80, 20, 0.06);
+}
+
+.history-table td a {
+  color: inherit;
+  text-decoration: none;
+  transition: color var(--t-fast);
+}
+
+.history-table td a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.history-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-primary);
+}
+
+body.light .history-table tr:hover td {
+  background: rgba(160, 80, 20, 0.03);
+}
+
+.empty-state {
+  text-align: center !important;
+  color: var(--text-muted);
+  padding: 32px 0 !important;
+  font-style: italic;
+}
+
+/* ──────────────────────────────────────────────────────────
+   MODO IFRAME (EMBED=TRUE)
+   Oculta navbar, cabeçalho e histórico, restando apenas o input
+   e o mascote integrados de forma ultracompacta.
+   ────────────────────────────────────────────────────────── */
+body.is-embedded {
+  background: transparent !important;
+  height: auto;
+  min-height: unset;
+  overflow: hidden;
+}
+
+body.is-embedded #navbar-container {
+  display: none !important;
+}
+
+body.is-embedded .linkly-container {
+  padding: 0;
+  gap: 12px;
+  min-height: unset;
+}
+
+body.is-embedded .linkly-header {
+  display: none !important;
+}
+
+body.is-embedded .linkly-card {
+  padding: 12px 14px;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+body.is-embedded .card-title {
+  display: none;
+}
+
+body.is-embedded .input-group input {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+body.is-embedded .btn-primary {
+  padding: 8px 16px;
+  font-size: 12px;
+}
+
+body.is-embedded .result-box {
+  padding: 10px;
+}
+
+body.is-embedded .result-field input {
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+body.is-embedded .btn-secondary {
+  padding: 8px 14px;
+  font-size: 11px;
+}
+
+body.is-embedded .card-history {
+  display: none !important;
+}
+
+/* Delete button and layout inside table cell */
+.short-link-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.delete-link-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all var(--t-fast);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.delete-link-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.history-table tr:hover .delete-link-btn {
+  opacity: 1;
+  pointer-events: auto;
+}

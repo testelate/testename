@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HUB.nexus — Relatório</title>
+<link rel="icon" href="../assets/logo.png" type="image/png"/>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Nunito:wght@400;500;600;700;800&family=Ubuntu:wght@400;500;700&display=swap');
+  :root {
+    --bg-page:#EFEFEC; --bg-surface:#FFFFFF; --bg-card:#F6F6F3; --bg-topbar:#FFFFFF;
+    --border:#E0DFD9; --text-primary:#161616; --text-secondary:#3C3C3C; --text-muted:#8A8A85;
+    --accent:#183EFF; --accent-dark:#0E2BBE;
+  }
+  body.dark {
+    --bg-page:#0E1016; --bg-surface:#171A22; --bg-card:#1E222D; --bg-topbar:#12141B;
+    --border:#2B303D; --text-primary:#ECECE8; --text-secondary:#A8A8A2; --text-muted:#6E6E68;
+    --accent:#5C7CFF; --accent-dark:#3955D9;
+  }
+  * { box-sizing:border-box; }
+  body { font-family:'Montserrat',-apple-system,"Segoe UI",Helvetica,Arial,sans-serif; font-size:16px; background:var(--bg-page); margin:0; color:var(--text-primary); transition:background .2s,color .2s; }
+  .topbar { background:#0a0e1c; border-bottom:3px solid var(--accent); padding:10px 24px; display:flex; align-items:center; justify-content:space-between; gap:12px; position:sticky; top:0; z-index:100; }
+  .topbar-left { display:flex; align-items:center; gap:12px; }
+  .brand-mark { font-size:11px; font-weight:900; letter-spacing:.08em; color:#fff; }
+  .topbar-right { display:flex; align-items:center; gap:10px; }
+  .btn-copy,.btn-theme { padding:7px 14px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); border-radius:6px; font-size:12px; font-weight:600; color:#fff; cursor:pointer; font-family:inherit; transition:all .15s; }
+  .btn-theme { width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; font-size:15px; }
+  .btn-copy:hover,.btn-theme:hover { background:rgba(255,255,255,.16); }
+  .state { min-height:70vh; display:flex; align-items:center; justify-content:center; color:var(--text-secondary); text-align:center; padding:30px; }
+  .report-wrap { padding:16px 20px 60px; }
+  .page { background:var(--bg-surface); border:.5px solid var(--border); border-radius:12px; overflow:hidden; max-width:820px; margin:0 auto; box-shadow:0 8px 40px rgba(0,0,0,.08); }
+  .hero { position:relative; min-height:220px; background:#0A1340 linear-gradient(135deg,#183EFF,#0A1340); background-size:cover; background-position:center; display:flex; align-items:flex-end; padding:2rem; }
+  .hero.has-img::after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(8,12,40,.15) 0%,rgba(8,12,40,.75) 100%); }
+  .hero-inner { position:relative; z-index:1; }
+  .hero-kicker { font-size:11px; font-weight:700; letter-spacing:.12em; color:rgba(255,255,255,.68); text-transform:uppercase; margin:0 0 8px; }
+  .hero-title { font-size:30px; font-weight:800; color:#fff; line-height:1.15; margin:0; }
+  .body { padding:1.75rem 2rem 1rem; }
+  .secao { padding:20px 0; border-top:1px solid var(--border); }
+  .secao:first-child { border-top:none; padding-top:0; }
+  .secao-titulo { font-size:17px; font-weight:800; margin:0 0 10px; color:var(--text-primary); }
+  .secao-corpo { font-size:15px; line-height:1.7; color:var(--text-secondary); margin:0; white-space:pre-wrap; }
+  .secao-img { display:block; width:100%; max-height:360px; object-fit:cover; border-radius:10px; margin-top:14px; }
+  .footer-note { padding:16px 2rem 22px; font-size:12px; color:var(--text-muted); border-top:1px solid var(--border); }
+  .embnac-wrap { padding:42px 16px 70px; background:#EDE3D6; font-family:'Nunito','Montserrat',-apple-system,"Segoe UI",sans-serif; }
+  .embnac-page { --edition:#4B2E83; --emb-bg-page:#FFF8F3; --emb-bg-card:#FFF3EA; --emb-border:#F3E1D2; --emb-text:#24140A; --emb-secondary:#6B4A34; --emb-muted:#A9836A; --emb-pos:#1E7A4C; --emb-neg:#A32D2D; --emb-neu:#B5790E; width:min(612px,100%); margin:0 auto 26px; background:var(--emb-bg-page); border-radius:16px; overflow:hidden; box-shadow:0 3px 10px rgba(78,44,20,.06),0 18px 34px rgba(78,44,20,.10); color:var(--emb-text); }
+  .embnac-hero-wrap { padding:16px 16px 0; }
+  .embnac-hero { position:relative; border-radius:14px; overflow:hidden; min-height:200px; display:flex; flex-direction:column; justify-content:flex-end; background:linear-gradient(200deg,#2A1420 0%,#5B2A52 55%,#7A1E2C 100%); background-size:cover; background-position:center; box-shadow:0 8px 20px rgba(40,20,8,.22); }
+  .embnac-hero.h7 { background:linear-gradient(200deg,#123A22 0%,#1E7A4C 55%,#2E5C2A 100%); }
+  .embnac-hero.h8 { background:linear-gradient(200deg,#241238 0%,#4B2E83 55%,#3A2260 100%); }
+  .embnac-hero.h14 { background:linear-gradient(200deg,#0B2F45 0%,#0B6FA0 55%,#0C5178 100%); }
+  .embnac-hero.h16 { background:linear-gradient(200deg,#2A1420 0%,#5B2A52 55%,#7A1E2C 100%); }
+  .embnac-hero::before { content:""; position:absolute; inset:0; background:linear-gradient(0deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,0) 55%); }
+  .embnac-cat { position:absolute; top:12px; left:14px; z-index:2; display:inline-flex; background:rgba(255,255,255,.16); color:#fff; font:700 10px 'Ubuntu',sans-serif; padding:6px 12px; border-radius:999px; letter-spacing:.03em; text-transform:lowercase; }
+  .embnac-date { position:absolute; top:12px; right:14px; z-index:2; font-size:10.5px; color:rgba(255,255,255,.75); }
+  .embnac-hero-content { position:relative; z-index:2; padding:22px 18px 18px; }
+  .embnac-eyebrow { font:700 10px 'Ubuntu',sans-serif; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.6); margin:0 0 5px; }
+  .embnac-title { font:700 30px 'Ubuntu',sans-serif; color:#fff; margin:0; line-height:1.05; }
+  .embnac-lead { padding:14px 20px 4px; font-size:11.5px; line-height:1.6; color:var(--emb-secondary); }
+  .embnac-section { padding:16px 20px; }
+  .embnac-label { font:800 11px 'Ubuntu',sans-serif; text-transform:uppercase; letter-spacing:1.4px; color:var(--edition); margin:0 0 10px; }
+  .embnac-copy { font-size:11px; line-height:1.62; color:#4a3626; margin:0 0 9px; white-space:pre-wrap; }
+  .embnac-divider { border:0; border-top:1px solid var(--emb-border); margin:0 20px; }
+  .embnac-img { display:block; width:100%; max-height:280px; object-fit:cover; border-radius:12px; margin-top:12px; border:1px solid var(--emb-border); }
+  .embnac-clip-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .embnac-clip { flex:1 1 150px; background:var(--emb-bg-card); border:1px solid var(--emb-border); border-radius:10px; padding:10px 12px; font-size:9.5px; line-height:1.4; color:#4a3626; text-decoration:none; min-width:0; }
+  .embnac-clip b { display:block; font:800 8.5px 'Ubuntu',sans-serif; text-transform:uppercase; letter-spacing:.04em; color:var(--edition); margin-bottom:3px; }
+  .embnac-clip span { display:block; font-weight:700; color:#2A170A; margin-bottom:3px; }
+  .embnac-clip em { display:inline-flex; margin-top:7px; padding:2px 7px; border-radius:20px; background:#FBEFD5; color:var(--emb-neu); font-style:normal; font-size:8px; font-weight:800; text-transform:uppercase; }
+  .embnac-clip em.pos { background:#E4EFD2; color:var(--emb-pos); }
+  .embnac-clip em.neg { background:#F5DEDA; color:var(--emb-neg); }
+  .embnac-quote { background:var(--emb-bg-card); border:1px solid var(--emb-border); border-left:3px solid var(--edition); border-radius:0 12px 12px 0; padding:14px 18px; }
+  .embnac-quote p { font:600 13px 'Ubuntu',sans-serif; line-height:1.6; color:#2A170A; margin:0; }
+  .embnac-footer { padding:20px 20px 24px; display:flex; flex-direction:column; align-items:center; gap:8px; border-top:1px solid var(--emb-border); margin-top:6px; }
+  .embnac-logos { display:flex; align-items:center; gap:16px; font:800 12px 'Ubuntu',sans-serif; color:var(--emb-muted); }
+  .embnac-fine { font-size:8px; color:var(--emb-muted); text-align:center; line-height:1.5; margin:0; }
+  @media (max-width:640px) {
+    .embnac-wrap { padding:22px 10px 42px; }
+    .embnac-title { font-size:26px; }
+    .embnac-clip { flex-basis:100%; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left"><span class="brand-mark">HUB.NEXUS</span></div>
+  <div class="topbar-right">
+    <button class="btn-copy" onclick="copiarLink()">Copiar link</button>
+    <button class="btn-theme" id="btnTheme" onclick="toggleTheme()">🌙</button>
+  </div>
+</div>
+<div id="state" class="state">Carregando relatório...</div>
+<main id="reportWrap" class="report-wrap" style="display:none;"></main>
+<div id="toast"></div>
+<script>
+  const esc = value => String(value || '').replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
+
+  function applyTheme(dark) {
+    document.body.classList.toggle('dark', dark);
+    document.getElementById('btnTheme').textContent = dark ? '☀️' : '🌙';
+  }
+  function toggleTheme() {
+    const dark = !document.body.classList.contains('dark');
+    localStorage.setItem('rm_theme', dark ? 'dark' : 'light');
+    applyTheme(dark);
+  }
+  function copiarLink() {
+    navigator.clipboard?.writeText(location.href).catch(() => {});
+    const btn = document.querySelector('.btn-copy');
+    const orig = btn.textContent;
+    btn.textContent = 'Copiado';
+    setTimeout(() => btn.textContent = orig, 1600);
+  }
+
+  function norm(value) {
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  }
+  function isEmbraturNacional(doc) {
+    const hay = norm([doc.id, doc.nome_cliente, doc.titulo].join(' '));
+    return hay.includes('embratur') && hay.includes('nacional');
+  }
+  function editionClass(doc) {
+    const hay = norm([doc.titulo, doc.nome_cliente].join(' '));
+    if (hay.includes('7h')) return 'h7';
+    if (hay.includes('8h')) return 'h8';
+    if (hay.includes('14h')) return 'h14';
+    if (hay.includes('16h')) return 'h16';
+    return hay.includes('monitor') ? 'h7' : 'h16';
+  }
+  function editionCategory(doc) {
+    const hay = norm(doc.titulo);
+    return hay.includes('monitor') ? 'monitor · redes sociais e imprensa' : 'análise · redes sociais e imprensa';
+  }
+  function renderMateriaCard(m) {
+    const tom = norm(m.tom);
+    const toneClass = tom.includes('favor') || tom.includes('posit') ? 'pos' : (tom.includes('neg') || tom.includes('sens') ? 'neg' : '');
+    const inner = `
+      <b>${esc(m.fonte || 'Fonte')}</b>
+      ${m.titulo ? `<span>${esc(m.titulo)}</span>` : ''}
+      ${m.resumo ? esc(m.resumo) : ''}
+      ${m.tom ? `<em class="${toneClass}">${esc(m.tom)}</em>` : ''}
+    `;
+    return m.url
+      ? `<a class="embnac-clip" href="${esc(m.url)}" target="_blank" rel="noopener">${inner}</a>`
+      : `<div class="embnac-clip">${inner}</div>`;
+  }
+  function renderEmbraturNacional(doc) {
+    const heroClass = editionClass(doc);
+    const date = new Date().toLocaleDateString('pt-BR');
+    const secoes = (doc.secoes || []).map((s, idx) => {
+      const isImprensa = s.tipo === 'imprensa';
+      const materias = Array.isArray(s.materias) ? s.materias.filter(m => m.fonte || m.titulo || m.resumo) : [];
+      const body = isImprensa
+        ? `${s.corpo ? `<p class="embnac-copy">${esc(s.corpo)}</p>` : ''}<div class="embnac-clip-row">${materias.map(renderMateriaCard).join('') || '<div class="embnac-clip"><b>Imprensa</b>Sem matérias cadastradas.</div>'}</div>`
+        : `${s.corpo ? (idx === (doc.secoes || []).length - 1 ? `<div class="embnac-quote"><p>${esc(s.corpo)}</p></div>` : `<p class="embnac-copy">${esc(s.corpo)}</p>`) : ''}`;
+      return `
+        <section class="embnac-section">
+          ${s.titulo ? `<p class="embnac-label">${esc(s.titulo)}</p>` : ''}
+          ${body}
+          ${s.imagem ? `<img class="embnac-img" src="${esc(s.imagem)}" alt="" />` : ''}
+        </section>
+        ${idx < (doc.secoes || []).length - 1 ? '<hr class="embnac-divider">' : ''}
+      `;
+    }).join('');
+
+    document.getElementById('reportWrap').innerHTML = `
+      <div class="embnac-wrap">
+        <article class="embnac-page">
+          <div class="embnac-hero-wrap">
+            <div class="embnac-hero ${heroClass}" ${doc.capa ? `style="background-image:url('${esc(doc.capa)}')"` : ''}>
+              <span class="embnac-cat">${editionCategory(doc)}</span>
+              <span class="embnac-date">${date}</span>
+              <div class="embnac-hero-content">
+                <p class="embnac-eyebrow">Nexus × Embratur</p>
+                <h1 class="embnac-title">${esc(doc.titulo || 'Monitor Embratur')}</h1>
+              </div>
+            </div>
+          </div>
+          <p class="embnac-lead">${esc(doc.nome_cliente || 'Embratur Nacional')} · panorama consolidado de redes sociais, imprensa e temas de atenção.</p>
+          ${secoes || '<section class="embnac-section"><p class="embnac-copy">Este relatório ainda não tem seções.</p></section>'}
+          <footer class="embnac-footer">
+            <div class="embnac-logos"><span>FSB holding</span><span>nexus.</span></div>
+            <p class="embnac-fine">Este é um produto exclusivo, enviado a destinatários cadastrados.<br>Caso tenha recebido por engano, desconsidere.</p>
+          </footer>
+        </article>
+      </div>
+    `;
+    document.getElementById('state').style.display = 'none';
+    document.getElementById('reportWrap').style.display = 'block';
+  }
+
+  function render(doc) {
+    if (isEmbraturNacional(doc)) {
+      renderEmbraturNacional(doc);
+      return;
+    }
+    const secoesHtml = (doc.secoes || []).map(s => `
+      <div class="secao">
+        ${s.titulo ? `<h2 class="secao-titulo">${esc(s.titulo)}</h2>` : ''}
+        ${s.corpo ? `<p class="secao-corpo">${esc(s.corpo)}</p>` : ''}
+        ${s.imagem ? `<img class="secao-img" src="${esc(s.imagem)}" alt="" />` : ''}
+      </div>
+    `).join('');
+
+    document.getElementById('reportWrap').innerHTML = `
+      <section class="page">
+        <div class="hero ${doc.capa ? 'has-img' : ''}" ${doc.capa ? `style="background-image:url('${esc(doc.capa)}')"` : ''}>
+          <div class="hero-inner">
+            <p class="hero-kicker">${esc(doc.nome_cliente || 'Relatório')}</p>
+            <h1 class="hero-title">${esc(doc.titulo || 'Relatório')}</h1>
+          </div>
+        </div>
+        <div class="body">${secoesHtml || '<p class="secao-corpo">Este relatório ainda não tem seções.</p>'}</div>
+        <p class="footer-note">Relatório gerado via HUB.nexus.</p>
+      </section>
+    `;
+    document.getElementById('state').style.display = 'none';
+    document.getElementById('reportWrap').style.display = 'block';
+  }
+
+  async function boot() {
+    const saved = localStorage.getItem('rm_theme');
+    applyTheme(saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const preview = new URLSearchParams(location.search).get('preview');
+    if (preview === 'embratur-nacional') {
+      render({
+        id: 'embratur-nacional-preview',
+        nome_cliente: 'Embratur Nacional',
+        titulo: 'Análise Embratur 16h',
+        capa: '',
+        secoes: [
+          { id: 's1', tipo: 'texto', titulo: 'Resumo do período', corpo: 'Panorama consolidado das últimas 24h, com atenção a temas de turismo, conectividade aérea e presença institucional da Embratur no noticiário nacional.', imagem: '' },
+          {
+            id: 's2',
+            tipo: 'imprensa',
+            titulo: 'Imprensa · noticiário',
+            corpo: 'Manchetes do noticiário ajudam a contextualizar o ambiente informativo do dia e os assuntos que podem afetar a percepção pública sobre turismo.',
+            imagem: '',
+            materias: [
+              { fonte: 'Folha', titulo: 'Setor turístico acompanha nova rodada de conectividade aérea', resumo: 'Matéria contextualiza impactos potenciais sobre destinos brasileiros.', tom: 'neutro', url: '' },
+              { fonte: 'Valor', titulo: 'Mercado vê avanço em serviços ligados a viagens', resumo: 'Indicadores econômicos reforçam ambiente favorável para promoção do Brasil.', tom: 'favorável', url: '' },
+              { fonte: 'Metrópoles', titulo: 'Embratur destaca ampliação de rotas internacionais', resumo: 'Cobertura associa a agenda institucional à atração de visitantes estrangeiros.', tom: 'favorável', url: '' },
+            ],
+          },
+          { id: 's3', tipo: 'texto', titulo: 'Tendências', corpo: 'A Embratur permanece direcionando sua atuação à promoção internacional do Brasil, priorizando conectividade aérea, segmentos estratégicos do turismo e divulgação de destinos em mercados internacionais.', imagem: '' },
+        ],
+      });
+      return;
+    }
+    const token = new URLSearchParams(location.search).get('token');
+    if (!token) { document.getElementById('state').textContent = 'Link inválido.'; return; }
+    try {
+      const res = await fetch('/api/relatorio-modelo/share?token=' + encodeURIComponent(token));
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Relatório não encontrado.');
+      render(data.dados);
+    } catch (e) {
+      document.getElementById('state').textContent = e.message || 'Erro ao carregar relatório.';
+    }
+  }
+  boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Embratur — Briefing semanal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-page:        #ECE9E1;
+    --bg-surface:     #FFFFFF;
+    --bg-card:        #F4F1E9;
+    --bg-topbar:      #FFFFFF;
+    --bg-nav:         #FFFFFF;
+    --bg-pill:        #F4F1E9;
+    --bg-input:       #FAFAF8;
+    --bg-gate:        #ECE9E1;
+    --bg-gate-card:   #FFFFFF;
+    --border:         #E4E1D8;
+    --text-primary:   #2A2823;
+    --text-secondary: #6B6862;
+    --text-muted:     #9A968D;
+    --text-error:     #A32D2D;
+    --header-bg:      #3C3489;
+    --delta-up:       #1f6e1f;
+    --delta-down:     #9a3b12;
+    --spinner-track:  #E4E1D8;
+    --font-serif:     'Fraunces','Georgia','Times New Roman',serif;
+  }
+  html.dark {
+    --bg-page:        #0F1117;
+    --bg-surface:     #1A1D27;
+    --bg-card:        #22263A;
+    --bg-topbar:      #13151F;
+    --bg-nav:         #13151F;
+    --bg-pill:        #1E2130;
+    --bg-input:       #1E2130;
+    --bg-gate:        #0F1117;
+    --bg-gate-card:   #1A1D27;
+    --border:         #2E3248;
+    --text-primary:   #E8E6F0;
+    --text-secondary: #9A98B0;
+    --text-muted:     #6B6985;
+    --text-error:     #F07070;
+    --header-bg:      #3C3489;
+    --delta-up:       #4ABA8E;
+    --delta-down:     #F07070;
+    --spinner-track:  #2E3248;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg-page); margin: 0; padding: 0;
+    color: var(--text-primary);
+    transition: background .2s, color .2s;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: calc(100vh - 90px); gap: 12px; color: var(--text-muted); font-size: 13px;
+    text-align: center; padding: 24px;
+  }
+  .spinner {
+    width: 28px; height: 28px; border: 2px solid var(--spinner-track);
+    border-top-color: #3C3489; border-radius: 50%; animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Topbar ── */
+  .topbar {
+    background: var(--bg-topbar); border-bottom: 1px solid var(--border);
+    padding: 10px 20px; display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; position: sticky; top: 0; z-index: 100;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar-sep  { width: 1px; height: 16px; background: var(--border); }
+  .topbar-right { display: flex; gap: 8px; align-items: center; }
+  .btn-copy {
+    padding: 7px 14px; background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 6px; font-size: 12px; font-weight: 500; color: var(--text-secondary);
+    cursor: pointer; font-family: inherit; transition: all .15s;
+  }
+  .btn-copy:hover { border-color: var(--text-muted); }
+  .btn-theme {
+    width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--bg-surface); cursor: pointer; display: flex; align-items: center;
+    justify-content: center; font-size: 15px; transition: all .15s; flex-shrink: 0;
+  }
+  .btn-theme:hover { border-color: var(--text-muted); }
+  .btn-pdf {
+    padding: 7px 16px; border: none; border-radius: 6px; font-size: 12px;
+    font-weight: 600; color: #fff; cursor: pointer; font-family: inherit;
+    transition: all .15s; background: var(--header-bg);
+  }
+  .btn-pdf:hover { opacity: .88; }
+
+  /* ── Country nav ── */
+  .country-nav {
+    background: var(--bg-nav); border-bottom: 1px solid var(--border);
+    padding: 8px 20px; display: flex; gap: 6px; align-items: center;
+    flex-wrap: wrap; position: sticky; top: 49px; z-index: 99;
+  }
+  .country-pill {
+    padding: 6px 12px; border-radius: 99px; border: 1px solid var(--border);
+    background: var(--bg-pill); font-size: 12px; font-weight: 500; color: var(--text-secondary);
+    cursor: pointer; font-family: inherit; transition: all .15s;
+    display: flex; align-items: center; gap: 6px; white-space: nowrap;
+  }
+  .country-pill:hover { border-color: var(--text-muted); }
+  .country-pill.active { background: var(--header-bg); border-color: var(--header-bg); color: #fff; }
+
+  /* ── Canvas de fundo animado ── */
+  #bgCanvas {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── Wrapper ── */
+  .report-wrap { padding: 16px 20px 60px; position: relative; z-index: 1; }
+
+  /* ── Card principal ── */
+  .page {
+    background: var(--bg-surface); border: 0.5px solid var(--border);
+    border-radius: 16px; overflow: hidden;
+    max-width: 780px; margin: 0 auto;
+    box-shadow: 0 6px 32px rgba(0,0,0,0.09);
+  }
+
+  /* ── Header do relatório ── */
+  .rep-flag-bar { display: flex; height: 4px; }
+  .rep-flag-bar span { flex: 1; }
+  .rep-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.1rem 1.5rem; background: var(--header-bg);
+  }
+  .rep-header-left { display: flex; align-items: baseline; gap: 10px; }
+  .rep-header-label { font-size: 12px; font-weight: 600; letter-spacing: .05em; color: rgba(255,255,255,.65); }
+  .rep-header-sep { color: rgba(255,255,255,.3); }
+  .rep-header-title {
+    font-size: 24px; margin: 0; font-family: var(--font-serif);
+    display: flex; align-items: center; gap: 10px; color: #fff;
+  }
+  .rep-header-right { text-align: right; }
+  .rep-header-right p { font-size: 12px; margin: 0; }
+  .rep-header-right .sub1 { color: rgba(255,255,255,.65); }
+  .rep-header-right .sub2 { color: rgba(255,255,255,.45); }
+
+  /* ── Body ── */
+  .rep-body { padding: 1.5rem 1.5rem 1.75rem; }
+
+  /* ── Resumo Executivo ── */
+  .resumo-exec {
+    border-left: 4px solid #D85A30;
+    background: #FBF1EA;
+    border-radius: 0 10px 10px 0;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  html.dark .resumo-exec { background: #2A1200; }
+  .resumo-exec-label {
+    font-size: 10.5px; color: #9a3b12; letter-spacing: .05em;
+    font-weight: 700; margin: 0 0 8px;
+  }
+  html.dark .resumo-exec-label { color: #F4C9B8; }
+  .resumo-exec-text {
+    font-size: 18px; font-family: var(--font-serif); line-height: 1.45;
+    margin: 0; color: var(--text-primary);
+  }
+  .resumo-exec-text + .resumo-exec-text { margin-top: 12px; }
+  p.rep-bem-text + p.rep-bem-text,
+  p.rep-atencao-text + p.rep-atencao-text,
+  p.sensiveis-text + p.sensiveis-text,
+  p.observar-text + p.observar-text { margin-top: 8px; }
+
+  /* ── Semana em Números ── */
+  .numeros-label {
+    font-size: 11px; color: var(--text-muted); margin: 0 0 8px;
+    letter-spacing: .02em; font-weight: 600;
+  }
+  .numeros-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr) 1.3fr;
+    gap: 10px; margin-bottom: 1.5rem;
+  }
+  .num-card { background: var(--bg-card); border-radius: 10px; padding: .8rem .9rem; }
+  .num-card-label { font-size: 11px; color: var(--text-secondary); margin: 0 0 4px; }
+  .num-card-value { font-size: 23px; font-weight: 600; margin: 0 0 6px; line-height: 1; }
+  .num-bars { display: flex; align-items: flex-end; gap: 2px; height: 20px; margin-bottom: 5px; }
+  .num-bar  { flex: 1; border-radius: 2px; }
+  .num-delta { font-size: 10px; font-weight: 600; }
+  .num-delta--up   { color: var(--delta-up); }
+  .num-delta--down { color: var(--delta-down); }
+  .num-delta--neutral { color: var(--text-muted); }
+  .num-card-sub { font-size: 10.5px; color: var(--text-muted); margin: 0; }
+  .sent-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .sent-donut { position: relative; width: 50px; height: 50px; flex-shrink: 0; }
+  .sent-pct  { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+  .sent-legend { display: flex; flex-direction: column; gap: 2px; font-size: 9.5px; flex: 1; min-width: 0; }
+  .sent-legend-item { display: flex; align-items: center; gap: 4px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sent-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Repercussão ── */
+  .section-header { display: flex; align-items: center; gap: 8px; margin-bottom: .75rem; }
+  .section-icon {
+    width: 30px; height: 30px; border-radius: 7px; background: #D85A30;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .section-icon svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round; }
+  .section-icon--green  { background: #3B6D11; }
+  .section-icon--amber  { background: #854F0B; }
+  .section-icon--purple { background: #3C3489; }
+  .section-title { margin: 0; font-size: 18px; font-family: var(--font-serif); }
+  .section-wrap  { margin-bottom: 1.5rem; }
+  .section-pill {
+    font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 12px;
+    white-space: nowrap; margin-left: auto;
+  }
+  .pill--agir    { color: #7a2e06; background: #FBE0CF; }
+  .pill--planejar { color: #412402; background: #F1E0BC; }
+  .pill--monitorar { color: #5F5E5A; background: #E5E3DB; }
+  html.dark .pill--agir    { color: #FFB380; background: rgba(120,50,10,.45); }
+  html.dark .pill--planejar { color: #FFD37A; background: rgba(100,60,0,.45); }
+  html.dark .pill--monitorar { color: #9A98B0; background: rgba(50,50,70,.45); }
+
+  .repercussao-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .rep-bem {
+    background: #EAF3DE; border-radius: 10px; padding: .85rem 1rem;
+  }
+  html.dark .rep-bem { background: #0E2010; }
+  .rep-bem-label { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .rep-bem-label span { font-size: 11px; font-weight: 700; color: #1f6e1f; }
+  html.dark .rep-bem-label span { color: #4ABA8E; }
+  .rep-bem-text { font-size: 12.5px; color: #173404; line-height: 1.5; margin: 0; }
+  html.dark .rep-bem-text { color: #6DC275; }
+  .rep-atencao {
+    background: #FBEBE0; border-radius: 10px; padding: .85rem 1rem;
+  }
+  html.dark .rep-atencao { background: #2A1200; }
+  .rep-atencao-label { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .rep-atencao-label span { font-size: 11px; font-weight: 700; color: #9a3b12; }
+  html.dark .rep-atencao-label span { color: #F4C9B8; }
+  .rep-atencao-text { font-size: 12.5px; color: #5a2a10; line-height: 1.5; margin: 0; }
+  html.dark .rep-atencao-text { color: #D9967A; }
+
+  /* ── Temas ── */
+  .temas-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .tema-card { background: var(--bg-card); border-radius: 10px; padding: .75rem .85rem; }
+  .tema-nome { font-size: 13px; font-weight: 500; margin: 0 0 6px; }
+  .tema-foot { display: flex; justify-content: space-between; align-items: baseline; }
+  .tema-vol  { font-size: 11px; color: var(--text-muted); }
+  .tema-sent { font-size: 11px; font-weight: 500; }
+  .sent--positivo { color: #639922; }
+  .sent--favoravel { color: #8DC63F; }
+  .sent--neutro   { color: #EF9F27; }
+  .sent--desfavoravel { color: #C0392B; }
+
+  /* ── Gráfico de barras + nuvem de termos (temas, dados reais) ── */
+  .temas-chart { display: flex; flex-direction: column; gap: 9px; padding: 4px 0 16px; border-bottom: 1px solid var(--border); margin: 14px 0; }
+  .temas-chart-row { display: grid; grid-template-columns: minmax(120px,220px) 1fr 40px; align-items: center; gap: 12px; }
+  .temas-chart-lbl { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; color: var(--text-secondary); text-align: right; line-height: 1.3; white-space: normal; }
+  .temas-chart-track { background: var(--border); border-radius: 5px; height: 13px; overflow: hidden; }
+  .temas-chart-bar { height: 100%; border-radius: 5px; background: linear-gradient(90deg, #FF8A3D, #FF6600); }
+  .temas-chart-pct { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+  .temas-cloud { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 18px 26px; padding: 22px 16px 14px; }
+  .temas-cloud span { display: inline-block; line-height: 1; white-space: nowrap; }
+  .temas-analise-box { margin-top: 20px; background: #FAEEDA; border-radius: 10px; padding: .95rem 1.1rem; display: flex; gap: 12px; }
+  html.dark .temas-analise-box { background: #2A1E0A; }
+  .temas-analise-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #854F0B; }
+  html.dark .temas-analise-icon { background: #D4820F; }
+  .temas-analise-icon svg { width: 19px; height: 19px; stroke: #fff; }
+  .temas-analise-title { font-size: 18px; font-weight: 600; font-family: var(--font-serif); color: #412402; margin: 0 0 .5rem; }
+  html.dark .temas-analise-title { color: #F5D5A8; }
+  .temas-analise { font-size: 13px; color: #633806; line-height: 1.6; margin: 0; }
+  html.dark .temas-analise { color: #C9954A; }
+
+  /* ── Destaques por rede social ── */
+  .redes-destaque-metric-title { font-size: 13px; font-weight: 700; margin: 4px 0 10px; }
+  .redes-destaque-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px; }
+  .rede-destaque-col { display: flex; flex-direction: column; gap: 8px; }
+  .rede-destaque-label { font-size: 15px; font-weight: 700; color: var(--text-primary); font-family: var(--font-serif); }
+  .rede-mini-card { background: var(--bg-card); border-radius: 10px; overflow: hidden; }
+  .rede-mini-card-empty { background: var(--bg-card); border: 1px dashed var(--border); border-radius: 10px; padding: 10px; font-size: 10.5px; color: var(--text-muted); }
+  .rede-mini-thumb { height: 58px; position: relative; background: linear-gradient(150deg, rgba(255,102,0,.15), rgba(255,102,0,.05)); }
+  .rede-mini-handle { position: absolute; top: 5px; left: 5px; font-size: 9.5px; color: #fff; background: rgba(0,0,0,.5); padding: 2px 6px; border-radius: 5px; font-weight: 600; max-width: calc(100% - 16px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rede-mini-body { padding: 6px 8px; }
+  .rede-mini-txt { font-size: 10px; color: var(--text-secondary); margin: 0 0 6px; line-height: 1.35; height: 27px; overflow: hidden; }
+  .rede-mini-foot { display: flex; justify-content: flex-end; align-items: baseline; }
+  .rede-mini-val { font-size: 14px; font-weight: 700; color: #FF6600; }
+  @media (max-width: 700px) {
+    .redes-destaque-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .sent--negativo { color: #E24B4A; }
+  html.dark .sent--positivo { color: #4ABA8E; }
+  html.dark .sent--favoravel { color: #A9E06A; }
+  html.dark .sent--neutro   { color: #F5B23A; }
+  html.dark .sent--desfavoravel { color: #F0A090; }
+  html.dark .sent--negativo { color: #F07070; }
+
+  /* ── Top Publicações ── */
+  .top-pub-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .pub-card {
+    background: var(--bg-surface); border: 0.5px solid var(--border);
+    border-radius: 10px; overflow: hidden; display: flex; flex-direction: column;
+  }
+  .pub-card-badge { padding: 5px 10px; font-size: 9.5px; font-weight: 700; letter-spacing: .04em; }
+  .pub-card-badge--alcance   { background: #EDECF7; color: #3C3489; }
+  .pub-card-badge--engage    { background: #EAF3DE; color: #3B6D11; }
+  .pub-card-badge--atencao   { background: #FBEBE0; color: #9a3b12; }
+  html.dark .pub-card-badge--alcance { background: rgba(60,52,137,.3); color: #AFA9EC; }
+  html.dark .pub-card-badge--engage  { background: rgba(59,109,17,.3); color: #6DC275; }
+  html.dark .pub-card-badge--atencao { background: rgba(120,50,10,.3); color: #F4C9B8; }
+  .pub-card-thumb {
+    height: 58px; display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 600; letter-spacing: .04em; color: rgba(255,255,255,.85);
+  }
+  .pub-card-body { padding: .65rem .8rem .75rem; flex: 1; }
+  .pub-card-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .pub-card-plat { font-size: 9.5px; font-weight: 600; background: rgba(0,0,0,.04); padding: 2px 6px; border-radius: 5px; }
+  html.dark .pub-card-plat { background: rgba(255,255,255,.08); }
+  .pub-card-perfil { font-size: 10px; color: var(--text-muted); }
+  .pub-card-resumo { font-size: 11.5px; color: var(--text-secondary); line-height: 1.4; margin: 0; }
+  .pub-card-stats { display: flex; gap: 10px; margin-top: 7px; }
+  .pub-stat { display: flex; align-items: center; gap: 3px; font-size: 10px; color: var(--text-muted); }
+
+  /* ── Ganchos ── */
+  .ganchos-card {
+    background: #EAF3DE; border-radius: 10px; padding: .95rem 1.1rem;
+  }
+  html.dark .ganchos-card { background: #0E2010; }
+  .ganchos-title { font-size: 13px; font-weight: 600; color: #173404; margin: 0 0 8px; }
+  html.dark .ganchos-title { color: #B8E8BC; }
+  .ganchos-p { font-size: 12.5px; color: #27500A; margin: 0 0 9px; line-height: 1.55; }
+  html.dark .ganchos-p { color: #6DC275; }
+  .ganchos-angulo {
+    font-size: 11px; color: #3B6D11; margin: 0; font-weight: 500;
+    border-top: 0.5px solid #CFE0BC; padding-top: 8px;
+  }
+  html.dark .ganchos-angulo { color: #4ABA8E; border-top-color: rgba(79,186,142,.2); }
+
+  /* ── Sensíveis ── */
+  .sensiveis-card {
+    background: #FAEEDA; border-radius: 10px; padding: .95rem 1.1rem;
+  }
+  html.dark .sensiveis-card { background: #2A1E0A; }
+  .sensiveis-row { display: flex; flex-direction: column; gap: 10px; }
+  .sensiveis-text { font-size: 13px; color: #412402; margin: 0; line-height: 1.55; }
+  html.dark .sensiveis-text { color: #F5D5A8; }
+  .sensiveis-badge {
+    font-size: 12px; font-weight: 500; color: #633806; background: #F1E0BC;
+    padding: 6px 10px; border-radius: 8px; white-space: normal; line-height: 1.5; display: block;
+  }
+  html.dark .sensiveis-badge { color: #FFD37A; background: rgba(100,60,0,.45); }
+
+  /* ── Redes acompanhadas ── */
+  .redes-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 10px 0 4px; border-top: 1px solid var(--border); margin-bottom: 4px; }
+  .redes-bar-label { font-size: 9px; font-weight: 700; letter-spacing: .07em; color: var(--text-muted); margin-right: 4px; }
+  .rede-pill { font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 20px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary); }
+
+  /* ── Redes monitoradas: header + footer badges ── */
+  .rf-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; color: #fff; letter-spacing: .02em; }
+  .rf-x  { background: #000; }
+  .rf-fb { background: #1877F2; }
+  .rf-ig { background: linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); }
+  .rf-yt { background: #FF0000; }
+  .rep-header-redes { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: flex-end; margin-top: 5px; }
+  .rep-header-redes-label { font-size: 9px; color: rgba(255,255,255,.45); margin-right: 2px; }
+  .redes-footer { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 16px 20px 20px; border-top: 1px solid var(--border); margin-top: 12px; }
+  .redes-footer-label { font-size: 11px; color: var(--text-secondary); font-weight: 500; }
+
+  /* ── Observar ── */
+  .observar-card {
+    background: var(--bg-card); border-radius: 10px; padding: .95rem 1.1rem;
+  }
+  .observar-text { font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; margin: 0; }
+
+  /* ── Ressalvas ── */
+  .ressalvas {
+    font-size: 11.5px; color: var(--text-muted); margin: 1.25rem 0 0;
+    padding: .75rem 1rem; border-radius: 8px; background: var(--bg-card);
+    border-left: 3px solid var(--border);
+  }
+
+  /* ── Visão Todos os países ── */
+  .overview-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; padding: 1.5rem; }
+  .overview-card {
+    border-radius: 10px; padding: 1.1rem 1.2rem; cursor: pointer;
+    transition: transform .15s, box-shadow .15s; border: .5px solid var(--border);
+    background: var(--bg-card);
+  }
+  .overview-card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+  .overview-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .overview-card-title { font-size: 18px; font-family: var(--font-serif); margin: 0; display: flex; align-items: center; gap: 8px; }
+  .overview-card-periodo { font-size: 11px; color: var(--text-muted); }
+  .overview-kpis { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .overview-kpi-label { font-size: 10px; color: var(--text-muted); margin: 0 0 2px; }
+  .overview-kpi-val { font-size: 18px; font-weight: 600; margin: 0; }
+  .overview-empty { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 13px; }
+  .overview-title-row { display: flex; align-items: baseline; gap: 10px; padding: 1.5rem 1.5rem 0; }
+  .overview-title-row h1 { font-size: 24px; font-family: var(--font-serif); margin: 0; }
+  .overview-title-row span { font-size: 12px; color: var(--text-muted); }
+
+  /* ── Gate de senha ── */
+  .gate-wrap {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 24px; background: var(--bg-gate); position: relative; z-index: 1;
+  }
+  .gate-card {
+    background: var(--bg-gate-card); border: .5px solid var(--border); border-radius: 14px;
+    padding: 2rem 2rem 1.75rem; width: 100%; max-width: 360px;
+    display: flex; flex-direction: column; gap: 16px; align-items: center; text-align: center;
+    position: relative; z-index: 2;
+  }
+  .gate-logo-sep { width: 1px; height: 20px; background: var(--border); }
+  .gate-logos { display: flex; align-items: center; justify-content: center; gap: 14px; }
+  .gate-title { font-size: 22px; font-family: var(--font-serif); color: var(--text-primary); margin: 0; }
+  .gate-sub   { font-size: 13px; color: var(--text-muted); margin: 0; }
+  .gate-field { display: flex; flex-direction: column; gap: 6px; width: 100%; text-align: left; }
+  .gate-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+  .gate-input {
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 15px; font-family: inherit; background: var(--bg-input);
+    color: var(--text-primary); outline: none; transition: border-color .15s; letter-spacing: .12em;
+  }
+  .gate-input:focus { border-color: #3C3489; }
+  .gate-input.error { border-color: var(--text-error); }
+  .gate-error { font-size: 12px; color: var(--text-error); min-height: 16px; margin: 0; }
+  .gate-btn {
+    padding: 11px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+    color: #fff; background: #3C3489; cursor: pointer; font-family: inherit;
+    transition: opacity .15s; width: 100%;
+  }
+  .gate-btn:hover { opacity: .88; }
+  .gate-btn:disabled { opacity: .5; cursor: default; }
+  .gate-theme-btn {
+    position: absolute; top: 16px; right: 16px; width: 34px; height: 34px;
+    border-radius: 8px; border: 1px solid var(--border); background: var(--bg-gate-card);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; transition: all .15s;
+  }
+  .gate-theme-btn:hover { border-color: var(--text-muted); }
+
+  /* ── Print ── */
+  .print-footer { display: none; }
+  @media print {
+    @page { size: A4; margin: 0; }
+    #bgCanvas { display: none; }
+    .topbar, .country-nav { display: none !important; }
+    body { background: #fff !important; padding: 0; }
+    .report-wrap { padding: 0; }
+    .page { border: none; border-radius: 0; max-width: 100%; box-shadow: none; padding: 0 20px; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .pub-card, .num-card, .tema-card, .ganchos-card, .sensiveis-card, .observar-card { break-inside: avoid; }
+    .top-pub-grid, .numeros-grid, .repercussao-grid, .temas-grid { break-inside: avoid; }
+    .section-wrap { break-inside: avoid; }
+    .print-footer { display: flex !important; align-items: center; justify-content: space-between; padding: 14px 20px; border-top: 1px solid #E4E1D8; margin-top: 8px; }
+    .print-footer-logos { display: flex; align-items: center; gap: 14px; }
+    .print-footer-sep { width: 1px; height: 16px; background: #E4E1D8; display: inline-block; }
+    .print-footer-text { font-size: 10px; color: #9A968D; }
+  }
+
+  @media (max-width: 600px) {
+    .numeros-grid { grid-template-columns: 1fr 1fr; }
+    .numeros-grid .num-card:nth-child(5) { grid-column: 1 / -1; }
+    .temas-grid   { grid-template-columns: 1fr; }
+    .repercussao-grid { grid-template-columns: 1fr; }
+    .top-pub-grid { grid-template-columns: 1fr; }
+    .overview-grid { grid-template-columns: 1fr; padding: 1rem; }
+    .rep-header-title { font-size: 20px; }
+    .report-wrap { padding: 10px 10px 48px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+
+<div id="gateWrap" class="gate-wrap" style="display:none;">
+  <button class="gate-theme-btn" onclick="toggleTheme()" id="gateThemeBtn">🌙</button>
+  <div class="gate-card">
+    <div class="gate-logos">
+      <img src="../assets/logo-nexus.png" alt="Nexus" style="height:28px;">
+      <span class="gate-logo-sep"></span>
+      <img src="../assets/fsbholding.svg" alt="FSB Holding" style="height:18px; opacity:.7;">
+    </div>
+    <h1 class="gate-title">Briefing semanal</h1>
+    <p class="gate-sub">Digite o código de acesso para visualizar o relatório.</p>
+    <div class="gate-field">
+      <label class="gate-label" for="gateInput">Código de acesso</label>
+      <input class="gate-input" id="gateInput" type="password" placeholder="••••••••"
+             autocomplete="current-password" inputmode="text"
+             onkeydown="if(event.key==='Enter')gateSubmit()">
+      <p class="gate-error" id="gateError"></p>
+    </div>
+    <button class="gate-btn" id="gateBtn" onclick="gateSubmit()">Acessar</button>
+  </div>
+</div>
+
+<div id="stateWrap" class="state" style="display:none;">
+  <div class="spinner"></div>
+  <span>Carregando relatório…</span>
+</div>
+
+<div id="reportWrap" style="display:none;">
+  <div class="topbar">
+    <div class="topbar-left">
+      <img src="../assets/logo-nexus.png" alt="Nexus" id="logoTopbar" style="height:22px;">
+      <span class="topbar-sep"></span>
+      <img src="../assets/fsbholding.svg" alt="FSB Holding" id="logoFSBTopbar" style="height:14px; opacity:.55;">
+    </div>
+    <div class="topbar-right">
+      <button class="btn-copy" onclick="copiarLink()">🔗 Copiar link</button>
+      <button class="btn-theme" id="btnTheme" onclick="toggleTheme()">🌙</button>
+      <button class="btn-pdf" onclick="window.print()" style="display:none;" id="btnPdf">⬇ Exportar PDF</button>
+    </div>
+  </div>
+  <div class="country-nav" id="countryNav"></div>
+  <div class="report-wrap">
+    <div class="page" id="page"></div>
+  </div>
+</div>
+
+<script>
+// ── Países ──────────────────────────────────────────────────────
+const PAISES = {
+  eua: { nome: 'Estados Unidos', emoji: '🇺🇸',
+    flag: `<svg width="23" height="16" viewBox="0 0 28 20"><rect width="28" height="20" fill="#B31942"/><rect y="1.5" width="28" height="1.5" fill="#fff"/><rect y="4.5" width="28" height="1.5" fill="#fff"/><rect y="7.5" width="28" height="1.5" fill="#fff"/><rect y="10.5" width="28" height="1.5" fill="#fff"/><rect y="13.5" width="28" height="1.5" fill="#fff"/><rect y="16.5" width="28" height="1.5" fill="#fff"/><rect width="11" height="9" fill="#0A3161"/></svg>`,
+    stripes: ['#B31942','#fff','#B31942'] },
+  esp: { nome: 'Espanha', emoji: '🇪🇸',
+    flag: `<svg width="23" height="16" viewBox="0 0 28 20"><rect width="28" height="20" fill="#AA151B"/><rect y="5" width="28" height="10" fill="#F1BF00"/></svg>`,
+    stripes: ['#AA151B','#F1BF00','#AA151B'] },
+  fra: { nome: 'França', emoji: '🇫🇷',
+    flag: `<svg width="23" height="16" viewBox="0 0 28 20"><rect width="28" height="20" fill="#ED2939"/><rect width="18.7" height="20" fill="#fff"/><rect width="9.3" height="20" fill="#002395"/></svg>`,
+    stripes: ['#002395','#fff','#ED2939'] },
+  uk:  { nome: 'Reino Unido', emoji: '🇬🇧',
+    flag: `<svg width="23" height="16" viewBox="0 0 28 20"><rect width="28" height="20" fill="#012169"/><path d="M0 0l28 20M28 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0l28 20M28 0L0 20" stroke="#C8102E" stroke-width="2"/><rect x="11" width="6" height="20" fill="#fff"/><rect y="7" width="28" height="6" fill="#fff"/><rect x="12" width="4" height="20" fill="#C8102E"/><rect y="8" width="28" height="4" fill="#C8102E"/></svg>`,
+    stripes: ['#012169','#C8102E','#012169'] },
+  deu: { nome: 'Alemanha', emoji: '🇩🇪',
+    flag: `<svg width="23" height="16" viewBox="0 0 28 20"><rect width="28" height="20" fill="#FFCE00"/><rect width="28" height="13.3" fill="#DD0000"/><rect width="28" height="6.7" fill="#000"/></svg>`,
+    stripes: ['#000','#DD0000','#FFCE00'] },
+  chn: { nome: 'China', emoji: '🇨🇳',
+    flag: `<svg width="23" height="16" viewBox="0 0 28 20"><rect width="28" height="20" fill="#DE2910"/><text x="2" y="10" font-size="9" fill="#FFDE00">★</text><text x="9" y="5" font-size="5" fill="#FFDE00">★</text><text x="12" y="8" font-size="5" fill="#FFDE00">★</text><text x="12" y="12" font-size="5" fill="#FFDE00">★</text><text x="9" y="15" font-size="5" fill="#FFDE00">★</text></svg>`,
+    stripes: ['#DE2910','#FFDE00','#DE2910'] },
+};
+
+function showErr(msg) {
+  document.getElementById('stateWrap').innerHTML = `<div style="font-size:32px">⚠️</div><div>${msg}</div>`;
+}
+
+// Transforma menções no texto da análise em hiperlinks clicáveis.
+// Apenas @perfil (URL) vira link — sem fallback para perfil.
+function linkifyMentions(text) {
+  if (!text) return esc(text);
+  // Remove marcadores de citação que sobram de algumas respostas de IA
+  // (ex.: "[cite: 13, 14]") — não fazem parte do formato @handle (url)
+  // esperado e não devem aparecer na versão de entrega ao cliente.
+  text = text.replace(/\s*\[cite:\s*[\d,\s]+\]/gi, '');
+  // Normaliza ([url]) → (url) — IA às vezes envolve a URL em colchetes dentro dos parênteses
+  text = text.replace(/\(\[(https?:\/\/[^\]]+)\]\)/g, '($1)');
+  // Normaliza markdown [texto](url) → url
+  text = text.replace(/\[[^\]]*\]\((https?:\/\/[^)]+)\)/g, '$1');
+  text = esc(text);
+
+  // Guarda cada link já montado num placeholder e só substitui de volta no
+  // final — assim a 2ª regex (URL solta) nunca re-encontra uma URL que já
+  // virou href="..." na 1ª passada e quebra a tag com um <a> aninhado.
+  const links = [];
+  const stash = html => { links.push(html); return "⁣" + (links.length - 1) + "⁣"; };
+
+  // @perfil (URL) → link direto para o post (só linka quando há URL explícita)
+  // Obs.: o texto já passou por esc(), então "&" virou "&amp;" — não pode
+  // excluir "&" da classe de caracteres da URL, senão trunca no primeiro "&"
+  // (ex.: link com múltiplos parâmetros "?a=1&b=2" ficava cortado em "?a=1").
+  text = text.replace(/(^|[\s(])@([A-Za-z0-9_.]{2,30})\s*\((https?:\/\/[^\s<>"')]+)\)/g,
+    (m, before, handle, url) =>
+      before + stash(`<a href="${url}" target="_blank" rel="noopener" class="mention-link">@${handle}</a>`)
+  );
+  // URL solta que sobrou (citação sem @handle na frente) → linka do mesmo
+  // jeito, com texto encurtado, senão fica só a URL crua sem clicar.
+  text = text.replace(/https?:\/\/[^\s<>"')]+/g, url => {
+    let label = url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+    if (label.length > 28) label = label.slice(0, 25) + '…';
+    return stash(`<a href="${url}" target="_blank" rel="noopener" class="mention-link">${label}</a>`);
+  });
+
+  return text.replace(/⁣(\d+)⁣/g, (m, i) => links[+i]);
+}
+
+// Quebra um texto corrido em parágrafos — a IA às vezes devolve tudo num
+// bloco só mesmo quando o prompt pede "2-3 parágrafos". Tenta, em ordem:
+// linha em branco, quebra de linha simples e, por fim, agrupa a cada 3
+// frases quando não há nenhuma quebra no texto.
+function paragraphize(text, cls) {
+  if (!text) return `<p class="${cls}">—</p>`;
+
+  // Protege URLs ANTES de qualquer split — o fallback de "3 frases" abaixo
+  // corta em qualquer ponto, e URLs (ex.: "twitter.com") têm ponto no meio.
+  // Sem isso, o regex de frase nunca fecha um match antes da URL (o ponto do
+  // domínio não é seguido de espaço) e o `.match(/…/g)` descarta em silêncio
+  // todo o texto anterior à URL — bug "texto cortado" reportado várias vezes.
+  const urls = [];
+  const safeText = text.replace(/https?:\/\/[^\s<>"')\]]+/g, u => {
+    urls.push(u);
+    return "@@URL" + (urls.length - 1) + "@@";
+  });
+  const restore = s => s.replace(/@@URL(\d+)@@/g, (m, i) => urls[+i]);
+
+  let paras = safeText.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  if (paras.length <= 1) paras = safeText.split(/\n/).map(p => p.trim()).filter(Boolean);
+  if (paras.length <= 1) {
+    // Split (não match!) em espaço logo após .!? — split() sempre particiona
+    // 100% da string, então não há como "perder" texto no meio do caminho.
+    // Um `.match(/[^.!?]+[.!?]+(\s+|$)/g)` antigo falhava e descartava tudo
+    // ANTES de um ponto sem espaço depois (ex.: handle "@evolving.ai" sem
+    // protocolo, então não protegido pelo placeholder de URL acima) — bug
+    // "texto cortado" reportado várias vezes, inclusive cortando o início.
+    const sentencas = safeText.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
+    if (!sentencas.length) sentencas.push(safeText);
+    paras = [];
+    for (let i = 0; i < sentencas.length; i += 3) paras.push(sentencas.slice(i, i + 3).join(' ').trim());
+    paras = paras.filter(Boolean);
+  }
+  if (!paras.length) paras = [safeText];
+  return paras.map(p => `<p class="${cls}">${linkifyMentions(restore(p))}</p>`).join('');
+}
+
+/* ── Estado ── */
+let TODOS_PAISES = {};
+let ATIVO = null;
+
+/* ── Navegação ── */
+function renderNav() {
+  const codigos = Object.keys(TODOS_PAISES);
+  const nav = document.getElementById('countryNav');
+  if (codigos.length <= 1) { nav.innerHTML = ''; nav.style.display = 'none'; return; }
+  nav.style.display = 'flex';
+  nav.innerHTML = `
+    <button class="country-pill ${ATIVO===null?'active':''}" onclick="irPara(null)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3C3489" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      Todos os países
+    </button>
+    ${codigos.map(c => {
+      const p = PAISES[c] || { nome: c, emoji: '🏳️' };
+      return `<button class="country-pill ${ATIVO===c?'active':''}" onclick="irPara('${c}')">${p.emoji} ${p.nome}</button>`;
+    }).join('')}`;
+}
+
+function irPara(codigo) {
+  ATIVO = codigo;
+  location.hash = codigo ? `pais=${codigo}` : '';
+  renderNav();
+  if (codigo && TODOS_PAISES[codigo]) {
+    document.getElementById('btnPdf').style.display = '';
+    renderPage(TODOS_PAISES[codigo], codigo);
+  } else {
+    document.getElementById('btnPdf').style.display = 'none';
+    renderOverview();
+  }
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+function renderOverview() {
+  document.title = 'Embratur — Briefing semanal';
+  const codigos = Object.keys(TODOS_PAISES);
+  if (!codigos.length) {
+    document.getElementById('page').innerHTML = `<div class="overview-empty">Nenhum país publicado ainda.</div>`;
+    return;
+  }
+  document.getElementById('page').innerHTML = `
+    <div class="rep-flag-bar">${['#3C3489','#fff','#3C3489'].map(c=>`<span style="background:${c}"></span>`).join('')}</div>
+    <div class="overview-title-row">
+      <h1>Briefing semanal</h1>
+      <span>${codigos.length} ${codigos.length===1?'país':'países'}</span>
+    </div>
+    <div class="overview-grid">
+      ${codigos.map(c => {
+        const p = PAISES[c] || { nome: c, emoji: '🏳️' };
+        const d = TODOS_PAISES[c];
+        const nums = d.numeros || {};
+        return `
+          <div class="overview-card" onclick="irPara('${c}')">
+            <div class="overview-card-head">
+              <p class="overview-card-title">${p.emoji} ${p.nome}</p>
+              <span class="overview-card-periodo">${d.periodo||'—'}</span>
+            </div>
+            <div class="overview-kpis">
+              <div><p class="overview-kpi-label">Menções</p><p class="overview-kpi-val">${nums.mencoes||'—'}</p></div>
+              <div><p class="overview-kpi-label">Alcance</p><p class="overview-kpi-val">${nums.alcance||'—'}</p></div>
+              <div><p class="overview-kpi-label">Sent. pos.</p><p class="overview-kpi-val">${nums.sentimento_positivo||'0'}%</p></div>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function renderPage(d, paisCodigo) {
+  const p = PAISES[paisCodigo] || { nome: paisCodigo, emoji: '🌎', flag: '', stripes: ['#3C3489','#fff','#3C3489'] };
+  document.title = `Embratur — ${p.nome} — ${d.periodo||'Semanal'}`;
+
+  const nums = d.numeros || {};
+  const temas = d.temas || [];
+  const topPub = d.top_publicacoes || [];
+  const ganchos = d.ganchos || {};
+  const sensiveis = d.sensiveis || {};
+  const observar = d.observar || {};
+
+  // Donut sentimento — 4 categorias (mesmo modelo do Diário): positivo,
+  // favorável, desfavorável e negativo. Desfavorável é normalizado como
+  // resto pra garantir soma de 100% mesmo com dados antigos/arredondados.
+  const pos    = +nums.sentimento_positivo || 0;
+  const fav    = +nums.sentimento_favoravel || 0;
+  const neg    = +nums.sentimento_negativo || 0;
+  const desfav = Math.max(0, 100 - pos - fav - neg);
+  const posTotal = pos + fav;
+  const circum = 138.2;
+  const _gap = 1.2;
+  const posLen    = Math.max(0, (pos    / 100) * circum - _gap).toFixed(1);
+  const favLen    = Math.max(0, (fav    / 100) * circum - _gap).toFixed(1);
+  const negLen    = Math.max(0, (neg    / 100) * circum - _gap).toFixed(1);
+  const desfavLen = Math.max(0, (desfav / 100) * circum - _gap).toFixed(1);
+  const posRot    = -90;
+  const favRot    = (-90 + (pos / 100) * 360).toFixed(2);
+  const negRot    = (-90 + ((pos + fav) / 100) * 360).toFixed(2);
+  const desfavRot = (-90 + ((pos + fav + neg) / 100) * 360).toFixed(2);
+  const donutSVG = `<svg width="50" height="50" viewBox="0 0 54 54">
+    <circle cx="27" cy="27" r="22" fill="none" stroke="var(--border)" stroke-width="7"/>
+    ${pos    > 0.5 ? `<circle cx="27" cy="27" r="22" fill="none" stroke="#639922" stroke-width="7" stroke-dasharray="${posLen} ${circum}" stroke-linecap="butt" transform="rotate(${posRot} 27 27)"/>` : ''}
+    ${fav    > 0.5 ? `<circle cx="27" cy="27" r="22" fill="none" stroke="#8DC63F" stroke-width="7" stroke-dasharray="${favLen} ${circum}" stroke-linecap="butt" transform="rotate(${favRot} 27 27)"/>` : ''}
+    ${neg    > 0.5 ? `<circle cx="27" cy="27" r="22" fill="none" stroke="#E24B4A" stroke-width="7" stroke-dasharray="${negLen} ${circum}" stroke-linecap="butt" transform="rotate(${negRot} 27 27)"/>` : ''}
+    ${desfav > 0.5 ? `<circle cx="27" cy="27" r="22" fill="none" stroke="#C0392B" stroke-width="7" stroke-dasharray="${desfavLen} ${circum}" stroke-linecap="butt" transform="rotate(${desfavRot} 27 27)"/>` : ''}
+  </svg>`;
+
+  // Barras sparkline (7 barras com alturas decrescentes simuladas)
+  const mkBars = (isToday) => `
+    <div class="num-bars">
+      ${[30,25,35,55,80,95,100].map((h,i) =>
+        `<div class="num-bar" style="height:${h}%;background:${i===6?(isToday?'#3C3489':'#534AB7'):'#CECBF6'}"></div>`
+      ).join('')}
+    </div>`;
+
+  const deltaClass = (positivo) =>
+    positivo === true  ? 'num-delta--up' :
+    positivo === false ? 'num-delta--down' : 'num-delta--neutral';
+
+  // Cor do thumb por posição
+  const thumbColors = ['#1E7A8C','#3C3489','#8a3b12'];
+  const platColors = {
+    tiktok: '#000000', instagram: '#C13584', 'x (twitter)': '#000000', youtube: '#FF0000',
+    facebook: '#1877F2',
+  };
+
+  const mkPubCard = (pub, idx) => {
+    const papel = pub.papel || '';
+    const badgeClass = papel === 'alcance' ? 'pub-card-badge--alcance' : papel === 'engajamento' ? 'pub-card-badge--engage' : 'pub-card-badge--atencao';
+    const badgeLabel = papel === 'alcance' ? 'MAIOR ALCANCE' : papel === 'engajamento' ? 'MAIOR ENGAJAMENTO' : 'ATENÇÃO';
+    const platLower = (pub.plataforma||'').toLowerCase();
+    const platColor = platColors[platLower] || '#555';
+    const pubLink = cleanUrl(pub.link);
+    const perfilHTML = pubLink
+      ? `<a href="${pubLink}" target="_blank" rel="noopener" class="pub-card-perfil" style="text-decoration:none;" title="Abrir publicação">${pub.perfil||''}</a>`
+      : `<span class="pub-card-perfil">${pub.perfil||''}</span>`;
+
+    const thumbHTML = pubLink
+      ? `<a href="${pubLink}" target="_blank" rel="noopener" style="display:block;width:100%;height:100%;">${pub.img ? `<img src="${esc(pub.img)}" style="width:100%;height:100%;object-fit:cover;display:block;">` : 'PRINT'}</a>`
+      : (pub.img ? `<img src="${esc(pub.img)}" style="width:100%;height:100%;object-fit:cover;display:block;">` : 'PRINT');
+
+    return `
+      <div class="pub-card">
+        <div class="pub-card-badge ${badgeClass}">${badgeLabel}</div>
+        <div class="pub-card-thumb" style="background:${thumbColors[idx]||'#555'};overflow:hidden;">
+          ${thumbHTML}
+        </div>
+        <div class="pub-card-body">
+          <div class="pub-card-meta">
+            <span class="pub-card-plat" style="color:${platColor}">${pub.plataforma||'—'}</span>
+            ${perfilHTML}
+          </div>
+          <p class="pub-card-resumo">${esc(pub.resumo||'—')}</p>
+          <div class="pub-card-stats">
+            <span class="pub-stat">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="2.5"/></svg>
+              ${pub.alcance||'—'}
+            </span>
+            <span class="pub-stat">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 21s-7-4.5-9.5-8.5C.8 9 2.5 5.5 6 5.5c2 0 3.2 1.2 4 2.3.8-1.1 2-2.3 4-2.3 3.5 0 5.2 3.5 3.5 7C19 16.5 12 21 12 21z"/></svg>
+              ${pub.curtidas||'—'}
+            </span>
+            <span class="pub-stat">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M4 4h16v11H8l-4 4z"/></svg>
+              ${pub.comentarios||'—'}
+            </span>
+          </div>
+        </div>
+      </div>`;
+  };
+
+  const statusPill = (status) => {
+    const map = {
+      agir:     ['⚡ Agir','pill--agir'],
+      planejar: ['💡 Planejar','pill--planejar'],
+      monitorar:['👁 Monitorar','pill--monitorar'],
+    };
+    const [label, cls] = map[status] || ['—','pill--monitorar'];
+    return `<span class="section-pill ${cls}">${label}</span>`;
+  };
+
+  const SENT_LABELS = { positivo: '● positivo', favoravel: '● favorável', desfavoravel: '● desfavorável', negativo: '● negativo' };
+  const sentLabel = s => SENT_LABELS[s] || '● neutro';
+  const sentClass = s => SENT_LABELS[s] ? `sent--${s}` : 'sent--neutro';
+
+  document.getElementById('page').innerHTML = `
+    <!-- Flag stripe -->
+    <div class="rep-flag-bar">
+      ${(p.stripes||['#3C3489','#fff','#3C3489']).map(c=>`<span style="background:${c}"></span>`).join('')}
+    </div>
+
+    <!-- Header -->
+    <div class="rep-header">
+      <div class="rep-header-left">
+        <span class="rep-header-label">EMBRATUR</span>
+        <span class="rep-header-sep">|</span>
+        <h1 class="rep-header-title">${p.nome} ${p.flag}</h1>
+      </div>
+      <div class="rep-header-right">
+        <p class="sub1">Briefing semanal · produção de conteúdo</p>
+        <p class="sub2">${esc(d.periodo||'—')}</p>
+        <div class="rep-header-redes">
+          <span class="rep-header-redes-label">Redes:</span>
+          <span class="rf-badge rf-x">X</span>
+          <span class="rf-badge rf-fb">Facebook</span>
+          <span class="rf-badge rf-ig">Instagram</span>
+          <span class="rf-badge rf-yt">YouTube</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="rep-body">
+
+      <!-- Resumo Executivo -->
+      <div class="resumo-exec">
+        <p class="resumo-exec-label">RESUMO EXECUTIVO</p>
+        ${paragraphize(d.resumo_executivo||'—', 'resumo-exec-text')}
+      </div>
+
+      <!-- Redes acompanhadas -->
+      ${d.canais && d.canais.length ? `<div class="redes-bar"><span class="redes-bar-label">REDES ACOMPANHADAS</span>${d.canais.map(c=>`<span class="rede-pill">${esc(c)}</span>`).join('')}</div>` : ''}
+
+      <!-- A Semana em Números -->
+      <p class="numeros-label">A SEMANA EM NÚMEROS</p>
+      <div class="numeros-grid">
+        <div class="num-card">
+          <p class="num-card-label">Menções</p>
+          <p class="num-card-value">${esc(nums.mencoes||'—')}</p>
+          ${mkBars(false)}
+          <span class="num-delta ${deltaClass(nums.mencoes_delta_positivo)}">${esc(nums.mencoes_delta||'')}</span>
+        </div>
+        <div class="num-card">
+          <p class="num-card-label">Interações</p>
+          <p class="num-card-value">${esc(nums.interacoes||'—')}</p>
+          ${mkBars(false)}
+          <span class="num-delta ${deltaClass(nums.interacoes_delta_positivo)}">${esc(nums.interacoes_delta||'')}</span>
+        </div>
+        <div class="num-card">
+          <p class="num-card-label">Alcance</p>
+          <p class="num-card-value">${esc(nums.alcance||'—')}</p>
+          ${mkBars(false)}
+          <span class="num-delta ${deltaClass(nums.alcance_delta_positivo)}">${esc(nums.alcance_delta||'')}</span>
+        </div>
+        <div class="num-card">
+          <p class="num-card-label">Engaj. médio</p>
+          <p class="num-card-value">${esc(String(nums.engaj_medio||'—'))}</p>
+          <span class="num-delta ${deltaClass(nums.engaj_delta_positivo)}" style="margin-top:5px;display:block">${esc(nums.engaj_delta||'')}</span>
+          <p class="num-card-sub">por post</p>
+        </div>
+        <div class="num-card" style="display:flex;flex-direction:column;">
+          <p class="num-card-label">Sentimento</p>
+          <div class="sent-row" style="margin-top:6px;flex:1;">
+            <div class="sent-donut">
+              ${donutSVG}
+              <div class="sent-pct">${posTotal}%</div>
+            </div>
+            <div class="sent-legend">
+              ${pos    > 0 ? `<div class="sent-legend-item"><span class="sent-dot" style="background:#639922"></span><span>Positivo · ${pos}%</span></div>` : ''}
+              ${fav    > 0 ? `<div class="sent-legend-item"><span class="sent-dot" style="background:#8DC63F"></span><span>Favorável · ${fav}%</span></div>` : ''}
+              ${neg    > 0 ? `<div class="sent-legend-item"><span class="sent-dot" style="background:#E24B4A"></span><span>Negativo · ${neg}%</span></div>` : ''}
+              ${desfav > 0 ? `<div class="sent-legend-item"><span class="sent-dot" style="background:#C0392B"></span><span>Desfavorável · ${desfav}%</span></div>` : ''}
+            </div>
+          </div>
+          <span class="num-delta num-delta--up" style="margin-top:5px;display:block">${esc(nums.sentimento_delta_pp||'')}</span>
+        </div>
+      </div>
+
+      <!-- Repercussão -->
+      <div class="section-wrap">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg viewBox="0 0 24 24"><path d="M3 12h4l2-7 4 14 2-7h6"/></svg>
+          </div>
+          <h2 class="section-title">Repercussão da semana</h2>
+        </div>
+        <div class="repercussao-grid">
+          <div class="rep-bem">
+            <div class="rep-bem-label">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#1f6e1f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+              <span>REPERCUTIU BEM</span>
+            </div>
+            ${paragraphize(d.repercussao?.repercutiu_bem||'—', 'rep-bem-text')}
+          </div>
+          <div class="rep-atencao">
+            <div class="rep-atencao-label">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#9a3b12" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l6 6 4-4 8 8"/><path d="M14 17h7v-7"/></svg>
+              <span>PONTO DE ATENÇÃO</span>
+            </div>
+            ${paragraphize(d.repercussao?.ponto_de_atencao||'—', 'rep-atencao-text')}
+          </div>
+        </div>
+      </div>
+
+      <!-- Temas da semana -->
+      <div class="section-wrap">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg viewBox="0 0 24 24"><path d="M9 5H5a2 2 0 0 0-2 2v4l9 9 7-7-9-9z"/><circle cx="7.5" cy="9.5" r="1"/></svg>
+          </div>
+          <h2 class="section-title">Temas da semana</h2>
+        </div>
+        ${temasChartCloudHTML(d.temasFreq)}
+        ${d.temas_analise ? `
+        <div class="temas-analise-box">
+          <div class="temas-analise-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H5a2 2 0 0 0-2 2v4l9 9 7-7-9-9z"/><circle cx="7.5" cy="9.5" r="1"/></svg></div>
+          <div>
+            <p class="temas-analise-title">Análise temática</p>
+            <p class="temas-analise">${linkifyMentions(d.temas_analise)}</p>
+          </div>
+        </div>` : ''}
+      </div>
+
+      <!-- Destaques de redes sociais -->
+      ${d.redesDestaque ? `
+      <div class="section-wrap">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          </div>
+          <h2 class="section-title">Destaques de redes sociais</h2>
+        </div>
+        ${redesDestaqueHTML(d.redesDestaque)}
+      </div>` : ''}
+
+      <!-- Ganchos de Conteúdo -->
+      <div class="section-wrap">
+        <div class="section-header">
+          <div class="section-icon section-icon--green">
+            <svg viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/></svg>
+          </div>
+          <h2 class="section-title">Ganchos de conteúdo</h2>
+          ${statusPill(ganchos.status)}
+        </div>
+        <div class="ganchos-card">
+          <p class="ganchos-title">${esc(ganchos.titulo||'—')}</p>
+          <p class="ganchos-p">${linkifyMentions(ganchos.paragrafo_1||'')}</p>
+          ${ganchos.paragrafo_2 ? `<p class="ganchos-p" style="margin-bottom:10px">${linkifyMentions(ganchos.paragrafo_2)}</p>` : ''}
+          ${ganchos.angulo_sugerido ? `<p class="ganchos-angulo">Ângulo sugerido: ${esc(ganchos.angulo_sugerido)}</p>` : ''}
+        </div>
+      </div>
+
+      <!-- Temas Sensíveis -->
+      <div class="section-wrap">
+        <div class="section-header">
+          <div class="section-icon section-icon--amber">
+            <svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+          </div>
+          <h2 class="section-title">Temas sensíveis</h2>
+          ${statusPill(sensiveis.status)}
+        </div>
+        <div class="sensiveis-card">
+          <div class="sensiveis-row">
+            ${paragraphize(sensiveis.texto||'—', 'sensiveis-text')}
+            ${sensiveis.orientacao_editorial ? `<span class="sensiveis-badge">${esc(sensiveis.orientacao_editorial)}</span>` : ''}
+          </div>
+        </div>
+      </div>
+
+      <!-- Observar na próxima semana -->
+      <div class="section-wrap" style="margin-bottom:0">
+        <div class="section-header">
+          <div class="section-icon section-icon--purple">
+            <svg viewBox="0 0 24 24"><path d="M6 21V8a2 2 0 0 1 4 0v1h4V8a2 2 0 0 1 4 0v13"/><path d="M6 13h4M14 13h4"/></svg>
+          </div>
+          <h2 class="section-title">Observar na próxima semana</h2>
+          ${statusPill(observar.status||'monitorar')}
+        </div>
+        <div class="observar-card">
+          ${paragraphize(observar.texto||'—', 'observar-text')}
+        </div>
+      </div>
+
+    </div>
+
+    <div class="redes-footer">
+      <span class="redes-footer-label">Redes monitoradas:</span>
+      <span class="rf-badge rf-x">X</span>
+      <span class="rf-badge rf-fb">Facebook</span>
+      <span class="rf-badge rf-ig">Instagram</span>
+      <span class="rf-badge rf-yt">YouTube</span>
+    </div>
+
+    <div class="print-footer">
+      <div class="print-footer-logos">
+        <img src="../assets/logo-nexus.png" alt="Nexus" style="height:22px;">
+        <span class="print-footer-sep"></span>
+        <img src="../assets/fsbholding.svg" alt="FSB Holding" style="height:14px; opacity:.6;">
+      </div>
+      <span class="print-footer-text">Embratur · Briefing semanal · ${esc(d.periodo||'—')}</span>
+    </div>
+  `;
+}
+
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── Gráfico de barras + nuvem de termos, a partir da frequência real de
+     temas classificados no Reputaition (d.temasFreq: [{nome,count,pct}]) ── */
+function temasChartCloudHTML(temasFreq) {
+  if (!temasFreq || !temasFreq.length) return '';
+  const max = Math.max(...temasFreq.map(t => t.count), 1);
+  const chart = `
+    <div class="temas-chart">
+      ${temasFreq.map(t => `
+        <div class="temas-chart-row">
+          <span class="temas-chart-lbl">${esc(t.nome)}</span>
+          <div class="temas-chart-track"><div class="temas-chart-bar" style="width:${Math.max(Math.round((t.count/max)*100),4)}%;"></div></div>
+          <span class="temas-chart-pct">${t.pct}%</span>
+        </div>`).join('')}
+    </div>`;
+  return chart;
+}
+
+/* ── Destaques por rede social — 1 card por rede (Facebook/Twitter-X/
+     Instagram/YouTube), com o post de maior alcance e o de maior interação,
+     ou um card informativo quando a rede não teve posts no período. ── */
+function redesDestaqueHTML(redesDestaque) {
+  if (!redesDestaque) return '';
+  const ordem = [
+    ['facebook','Facebook'], ['x','Twitter/X'], ['instagram','Instagram'], ['youtube','YouTube'],
+  ];
+  const miniCard = (it) => {
+    if (!it) return `<div class="rede-mini-card-empty">Sem dado</div>`;
+    const fotoStyle = it.imagem ? `background-image:url('${esc(it.imagem)}');background-size:cover;background-position:center;` : '';
+    const legenda = it.link ? `<a href="${esc(cleanUrl(it.link))}" target="_blank" style="color:inherit;text-decoration:none;">${esc(it.texto||'')}</a>` : esc(it.texto||'');
+    return `
+      <div class="rede-mini-card">
+        <div class="rede-mini-thumb" style="${fotoStyle}"><span class="rede-mini-handle">${esc(it.handle||'')}</span></div>
+        <div class="rede-mini-body">
+          <p class="rede-mini-txt">${legenda}</p>
+          <div class="rede-mini-foot"><span class="rede-mini-val">${esc(it.val||'—')}</span></div>
+        </div>
+      </div>`;
+  };
+  const linha = (metricKey, tituloMetrica, cor) => `
+    <div class="redes-destaque-metric-title" style="color:${cor};">${tituloMetrica}</div>
+    <div class="redes-destaque-grid">
+      ${ordem.map(([chave, label]) => {
+        const r = redesDestaque[chave];
+        const semPosts = !r || r.semPosts;
+        return `<div class="rede-destaque-col">
+          <span class="rede-destaque-label">${label}</span>
+          ${semPosts ? `<div class="rede-mini-card-empty">Sem publicações desta rede no período.</div>` : miniCard(r[metricKey])}
+        </div>`;
+      }).join('')}
+    </div>`;
+  return linha('maiorAlcance', 'Maior alcance', '#9B59B6') + linha('maiorInteracao', 'Maior interação', '#C0396E');
+}
+
+// Limpa uma URL crua (campos como "link" de top_publicacoes) que a IA às
+// vezes manda embrulhada em markdown ("[url](url)") — diferente do texto
+// livre, esses campos viram href diretamente, sem passar por
+// linkifyMentions, então precisam da mesma normalização aqui.
+function cleanUrl(s) {
+  s = String(s || '').trim();
+  const md = s.match(/^\[https?:\/\/[^\]]+\]\((https?:\/\/[^)]+)\)$/);
+  if (md) return md[1];
+  return s.replace(/^\[|\]$/g, '');
+}
+
+function copiarLink() {
+  navigator.clipboard.writeText(location.href).then(() => {
+    const btn = document.querySelector('.btn-copy');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copiado!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  });
+}
+
+/* ── Gate de senha ── */
+const GATE_KEY    = 'emb_session_sem';
+const GATE_TTL_MS = 8 * 60 * 60 * 1000;
+
+function _gateValido() {
+  try {
+    const raw = sessionStorage.getItem(GATE_KEY);
+    if (!raw) return false;
+    const { ts, ttl } = JSON.parse(raw);
+    return (Date.now() - ts) < (ttl || GATE_TTL_MS);
+  } catch { return false; }
+}
+
+async function gateSubmit() {
+  const inp = document.getElementById('gateInput');
+  const err = document.getElementById('gateError');
+  const btn = document.getElementById('gateBtn');
+  const val = (inp.value || '').trim();
+  if (!val) { err.textContent = 'Por favor, digite o código.'; inp.classList.add('error'); return; }
+  btn.disabled = true; btn.textContent = 'Verificando…';
+  try {
+    const res  = await fetch('/api/ekklesia/embratur-auth', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ senha: val }),
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      const { ts, ttl } = JSON.parse(atob(data.session_token.split('.')[0]));
+      sessionStorage.setItem(GATE_KEY, JSON.stringify({ ts, ttl, token: data.session_token }));
+      document.getElementById('gateWrap').style.display = 'none';
+      document.getElementById('stateWrap').style.display = '';
+      init();
+    } else {
+      err.textContent = data.error || 'Código incorreto.';
+      inp.classList.add('error'); inp.value = ''; inp.focus();
+      setTimeout(() => { btn.disabled = false; btn.textContent = 'Acessar'; }, 2000);
+    }
+  } catch {
+    err.textContent = 'Erro de conexão. Tente novamente.';
+    btn.disabled = false; btn.textContent = 'Acessar';
+  }
+}
+
+function gateBoot() {
+  if (_gateValido()) {
+    document.getElementById('stateWrap').style.display = '';
+    init();
+  } else {
+    document.getElementById('gateWrap').style.display = '';
+    setTimeout(() => document.getElementById('gateInput')?.focus(), 80);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('gateInput')?.addEventListener('input', () => {
+    document.getElementById('gateInput').classList.remove('error');
+    document.getElementById('gateError').textContent = '';
+  });
+});
+
+async function init() {
+  // Modo 1: token de share público
+  const token = new URLSearchParams(location.search).get('token');
+  if (token) {
+    try {
+      const res  = await fetch(`/api/ekklesia/embratur-semanal-share?token=${encodeURIComponent(token)}`);
+      const data = await res.json();
+      if (!res.ok || !data.dados?.paises) { showErr(data.error || 'Relatório não encontrado.'); return; }
+      TODOS_PAISES = data.dados.paises;
+      _boot();
+    } catch { showErr('Erro ao carregar o relatório.'); }
+    return;
+  }
+
+  // Modo 2: URL de link fixo /semanal/{pais}/{periodo}
+  const fixedMatch = location.pathname.match(/\/semanal\/([a-z]{2,4})\/([0-9-]+)/);
+  if (fixedMatch) {
+    const pais    = fixedMatch[1];
+    const periodo = fixedMatch[2];
+    const session = (() => { try { return JSON.parse(sessionStorage.getItem(GATE_KEY) || '{}'); } catch { return {}; } })();
+    try {
+      const res  = await fetch(`/api/ekklesia/embratur-semanal?pais=${pais}&periodo=${periodo}`, {
+        headers: session.token ? { 'Authorization': `Bearer ${session.token}` } : {},
+      });
+      if (res.status === 401) { showErr('Sessão expirada — recarregue a página.'); return; }
+      const data = await res.json();
+      if (!res.ok || !data.dados) { showErr(data.error || 'Relatório não encontrado.'); return; }
+      TODOS_PAISES = { [pais]: data.dados };
+      ATIVO = pais;
+      document.getElementById('btnPdf').style.display = '';
+      renderNav();
+      renderPage(data.dados, pais);
+      document.getElementById('stateWrap').style.display  = 'none';
+      document.getElementById('reportWrap').style.display = '';
+      window.scrollTo(0, 0);
+    } catch { showErr('Erro ao carregar o relatório.'); }
+    return;
+  }
+
+  showErr('Link inválido — nenhum token ou URL reconhecida.');
+}
+
+function _boot() {
+  const codigos = Object.keys(TODOS_PAISES);
+  if (!codigos.length) { showErr('Relatório ainda sem nenhum país publicado.'); return; }
+  const hashPais = new URLSearchParams(location.hash.replace('#','')).get('pais');
+  ATIVO = (hashPais && TODOS_PAISES[hashPais]) ? hashPais : (codigos.length === 1 ? codigos[0] : null);
+  renderNav();
+  if (ATIVO) {
+    document.getElementById('btnPdf').style.display = '';
+    renderPage(TODOS_PAISES[ATIVO], ATIVO);
+  } else {
+    document.getElementById('btnPdf').style.display = 'none';
+    renderOverview();
+  }
+  document.getElementById('stateWrap').style.display  = 'none';
+  document.getElementById('reportWrap').style.display = '';
+  window.scrollTo(0, 0);
+}
+
+window.addEventListener('hashchange', () => {
+  const hashPais = new URLSearchParams(location.hash.replace('#','')).get('pais');
+  if ((hashPais || null) !== ATIVO) irPara(hashPais && TODOS_PAISES[hashPais] ? hashPais : null);
+});
+
+/* ── Tema ── */
+const THEME_KEY = 'emb_theme';
+function _applyTheme(dark) {
+  document.documentElement.classList.toggle('dark', dark);
+  const icon = dark ? '☀️' : '🌙';
+  const btnT = document.getElementById('btnTheme');
+  const btnG = document.getElementById('gateThemeBtn');
+  if (btnT) btnT.textContent = icon;
+  if (btnG) btnG.textContent = icon;
+  document.querySelectorAll('#logoTopbar, .gate-card img[alt="Nexus"]').forEach(img => {
+    img.src = dark ? '../assets/logo-nexus-white.png' : '../assets/logo-nexus.png';
+  });
+  document.querySelectorAll('#logoFSBTopbar, .gate-card img[alt="FSB Holding"]').forEach(img => {
+    img.style.filter  = dark ? 'invert(1) brightness(1.8)' : '';
+    img.style.opacity = dark ? '0.6' : '0.55';
+  });
+}
+function toggleTheme() {
+  const dark = !document.documentElement.classList.contains('dark');
+  localStorage.setItem(THEME_KEY, dark ? 'dark' : 'light');
+  _applyTheme(dark);
+}
+(function() {
+  const saved = localStorage.getItem(THEME_KEY);
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  _applyTheme(saved ? saved === 'dark' : prefersDark);
+})();
+
+/* ── Animação de fundo (partículas + ondas laranja) ── */
+(function() {
+  const canvas = document.getElementById('bgCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, particles, waves;
+  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  function mkParticles(n) {
+    return Array.from({length: n}, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      r: Math.random() * 2.4 + 0.6,
+      vx: (Math.random() - 0.5) * 0.18, vy: (Math.random() - 0.5) * 0.18,
+      a: Math.random() * 0.55 + 0.18,
+    }));
+  }
+  function mkWaves(n) {
+    return Array.from({length: n}, (_, i) => ({
+      amp: 38 + i * 22, freq: 0.004 - i * 0.0005, speed: 0.0035 + i * 0.0011,
+      phase: Math.random() * Math.PI * 2, yBase: H * (0.32 + i * 0.13), alpha: 0.13 - i * 0.018,
+    }));
+  }
+  function init() { resize(); particles = mkParticles(80); waves = mkWaves(5); }
+  let tick = 0;
+  function draw() {
+    ctx.clearRect(0, 0, W, H); tick++;
+    const isDark = document.documentElement.classList.contains('dark');
+    const baseColor = isDark ? '255,110,30' : '255,88,0';
+    const darkMult  = isDark ? 2.0 : 1;
+    waves.forEach(w => {
+      ctx.beginPath();
+      for (let x = 0; x <= W; x += 4) {
+        const y = w.yBase + Math.sin(x * w.freq + w.phase + tick * w.speed) * w.amp
+                          + Math.sin(x * w.freq * 1.7 + tick * w.speed * 0.6) * (w.amp * 0.4);
+        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = `rgba(${baseColor},${w.alpha * darkMult})`; ctx.lineWidth = 1.8; ctx.stroke();
+    });
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < 160) {
+          ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(${baseColor},${(1 - d / 160) * 0.22 * darkMult})`; ctx.lineWidth = 0.8; ctx.stroke();
+        }
+      }
+    }
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${baseColor},${p.a * darkMult})`; ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  init(); draw();
+  window.addEventListener('resize', () => { init(); });
+})();
+
+gateBoot();
+</script>
+</body>
+</html>

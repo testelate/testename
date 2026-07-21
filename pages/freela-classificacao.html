@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Classificação IRX — Nexus</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root{--bg:#0d0d0f;--card:rgba(255,255,255,.04);--border:rgba(255,255,255,.09);--text:#f0ece8;--muted:#6b6570;--sec:#a89e96;--acc:#ff6500;--acc-h:24;--green:#4ade80;--red:#f87171;--amber:#f59e0b;--r:8px;--t:.14s ease}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;overflow:hidden;height:100vh}
+
+    /* ── Header ── */
+    .hdr{display:flex;align-items:center;gap:12px;padding:0 18px;height:50px;flex-shrink:0;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border)}
+    .hdr-logo{font-size:13px;font-weight:700;color:var(--acc);letter-spacing:-.3px}
+    .hdr-sep{width:1px;height:16px;background:var(--border)}
+    .hdr-proj{font-size:12px;color:var(--sec);font-weight:500}
+    .hdr-sp{flex:1}
+    .hdr-user{font-size:11px;color:var(--muted)}
+    .prog-wrap{height:3px;background:rgba(255,255,255,.06);flex-shrink:0}
+    .prog-fill{height:100%;background:var(--acc);transition:width .4s}
+
+    /* ── Layout ── */
+    .layout{display:flex;flex:1;overflow:hidden}
+
+    /* ── Sidebar ── */
+    .sb{width:260px;min-width:260px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden}
+    .sb-srch{padding:8px 8px 4px}
+    .sb-srch input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:var(--r);padding:6px 10px;font-size:12px;color:var(--text);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box}
+    .sb-srch input::placeholder{color:var(--muted)}
+    .sb-list{flex:1;overflow-y:auto;padding:3px 7px}
+    .sb-list::-webkit-scrollbar{width:3px}
+    .sb-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.10);border-radius:2px}
+    .si{padding:8px 9px;border-radius:7px;cursor:pointer;transition:background var(--t);margin-bottom:2px;border:1px solid transparent}
+    .si:hover{background:rgba(255,255,255,.05)}
+    .si.on{background:rgba(255,101,0,.10);border-color:rgba(255,101,0,.22)}
+    .si-name{font-size:12px;font-weight:500;color:var(--text);line-height:1.3}
+    .si-meta{font-size:10px;color:var(--muted);margin-top:2px;display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+    .badge{display:inline-flex;align-items:center;padding:1px 5px;border-radius:20px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+    .b-pend{background:rgba(245,158,11,.14);color:var(--amber)}
+    .b-apr{background:rgba(34,197,94,.14);color:var(--green)}
+    .b-rep{background:rgba(239,68,68,.14);color:var(--red)}
+    .b-av{background:rgba(34,197,94,.14);color:var(--green)}
+    .b-rev{background:rgba(245,158,11,.14);color:var(--amber)}
+    .b-desc{background:rgba(239,68,68,.14);color:var(--red)}
+    .sb-foot{padding:8px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);flex-shrink:0}
+
+    /* ── Panel ── */
+    .panel{flex:1;display:flex;flex-direction:column;overflow:hidden}
+    .empty{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:var(--muted)}
+    .empty svg{opacity:.15}
+    .empty p{font-size:13px}
+    #panelContent{display:none;flex:1;flex-direction:column;overflow:hidden}
+
+    /* Panel topbar */
+    .ptb{display:flex;align-items:center;gap:8px;padding:7px 16px;flex-shrink:0;border-bottom:1px solid var(--border)}
+    .ptb-name{font-size:14px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .nav-wrap{display:flex;gap:3px}
+    .nbtn{display:flex;align-items:center;justify-content:center;width:26px;height:26px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;cursor:pointer;color:var(--muted);transition:all var(--t)}
+    .nbtn:hover:not(:disabled){background:rgba(255,255,255,.09);color:var(--text)}
+    .nbtn:disabled{opacity:.25;cursor:default}
+    .nbtn svg{width:11px;height:11px;stroke:currentColor;stroke-width:2.5;fill:none}
+    .nctr{font-size:11px;color:var(--muted);min-width:52px;text-align:center;font-variant-numeric:tabular-nums}
+    .ssel{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:7px;padding:4px 9px;font-size:11px;color:var(--sec);font-family:'Inter',sans-serif;outline:none;cursor:pointer}
+    .ssel option{background:#1a1206}
+
+    /* Body row: card + ficha */
+    .body-row{flex:1;display:flex;overflow:hidden}
+
+    /* Card */
+    .card-area{flex:1;overflow-y:auto;padding:14px 18px}
+    .card-area::-webkit-scrollbar{width:4px}
+    .card-area::-webkit-scrollbar-thumb{background:rgba(255,255,255,.10);border-radius:2px}
+    .pcard{width:100%;background:rgba(255,255,255,.035);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+
+    .pc-hdr{display:flex;align-items:flex-start;gap:14px;padding:16px 20px 14px;background:linear-gradient(135deg,rgba(255,101,0,.18),rgba(255,101,0,.05));border-bottom:1px solid var(--border)}
+    .pc-av{width:56px;height:56px;border-radius:50%;background:rgba(255,101,0,.25);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--acc);flex-shrink:0;overflow:hidden;border:2px solid rgba(255,101,0,.28)}
+    .pc-av img{width:100%;height:100%;object-fit:cover}
+    .pc-info{flex:1;min-width:0}
+    .pc-name{font-size:19px;font-weight:700;line-height:1.15}
+    .pc-handle{font-size:12px;color:var(--muted);font-family:monospace;margin-top:1px}
+    .pc-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+    .ptag{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;background:rgba(255,255,255,.07);color:var(--sec);border:1px solid var(--border)}
+    .pc-score{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+    .sc-num{font-size:24px;font-weight:800;color:var(--acc);line-height:1;letter-spacing:-.03em}
+    .sc-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+
+    .fonte-row{display:flex;align-items:center;gap:6px;padding:8px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;font-size:11px;color:var(--muted)}
+    .pc-redes{display:flex;gap:6px;padding:8px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+    .rpill{display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid var(--border);font-size:11px;color:var(--sec)}
+    .rpill .rn{font-weight:600;color:var(--text)}
+    .rpill a{color:inherit;text-decoration:none;font-size:10px;opacity:.55}
+    .rpill a:hover{opacity:1;color:var(--acc)}
+
+    /* Campos editáveis no card */
+    .pc-fields{display:grid;grid-template-columns:1fr 1fr}
+    .pc-col{padding:12px 20px}
+    .pc-col+.pc-col{border-left:1px solid var(--border)}
+    .col-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--acc);margin-bottom:6px}
+    .edit-area{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--text);font-family:'Inter',sans-serif;outline:none;resize:vertical;min-height:110px;line-height:1.6;box-sizing:border-box;transition:border-color var(--t)}
+    .edit-area:focus{border-color:rgba(255,101,0,.40)}
+    .edit-input{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--text);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;transition:border-color var(--t)}
+    .edit-input:focus{border-color:rgba(255,101,0,.40)}
+
+    .pc-fields-3{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid var(--border)}
+    .pc-fields-3 .pc-col+.pc-col{border-left:1px solid var(--border)}
+
+    /* Posts */
+    .pc-posts{padding:10px 20px 14px;border-top:1px solid var(--border)}
+    .posts-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:7px}
+    .post-item{font-size:11px;color:var(--muted);line-height:1.55;padding:6px 10px;border-radius:7px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-left:2px solid rgba(255,101,0,.32);margin-bottom:5px}
+
+    /* Footer */
+    .pc-foot{display:flex;align-items:center;justify-content:space-between;padding:9px 20px;border-top:1px solid var(--border);background:rgba(255,255,255,.015);flex-wrap:wrap;gap:8px}
+    .pf-rec{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--muted)}
+    .score-pill{padding:2px 8px;border-radius:20px;font-size:10px;background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--sec);white-space:nowrap}
+
+    /* Ficha drawer */
+    .ficha-p{width:0;flex-shrink:0;overflow:hidden;transition:width .22s ease}
+    .ficha-p.open{width:290px}
+    .ficha-inner{width:290px;height:100%;display:flex;flex-direction:column;border-left:1px solid var(--border);background:rgba(255,255,255,.02)}
+    .ficha-head{padding:10px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    .ficha-title{font-size:12px;font-weight:600}
+    .ficha-body{flex:1;overflow-y:auto;padding:11px 13px}
+    .ficha-body::-webkit-scrollbar{width:3px}
+    .ficha-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.10);border-radius:2px}
+    .fg{margin-bottom:11px}
+    .fg label{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.03em;display:block;margin-bottom:3px}
+    .fg input,.fg select,.fg textarea{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:7px;padding:6px 9px;font-size:12px;color:var(--text);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;transition:border-color var(--t)}
+    .fg input:focus,.fg textarea:focus{border-color:rgba(255,101,0,.42)}
+    .fg select option{background:#1a1206}
+    .fg textarea{resize:vertical;min-height:90px}
+    .fg-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+    .fsec{font-size:10px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.07em;margin:14px 0 7px}
+    .fg.fg-warn label{color:var(--red)}
+    .fg.fg-warn textarea{border-color:rgba(239,68,68,.18)}
+    .fg.fg-warn textarea:focus{border-color:rgba(239,68,68,.40)}
+    .ficha-foot{padding:9px 13px;border-top:1px solid var(--border);display:flex;gap:7px;flex-shrink:0}
+    .ia-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;flex:1;background:linear-gradient(135deg,rgba(120,80,255,.13),rgba(255,101,0,.09));border:1px solid rgba(150,100,255,.22);border-radius:7px;font-size:11px;color:#c4a8ff;cursor:pointer;font-family:'Inter',sans-serif;transition:all var(--t);justify-content:center}
+    .ia-btn:hover{filter:brightness(1.12)}
+    .ia-btn.loading{opacity:.5;pointer-events:none}
+    .save-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:rgba(255,101,0,.14);border:1px solid rgba(255,101,0,.28);border-radius:7px;font-size:11px;color:var(--acc);cursor:pointer;font-family:'Inter',sans-serif;transition:all var(--t)}
+    .save-btn:hover{background:rgba(255,101,0,.24)}
+    .ficha-toggle{display:inline-flex;align-items:center;gap:4px;padding:5px 9px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:7px;font-size:11px;color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif;transition:all var(--t)}
+    .ficha-toggle:hover{color:var(--text)}
+    .ficha-toggle.on{color:var(--acc);background:rgba(255,101,0,.10);border-color:rgba(255,101,0,.25)}
+
+    /* Decision bar */
+    .dec-bar{display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 24px;flex-shrink:0;border-top:1px solid var(--border);background:rgba(255,255,255,.015)}
+    .dec-lbl{font-size:11px;color:var(--muted);margin-right:4px}
+    .dec-btn{display:inline-flex;align-items:center;gap:8px;padding:11px 28px;border-radius:40px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all var(--t);border:none;letter-spacing:.01em}
+    .dec-btn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.5}
+    .dec-rep{background:rgba(239,68,68,.13);border:1.5px solid rgba(239,68,68,.28);color:var(--red)}
+    .dec-rep:hover{background:rgba(239,68,68,.26);transform:scale(1.04)}
+    .dec-skip{background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.11);color:var(--muted);padding:11px 20px}
+    .dec-skip:hover{background:rgba(255,255,255,.10)}
+    .dec-apr{background:rgba(34,197,94,.13);border:1.5px solid rgba(34,197,94,.30);color:var(--green)}
+    .dec-apr:hover{background:rgba(34,197,94,.26);transform:scale(1.04)}
+
+    /* Loading / erro screens */
+    .screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:40px}
+    .screen p{font-size:13px;color:var(--muted);max-width:320px}
+
+    /* btn base */
+    .tbtn{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:7px;font-size:11px;color:var(--sec);cursor:pointer;font-family:'Inter',sans-serif;transition:all var(--t)}
+    .tbtn:hover{background:rgba(255,255,255,.09);color:var(--text)}
+
+    /* Toasts */
+    .toasts{position:fixed;top:16px;right:18px;z-index:9999;display:flex;flex-direction:column;gap:5px;pointer-events:none}
+    .toast{padding:8px 13px;border-radius:9px;font-size:11px;font-weight:500;animation:tIn .16s ease}
+    .tok{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.28);color:var(--green)}
+    .terr{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.28);color:var(--red)}
+    @keyframes tIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+    .spin{animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    @media(max-width:600px){
+      .layout{flex-direction:column}
+      .sb{width:100%;max-height:160px;border-right:none;border-bottom:1px solid var(--border)}
+      .pc-fields,.pc-fields-3{grid-template-columns:1fr}
+      .pc-col+.pc-col,.pc-fields-3 .pc-col+.pc-col{border-left:none;border-top:1px solid var(--border)}
+      .ficha-p.open{width:100%}
+      .dec-btn{padding:9px 18px;font-size:13px}
+    }
+    /* Deep Research btn */
+    .dr-card-btn {
+      display:inline-flex; align-items:center; gap:5px; padding:6px 13px;
+      background:linear-gradient(135deg,hsla(220,80%,60%,.13),hsla(260,80%,65%,.09));
+      border:1px solid hsla(220,80%,60%,.22); border-radius:8px;
+      font-size:11px; color:#93c5fd; cursor:pointer; font-family:'Inter',sans-serif; transition:all .14s;
+    }
+    .dr-card-btn:hover { filter:brightness(1.14); }
+
+    /* ── Modais ── */
+    .overlay{display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center}
+    .overlay.open{display:flex}
+    .modal{background:#1a1206;border:1px solid var(--border);border-radius:16px;padding:20px;width:560px;max-width:95vw;max-height:88vh;display:flex;flex-direction:column;gap:13px}
+    .modal-lg{width:580px}
+    .modal-head{display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    .modal-title{font-size:13px;font-weight:600;color:var(--text)}
+    .mcls{background:none;border:none;cursor:pointer;color:var(--muted);padding:3px;border-radius:5px}
+    .mcls:hover{color:var(--text)}
+    .mcls svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none}
+    .mnote{font-size:10px;color:var(--muted)}
+    .mfoot{display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
+    .dr-tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:2px;flex-shrink:0}
+    .dr-tab{padding:7px 14px;font-size:11px;color:var(--muted);cursor:pointer;border:none;background:none;font-family:'Inter',sans-serif;transition:all .13s;border-bottom:2px solid transparent;margin-bottom:-1px}
+    .dr-tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+    #drPromptBox{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:11px;color:var(--sec);line-height:1.65;white-space:pre-wrap;font-family:'Inter',sans-serif;user-select:all;flex-shrink:0;max-height:300px;overflow-y:auto}
+    #drPasteArea{width:100%;min-height:180px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--text);font-family:'Inter',sans-serif;outline:none;resize:vertical;line-height:1.6;box-sizing:border-box}
+    #drPasteArea:focus{border-color:rgba(255,101,0,.40)}
+    .dr-scroll{overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px}
+  </style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-logo">nexus.</div>
+  <div class="hdr-sep"></div>
+  <div class="hdr-proj" id="hdrProj">Classificação IRX</div>
+  <div class="hdr-sp"></div>
+  <div class="hdr-user" id="hdrUser"></div>
+</div>
+<div class="prog-wrap"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+
+<!-- Loading -->
+<div class="screen" id="scrLoad">
+  <svg class="spin" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2"><path d="M21 12a9 9 0 11-18 0"/></svg>
+  <p>Validando acesso…</p>
+</div>
+<!-- Erro -->
+<div class="screen" id="scrErr" style="display:none">
+  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+  <p id="errMsg">Link inválido ou expirado.</p>
+</div>
+
+<!-- App -->
+<div class="layout" id="app" style="display:none">
+  <div class="sb">
+    <div class="sb-srch"><input id="busca" placeholder="Buscar…" oninput="filtrar()" autocomplete="off"/></div>
+    <div class="sb-list" id="sbList"></div>
+    <div class="sb-foot" id="sbFoot"></div>
+  </div>
+
+  <div class="panel">
+    <div class="empty" id="panelEmpty">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="8" r="5"/><path d="M3 21v-2a7 7 0 0 1 14 0v2"/></svg>
+      <p>Selecione um influenciador ao lado</p>
+    </div>
+
+    <div id="panelContent">
+      <!-- Topbar interna -->
+      <div class="ptb">
+        <div class="ptb-name" id="ptbNome">—</div>
+        <div class="nav-wrap">
+          <button class="nbtn" id="btnPrev" onclick="nav(-1)"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <button class="nbtn" id="btnNext" onclick="nav(1)"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></button>
+        </div>
+        <span class="nctr" id="nctr">— / —</span>
+        <select id="statusSel" class="ssel" onchange="onStatus()">
+          <option value="pendente">Pendente</option>
+          <option value="aprovado">✅ Aprovado</option>
+          <option value="reprovado">❌ Reprovado</option>
+        </select>
+        <button class="ficha-toggle" id="fichaToggle" onclick="toggleFicha()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Ficha
+        </button>
+      </div>
+
+      <div class="body-row">
+        <!-- Card principal -->
+        <div class="card-area">
+          <div class="pcard" id="pcard">
+            <div class="pc-hdr">
+              <div class="pc-av" id="pcAv">?</div>
+              <div class="pc-info">
+                <div class="pc-name" id="pcNome">—</div>
+                <div class="pc-handle" id="pcHandle">@—</div>
+                <div class="pc-tags" id="pcTags"></div>
+              </div>
+              <div class="pc-score">
+                <div class="sc-num" id="pcScore">—</div>
+                <div class="sc-lbl">Seguidores</div>
+                <div id="pcRec" style="margin-top:5px"></div>
+              <button class="dr-card-btn" style="margin-top:8px" onclick="abrirDR()">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Deep Research
+              </button>
+              </div>
+            </div>
+
+            <div class="fonte-row" id="fonteRow"></div>
+            <div class="pc-redes" id="pcRedes"></div>
+
+            <div class="pc-fields">
+              <div class="pc-col">
+                <div class="col-lbl">Sobre o influenciador</div>
+                <textarea class="edit-area" id="fBio" placeholder="Bio / contexto de atuação…"></textarea>
+              </div>
+              <div class="pc-col">
+                <div class="col-lbl">Posicionamento nas redes</div>
+                <textarea class="edit-area" id="fPos" placeholder="Como se posiciona online…"></textarea>
+              </div>
+            </div>
+
+            <div class="pc-fields-3">
+              <div class="pc-col">
+                <div class="col-lbl">Temática / Setor</div>
+                <input class="edit-input" id="fTema" placeholder="Ex: Saneamento…"/>
+              </div>
+              <div class="pc-col">
+                <div class="col-lbl">Bloco</div>
+                <input class="edit-input" id="fBloco" placeholder="Ex: Indústrias de base…"/>
+              </div>
+              <div class="pc-col">
+                <div class="col-lbl">Abordagem</div>
+                <input class="edit-input" id="fAbord" placeholder="Ex: Relacional…"/>
+              </div>
+            </div>
+
+            <div class="pc-posts" id="pcPostsWrap">
+              <div class="posts-lbl">Amostra de posts</div>
+              <div id="pcPosts"></div>
+            </div>
+
+            <div class="pc-foot">
+              <div class="pf-rec"><span style="font-size:10px;color:var(--muted)">IR² recomenda:</span><span id="pfRec">—</span></div>
+              <div style="display:flex;gap:4px;flex-wrap:wrap" id="pfScores"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ficha drawer -->
+        <div class="ficha-p" id="fichaP">
+          <div class="ficha-inner">
+            <div class="ficha-head">
+              <span class="ficha-title">📝 Ficha</span>
+              <button class="tbtn" onclick="toggleFicha()" style="padding:2px 7px;font-size:10px">✕</button>
+            </div>
+            <div class="ficha-body">
+              <div class="fg fg-warn">
+                <label>⚠️ Justificativa de não inclusão</label>
+                <textarea id="f_jex" placeholder="Por que não incluir na lista final…" style="min-height:50px"></textarea>
+              </div>
+              <div class="fsec">Identificação</div>
+              <div class="fg-row">
+                <div class="fg"><label>Região</label>
+                  <select id="f_reg"><option value="">—</option><option>Norte</option><option>Nordeste</option><option>Centro-Oeste</option><option>Sudeste</option><option>Sul</option></select>
+                </div>
+                <div class="fg"><label>UF</label><input id="f_uf" maxlength="2" placeholder="SP"/></div>
+              </div>
+              <div class="fg-row">
+                <div class="fg"><label>Tipo de Perfil</label>
+                  <select id="f_tipo"><option value="">—</option><option>Especialista</option><option>Institucional</option><option>Criador</option><option>Ruído</option><option>Jornalista</option><option>Militante</option><option>Celebridade</option><option>Outro</option></select>
+                </div>
+                <div class="fg"><label>Tier</label>
+                  <select id="f_tier"><option value="">—</option><option>Nano</option><option>Micro</option><option>Médio</option><option>Macro</option><option>Mega</option></select>
+                </div>
+              </div>
+              <div class="fsec">Análise Qualitativa</div>
+              <div class="fg"><label>Validação Ideológica</label><textarea id="f_vid" placeholder="Posicionamento político/ideológico…"></textarea></div>
+              <div class="fg"><label>Histórico Profissional</label><textarea id="f_hist" placeholder="Trajetória…"></textarea></div>
+              <div class="fg"><label>Recomendações de Relacionamento</label><textarea id="f_rec" placeholder="Estratégia de aproximação…"></textarea></div>
+              <div class="fg"><label>Assuntos Sensíveis / Polêmicas</label><textarea id="f_sens" style="min-height:46px" placeholder="Polêmicas…"></textarea></div>
+              <div class="fsec">Links</div>
+              <div class="fg"><label>Outros Links / Notas</label><textarea id="f_links" style="min-height:46px" placeholder="Links extras…"></textarea></div>
+            </div>
+            <div class="ficha-foot">
+              <button class="ia-btn" id="iaBtn" onclick="preencherIA()">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                Preencher com IA
+              </button>
+              <button class="save-btn" onclick="salvar()">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div><!-- body-row -->
+
+      <!-- Decision bar -->
+      <div class="dec-bar">
+        <span class="dec-lbl">Decisão:</span>
+        <button class="dec-btn dec-rep" onclick="decidir('reprovado')">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Reprovar
+        </button>
+        <button class="dec-btn dec-skip" onclick="nav(1)">⏭ Pular</button>
+        <button class="dec-btn dec-apr" onclick="decidir('aprovado')">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Aprovar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Deep Research ── -->
+<div class="overlay" id="drModal">
+  <div class="modal modal-lg" style="height:82vh">
+    <div class="modal-head" style="flex-shrink:0">
+      <span class="modal-title">🔍 Deep Research — <span id="drNomeLabel">—</span></span>
+      <button class="mcls" onclick="closeModal('drModal')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <!-- Tabs: Prompt | Colar resposta -->
+    <div class="dr-tabs" style="flex-shrink:0">
+      <button class="dr-tab on" id="drTab1" onclick="drSetTab(1)">📋 Prompt</button>
+      <button class="dr-tab" id="drTab2" onclick="drSetTab(2)">📥 Colar resposta</button>
+    </div>
+    <!-- Tab 1: prompt -->
+    <div id="drPane1" class="dr-scroll" style="display:flex;flex-direction:column;gap:10px;overflow-y:auto">
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <div class="mnote" style="color:var(--text-secondary);flex:1">Cole no Google AI Studio, Gemini Advanced ou ChatGPT Deep Research para análise aprofundada.</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <label style="font-size:10px;color:var(--text-muted);font-weight:600;white-space:nowrap;letter-spacing:.03em">SETOR DO CLIENTE</label>
+        <input id="drSetor" placeholder="Ex: Saneamento, Alimentos, Energia, Pharma…"
+          style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:7px;padding:5px 10px;font-size:12px;color:var(--text-primary);font-family:'Inter',sans-serif;outline:none;"
+          oninput="atualizarPromptSetor(this.value)"/>
+      </div>
+      <pre id="drPromptBox"></pre>
+      <div class="mfoot" style="flex-shrink:0">
+        <button class="tbtn" onclick="copiarDR()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copiar prompt
+        </button>
+        <a href="https://gemini.google.com/app?hl=pt-BR" target="_blank" class="tbtn tbtn-primary">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Abrir Gemini
+        </a>
+      </div>
+    </div>
+    <!-- Tab 2: colar resposta -->
+    <div id="drPane2" style="display:none;flex-direction:column;gap:10px;flex:1;overflow:hidden">
+      <div class="mnote" style="color:var(--text-secondary);flex-shrink:0">Cole aqui a resposta completa do Deep Research. A IA vai extrair e preencher os campos automaticamente.</div>
+      <textarea id="drPasteArea" placeholder="Cole aqui a resposta do Deep Research…" style="flex:1"></textarea>
+      <div class="mfoot" style="flex-shrink:0">
+        <button class="tbtn tbtn-primary" id="drProcessBtn" onclick="processarDR()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Extrair e preencher campos
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Avatar -->
+<div class="overlay" id="avatarModal">
+  <div class="modal" style="width:380px">
+    <div class="modal-head">
+      <span class="modal-title">📷 Foto do influenciador</span>
+      <button class="mcls" onclick="closeModal('avatarModal')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;justify-content:center">
+        <div id="avPreview" style="width:80px;height:80px;border-radius:50%;background:hsla(var(--theme-h),55%,28%,.5);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:var(--accent-light);overflow:hidden;border:2px solid hsla(var(--theme-h),90%,50%,.28)">?</div>
+      </div>
+      <div class="mf"><label>URL da foto</label><input id="avUrl" placeholder="https://…" oninput="prevAvUrl()"/></div>
+      <div style="text-align:center;font-size:11px;color:var(--text-muted)">— ou —</div>
+      <button class="tbtn" onclick="document.getElementById('avatarFileIn').click()" style="justify-content:center">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Fazer upload de imagem
+      </button>
+    </div>
+    <div class="mfoot">
+      <button class="tbtn" onclick="limparAvatar()">Remover foto</button>
+      <button class="tbtn tbtn-primary" onclick="salvarAvatar()">Aplicar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+const PLAT={instagram:'📸',tiktok:'🎵',youtube:'▶️',twitter:'🐦',facebook:'📘',linkedin:'💼'};
+const S={token:null,projetoId:null,nomeFreela:'',nomeProjeto:'',lista:[],filtrada:[],idx:-1,fichaAberta:false};
+
+window.addEventListener('DOMContentLoaded',async()=>{
+  S.token=new URLSearchParams(location.search).get('token');
+  if(!S.token){showErr('Link inválido — token não encontrado.');return;}
+  try{
+    const r=await fetch(`/api/irx/freela-token?token=${S.token}`);
+    const d=await r.json();
+    if(!r.ok||!d.ok){showErr(d?.error||'Token inválido ou expirado.');return;}
+    S.projetoId=d.projeto_id; S.nomeFreela=d.nome_freela||'';
+    // buscar nome do projeto
+    try{const rp=await fetch(`/api/irx/projetos?id=${S.projetoId}`);const dp=await rp.json();S.nomeProjeto=dp.nome||'';}catch{}
+    document.getElementById('hdrProj').textContent=S.nomeProjeto||'Classificação IRX';
+    if(S.nomeFreela){
+      document.getElementById('hdrUser').textContent=`Olá, ${S.nomeFreela} 👋`;
+    }
+    document.getElementById('scrLoad').style.display='none';
+    document.getElementById('app').style.display='flex';
+    await carregarLista();
+  }catch(e){showErr('Erro ao validar acesso: '+e.message);}
+});
+
+function showErr(msg){
+  document.getElementById('scrLoad').style.display='none';
+  document.getElementById('scrErr').style.display='flex';
+  document.getElementById('errMsg').textContent=msg;
+}
+
+async function carregarLista(){
+  try{
+    const r=await fetch(`/api/irx/classificacao?projeto_id=${S.projetoId}`);
+    const d=await r.json();
+    if(!r.ok||!Array.isArray(d)){toast('Erro ao carregar lista','err');return;}
+    S.lista=d; filtrar();
+  }catch(e){toast('Erro: '+e.message,'err');}
+}
+
+function filtrar(){
+  const q=document.getElementById('busca').value.toLowerCase();
+  S.filtrada=S.lista.filter(i=>!q||(i.nome||'').toLowerCase().includes(q));
+  renderSB(); updProg(); updNav();
+}
+
+function renderSB(){
+  const el=document.getElementById('sbList');
+  if(!S.filtrada.length){el.innerHTML='<div style="padding:16px 8px;text-align:center;font-size:12px;color:var(--muted)">Nenhum resultado.</div>';return;}
+  const curId=S.idx>=0?S.filtrada[S.idx]?.id:null;
+  el.innerHTML=S.filtrada.map((i,idx)=>`
+    <div class="si${i.id===curId?' on':''}" onclick="abrirIdx(${idx})">
+      <div class="si-name">${esc(i.nome)}</div>
+      <div class="si-meta">
+        ${i.plataforma?`<span>${PLAT[i.plataforma?.toLowerCase()]||'🌐'} ${esc(i.plataforma)}</span>`:''}
+        ${bSt(i.status)} ${i.recomendacao_irx?bRec(i.recomendacao_irx):''}
+      </div>
+    </div>`).join('');
+  // footer stats
+  const t=S.lista.length,a=S.lista.filter(i=>i.status==='aprovado').length,
+        rp=S.lista.filter(i=>i.status==='reprovado').length;
+  document.getElementById('sbFoot').textContent=`${a} apr · ${rp} rep · ${t-(a+rp)} pend`;
+}
+
+function bSt(s){const m={pendente:['b-pend','Pendente'],aprovado:['b-apr','Aprovado'],reprovado:['b-rep','Reprovado']};const[c,l]=m[s]||['b-pend','Pendente'];return`<span class="badge ${c}">${l}</span>`;}
+function bRec(r){const m={'Avançar':['b-av','Avançar'],'Revisar':['b-rev','Revisar'],'Descartar':['b-desc','Descartar']};const[c,l]=m[r]||['b-pend',r];return`<span class="badge ${c}">${l}</span>`;}
+function bFonte(f){const fl=String(f).toUpperCase();if(fl.includes('DECK'))return`<span class="badge" style="background:rgba(139,92,246,.14);color:#a78bfa">DECK</span>`;if(fl.includes('NEXUS')||fl.includes('TAGGER'))return`<span class="badge" style="background:rgba(255,101,0,.14);color:var(--acc)">Nexus</span>`;return`<span class="badge b-pend" style="font-size:8px">${esc(f)}</span>`;}
+
+function updProg(){
+  const t=S.lista.length,f=S.lista.filter(i=>i.status==='aprovado'||i.status==='reprovado').length;
+  document.getElementById('progFill').style.width=t?(f/t*100)+'%':'0%';
+}
+
+async function abrirIdx(idx){
+  if(idx<0||idx>=S.filtrada.length)return;
+  S.idx=idx;
+  const item=S.filtrada[idx];
+  try{
+    const r=await fetch(`/api/irx/classificacao?id=${item.id}`);
+    const d=await r.json();
+    if(d){const li=S.lista.findIndex(x=>x.id===d.id);if(li>=0)S.lista[li]={...S.lista[li],...d};}
+    renderCard(d||item); preencherFicha(d||item);
+    mostrar(); renderSB(); updNav();
+  }catch(e){toast('Erro ao abrir','err');}
+}
+function nav(delta){const n=S.idx+delta;if(n>=0&&n<S.filtrada.length)abrirIdx(n);}
+function updNav(){
+  const p=document.getElementById('btnPrev'),n=document.getElementById('btnNext');
+  if(p)p.disabled=S.idx<=0;if(n)n.disabled=S.idx>=S.filtrada.length-1;
+  const c=document.getElementById('nctr');if(c)c.textContent=S.filtrada.length?`${S.idx+1} / ${S.filtrada.length}`:'— / —';
+}
+function mostrar(){
+  document.getElementById('panelEmpty').style.display='none';
+  const pc=document.getElementById('panelContent');pc.style.display='flex';pc.style.flexDirection='column';
+}
+
+function renderCard(d){
+  document.getElementById('ptbNome').textContent=d.nome||'—';
+  const av=document.getElementById('pcAv');
+  if(d.foto_url){av.innerHTML=`<img src="${esc(d.foto_url)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.innerHTML='${(d.nome||'?')[0].toUpperCase()}'">`;}
+  else av.innerHTML=(d.nome||'?')[0].toUpperCase();
+  document.getElementById('pcNome').textContent=d.nome||'—';
+  document.getElementById('pcHandle').textContent='@'+(d.username||d.nome||'?');
+  const tags=[];if(d.plataforma)tags.push(d.plataforma);if(d.tipo_perfil)tags.push(d.tipo_perfil);
+  document.getElementById('pcTags').innerHTML=tags.map(t=>`<span class="ptag">${esc(t)}</span>`).join('');
+  const vol=d.seguidores||d.score_bw||0;
+  document.getElementById('pcScore').textContent=vol?fmtN(vol):'—';
+  document.getElementById('pcRec').innerHTML=d.recomendacao_irx?bRec(d.recomendacao_irx):'';
+  // Fonte row
+  const fr=document.getElementById('fonteRow');
+  const fi=[];
+  if(d.fonte)fi.push(bFonte(d.fonte));
+  if(d.tematica)fi.push(`<span class="ptag">${esc(d.tematica)}</span>`);
+  if(d.bloco)fi.push(`<span class="ptag">${esc(d.bloco)}</span>`);
+  if(d.localizacao)fi.push(`<span style="font-size:11px;color:var(--muted)">📍 ${esc(d.localizacao)}</span>`);
+  fr.innerHTML=fi.length?`<span style="font-size:10px;color:var(--muted)">Fonte:</span>`+fi.join(''):'';
+  fr.style.display=fi.length?'':'none';
+  // Redes
+  const re=document.getElementById('pcRedes');
+  const plats=(d.redes||d.plataforma||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+  if(plats.length){
+    re.innerHTML=plats.map(p=>{
+      const url=p==='instagram'?(d.username_instagram||d.url_perfil||''):p==='linkedin'?(d.username_linkedin||d.url_perfil||''):p==='tiktok'?(d.username_tiktok||''):(d.url_perfil||'');
+      const segMap={instagram:d.seguidores_ig||0,tiktok:d.seguidores_tiktok||0,youtube:0,linkedin:0,twitter:0,facebook:0};
+      let seg=segMap[p]||0;
+      if(!seg && plats.length===1) seg=d.seguidores||0;
+      return`<span class="rpill">${PLAT[p]||'🌐'} <span>${p}</span>${seg?` <span class="rn">${fmtN(seg)}</span>`:''}${url?` <a href="${esc(url.startsWith('http')?url:'https://'+url)}" target="_blank">ver ↗</a>`:''}</span>`;
+    }).join('');
+  } else if(vol) re.innerHTML=`<span class="rpill"><span class="rn">${fmtN(vol)} seguidores</span></span>`;
+  else re.innerHTML='';
+  // Campos editáveis
+  document.getElementById('fBio').value=d.bio||d.perfil||'';
+  document.getElementById('fPos').value=d.posicionamento_redes||d.abordagem||'';
+  document.getElementById('fTema').value=d.tematica||'';
+  document.getElementById('fBloco').value=d.bloco||(S.nomeProjeto||'');
+  document.getElementById('fAbord').value=d.abordagem||'';
+  // Posts
+  const pw=document.getElementById('pcPostsWrap'),pp=document.getElementById('pcPosts');
+  const am=(d.titulos_amostra_bw||'').split('|').map(s=>s.trim()).filter(Boolean).slice(0,4);
+  if(am.length){pp.innerHTML=am.map(a=>`<div class="post-item">${esc(a)}</div>`).join('');pw.style.display='';}
+  else pw.style.display='none';
+  // Footer
+  document.getElementById('pfRec').innerHTML=d.recomendacao_irx?bRec(d.recomendacao_irx):'—';
+  const just=d.justificativa||'';
+  const sc=document.getElementById('pfScores');
+  sc.innerHTML=just&&just.includes('|')?just.split('|').map(s=>s.trim()).filter(Boolean).map(s=>`<span class="score-pill">${esc(s)}</span>`).join(''):'';
+  document.getElementById('statusSel').value=d.status||'pendente';
+}
+
+function fmtN(n){const v=parseInt(String(n).replace(/\D/g,''))||0;if(v>=1000000)return(v/1000000).toFixed(1).replace('.',',')+'M';if(v>=1000)return Math.round(v/1000)+'K';return v.toLocaleString('pt-BR');}
+
+function preencherFicha(d){
+  const m={f_jex:'justificativa_exclusao',f_reg:'regiao',f_uf:'uf',f_tipo:'tipo_perfil',f_tier:'tier',
+    f_vid:'validacao_ideologica',f_hist:'historico_profissional',f_rec:'recomendacoes',
+    f_sens:'assuntos_sensiveis',f_links:'outros_links'};
+  Object.entries(m).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.value=d[k]||'';});
+}
+function toggleFicha(){
+  S.fichaAberta=!S.fichaAberta;
+  document.getElementById('fichaP').classList.toggle('open',S.fichaAberta);
+  document.getElementById('fichaToggle').classList.toggle('on',S.fichaAberta);
+}
+function onStatus(){
+  if(S.idx<0)return;
+  const v=document.getElementById('statusSel').value;
+  const item=S.filtrada[S.idx];
+  if(item){item.status=v;const li=S.lista.findIndex(x=>x.id===item.id);if(li>=0)S.lista[li].status=v;}
+  renderSB(); updProg();
+}
+
+async function decidir(status){
+  if(S.idx<0)return;
+  document.getElementById('statusSel').value=status; onStatus();
+  await salvar(true);
+  if(S.idx<S.filtrada.length-1)nav(1); else toast('Todos classificados! 🎉');
+}
+
+async function salvar(silent=false){
+  if(S.idx<0)return;
+  const item=S.filtrada[S.idx];
+  const g=id=>{const el=document.getElementById(id);return el?el.value.trim():'';};
+  const pid=item.projeto_id||S.projetoId;
+  if(!pid){toast('Erro: projeto não identificado','err');return;}
+  const payload={
+    id:item.id, projeto_id:String(pid), nome:item.nome||item.username||'', username:item.username||'',
+    status:g('statusSel'),
+    bio:g('fBio'), posicionamento_redes:g('fPos'),
+    tematica:g('fTema'), bloco:g('fBloco'), abordagem:g('fAbord'),
+    regiao:g('f_reg'), uf:g('f_uf'), tipo_perfil:g('f_tipo'), tier:g('f_tier'),
+    validacao_ideologica:g('f_vid'), historico_profissional:g('f_hist'),
+    recomendacoes:g('f_rec'), assuntos_sensiveis:g('f_sens'),
+    outros_links:g('f_links'), justificativa_exclusao:g('f_jex'),
+  };
+  try{
+    const res=await fetch('/api/irx/classificacao',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!res.ok){const err=await res.json().catch(()=>({}));toast('Erro: '+(err?.error||res.status),'err');return;}
+    if(!silent)toast('Salvo ✓');
+    const li=S.lista.findIndex(x=>x.id===item.id);
+    if(li>=0)S.lista[li]={...S.lista[li],...payload};
+    S.filtrada[S.idx]={...S.filtrada[S.idx],...payload};
+    renderSB(); updProg();
+  }catch(e){toast('Erro ao salvar','err');}
+}
+
+async function preencherIA(){
+  if(S.idx<0)return;
+  const d=S.filtrada[S.idx];
+  const btn=document.getElementById('iaBtn');
+  btn.classList.add('loading');
+  btn.innerHTML='<svg class="spin" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-18 0"/></svg> Analisando…';
+  const prompt=`Analise o influenciador abaixo e retorne SOMENTE JSON válido (sem markdown):
+Nome: ${d.nome}
+Handle: ${d.username||''}
+Link: ${d.url_perfil||d.link||'não informado'}
+Plataforma: ${d.plataforma||''}
+Bio: ${document.getElementById('fBio')?.value||d.bio||''}
+Temática: ${d.tematica||''}
+Recomendação IR²: ${d.recomendacao_irx||''}
+
+{"regiao":"Norte|Nordeste|Centro-Oeste|Sudeste|Sul","uf":"2 letras","tipo_perfil":"Especialista|Institucional|Criador|Ruído|Jornalista|Militante|Celebridade|Outro","tier":"Nano|Micro|Médio|Macro|Mega","validacao_ideologica":"...","historico_profissional":"...","posicionamento_redes":"...","recomendacoes":"...","assuntos_sensiveis":"..."}`;
+  try{
+    const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,maxTokens:1400})});
+    const data=await res.json();
+    const text=typeof data.content==='string'?data.content:(data.content?.[0]?.text||data.text||'');
+    const match=text.match(/\{[\s\S]*\}/);
+    if(!match){toast('IA retornou formato inesperado','err');return;}
+    const p=JSON.parse(match[0]);
+    const mapa={regiao:'f_reg',uf:'f_uf',tipo_perfil:'f_tipo',tier:'f_tier',
+      validacao_ideologica:'f_vid',historico_profissional:'f_hist',
+      posicionamento_redes:'fPos',recomendacoes:'f_rec',assuntos_sensiveis:'f_sens'};
+    Object.entries(mapa).forEach(([k,id])=>{const el=document.getElementById(id);if(el&&p[k])el.value=p[k];});
+    if(!S.fichaAberta)toggleFicha();
+    toast('IA preencheu os campos ✓');
+  }catch(e){toast('Erro: '+e.message,'err');}
+  finally{
+    btn.classList.remove('loading');
+    btn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Preencher com IA';
+  }
+}
+
+// ── Deep Research ────────────────────────────────────────────
+let _drTab=1;
+function drSetTab(n){
+  _drTab=n;
+  document.getElementById('drTab1').classList.toggle('on',n===1);
+  document.getElementById('drTab2').classList.toggle('on',n===2);
+  document.getElementById('drPane1').style.display=n===1?'flex':'none';
+  document.getElementById('drPane2').style.display=n===2?'flex':'none';
+}
+function abrirDR(){
+  if(S.idx<0)return;
+  const d=S.filtrada[S.idx];
+  const bio   = document.getElementById('fBio')?.value.trim()       || d.bio       || d.perfil || '';
+  const pos   = document.getElementById('fPos')?.value.trim()       || d.posicionamento_redes  || '';
+  const tema  = document.getElementById('fTematica')?.value.trim()  || d.tematica  || '';
+  const bloco = document.getElementById('fBloco')?.value.trim()     || d.bloco     || '';
+  const abord = document.getElementById('fAbordagem')?.value.trim() || d.abordagem || '';
+  const handle = (d.username && d.username.toLowerCase()!==d.nome?.toLowerCase())
+    ? d.username : (d.username_instagram||d.username_tiktok||d.username_linkedin||'');
+  const link = d.url_perfil||d.link||d.username_instagram||d.username_linkedin||'';
+  const redes = d.redes||d.plataforma||'';
+  const setor = tema||bloco||'saneamento/alimentos/energia';
+  const linhas = [
+    `Nome: ${d.nome}`,
+    handle ? `Handle/Username: @${handle.replace('@','')}` : '',
+    redes  ? `Plataforma(s): ${redes}` : '',
+    link   ? `Link: ${link}` : '',
+    bio    ? `Contexto: ${bio}` : '',
+    pos    ? `Posicionamento atual: ${pos}` : '',
+    tema   ? `Temática/Setor: ${tema}` : '',
+    bloco  ? `Bloco: ${bloco}` : '',
+    abord  ? `Abordagem: ${abord}` : '',
+    d.fonte            ? `Fonte: ${d.fonte}` : '',
+    d.recomendacao_irx ? `Recomendação IR²: ${d.recomendacao_irx}` : '',
+    d.justificativa    ? `Justificativa IR²: ${d.justificativa}` : '',
+  ].filter(Boolean).join('\n');
+  document.getElementById('drNomeLabel').textContent=d.nome||'—';
+  document.getElementById('drPasteArea').value='';
+  document.getElementById('drPromptBox').textContent=`Você é um analista de inteligência digital especializado em mapeamento de influenciadores brasileiros.
+
+Faça uma pesquisa aprofundada sobre o seguinte influenciador/organização:
+
+${linhas}
+
+Responda com um relatório estruturado nos seguintes tópicos:
+
+1. IDENTIDADE E TRAJETÓRIA
+Quem é? Formação, carreira, posição atual, marcos profissionais.
+
+2. POSICIONAMENTO NAS REDES
+Tom, estilo, frequência de publicações, temas recorrentes, forma de engajamento.
+
+3. VALIDAÇÃO IDEOLÓGICA
+Alinhamento político/ideológico, posicionamentos sobre temas polêmicos.
+
+4. MÉTRICAS E ALCANCE
+Pesquise e informe o número ATUAL de seguidores em cada rede social onde o influenciador está presente (Instagram, TikTok, YouTube, LinkedIn, Twitter/X, Facebook). Para cada rede: número exato ou estimativa com fonte, taxa de engajamento médio, frequência de postagem e crescimento recente. Se não encontrar dados de uma rede, informe explicitamente "não encontrado".
+
+5. ASSUNTOS SENSÍVEIS E POLÊMICAS
+Controvérsias, processos, declarações problemáticas, associações questionáveis.
+
+6. RECOMENDAÇÕES DE RELACIONAMENTO
+Como uma marca do setor de ${tema||'saneamento/alimentos/energia'} deveria se aproximar? Formatos recomendados, alertas antes de fechar parceria.
+
+Seja objetivo, factual, cite fontes quando possível.
+
+IMPORTANTE — LIMITES DE TAMANHO POR SEÇÃO:
+- Seção 1 (Identidade): máximo 600 caracteres
+- Seção 2 (Posicionamento): máximo 600 caracteres
+- Seção 3 (Validação Ideológica): máximo 600 caracteres
+- Seção 4 (Métricas): tabela simples + máximo 300 caracteres de texto
+- Seção 5 (Assuntos Sensíveis): máximo 500 caracteres
+- Seção 6 (Recomendações): máximo 800 caracteres
+
+Sempre termine cada seção numa frase completa (termine com ponto final). Nunca corte no meio de uma palavra ou frase. Priorize dados concretos: números, datas, fontes.
+
+CAMPOS OBRIGATÓRIOS — preencha mesmo que precise estimar:
+- Temática/Setor: informe o setor principal de atuação do influenciador (ex: Meio Ambiente, Alimentação, Saúde, Educação, Tecnologia, Política, etc.)
+- Região e UF: informe o estado e região de atuação principal
+- Tipo de Perfil: Especialista | Institucional | Criador | Jornalista | Militante | Celebridade
+- Taxa de engajamento: informe estimativa mesmo que aproximada`;
+  drSetTab(1);
+  document.getElementById('drModal').classList.add('open');
+  // Preencher campo setor
+  const setorEl=document.getElementById('drSetor');
+  if(setorEl) setorEl.value=setor!=='saneamento/alimentos/energia'?setor:'';
+}
+function atualizarPromptSetor(val){
+  const box=document.getElementById('drPromptBox');
+  if(!box)return;
+  const setor=val.trim()||'saneamento/alimentos/energia';
+  box.textContent=box.textContent.replace(
+    /Como uma marca do setor de .+? deveria se aproximar/,
+    'Como uma marca do setor de '+setor+' deveria se aproximar'
+  );
+}
+function copiarDR(){
+  navigator.clipboard.writeText(document.getElementById('drPromptBox').textContent)
+    .then(()=>toast('Prompt copiado ✓'))
+    .catch(()=>toast('Não foi possível copiar','err'));
+}
+
+async function processarDR(){
+  const texto=document.getElementById('drPasteArea').value.trim();
+  if(!texto||texto.length<50){toast('Cole a resposta do Deep Research primeiro','err');return;}
+  // Truncar para evitar textos excessivamente longos
+  const textoProc = texto.length > 12000 ? texto.slice(0,12000) + '\n[texto truncado]' : texto;
+  if(S.idx<0){toast('Nenhum influenciador selecionado','err');return;}
+  const btn=document.getElementById('drProcessBtn');
+  btn.textContent='Extraindo…'; btn.disabled=true;
+
+  try{
+    // ── Extração por posição dos números (funciona com texto corrido ou com quebras) ──
+    function extrairSecoes(texto){
+      const splits=[...texto.matchAll(/(?<!\d)([1-6])\.(\s*\S)/g)];
+      const map={};
+      splits.forEach((m,i)=>{
+        const n=parseInt(m[1]);
+        const start=m.index+m[0].length-1;
+        const end=i+1<splits.length?splits[i+1].index:texto.length;
+        let content=texto.slice(start,end).trim();
+        // Remove título colado no início (ex: "Identidade e trajetóriaLaila" → "Laila")
+        // Remove apenas títulos de seção colados (ex: 'Identidade e trajetória' antes do conteúdo)
+        // Só remove se for uma sequência de palavras sem pontuação E sem números
+        content=content.replace(/^(?:[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ][a-záéíóúâêîôûãõç]+(?:\s+(?:e|de|do|da|das|dos|em|nas|nos|a|o|para|com|por)\s+[a-záéíóúâêîôûãõçA-Z]+)*){1,6}(?=[A-Z][a-z])/,'').trim();
+        map[n]=content;
+      });
+      return map;
+    }
+    const secs=extrairSecoes(textoProc);
+    const s1=secs[1]||'', s2=secs[2]||'', s3=secs[3]||'',
+          s4=secs[4]||'', s5=secs[5]||'', s6=secs[6]||'';
+
+    // ── Bio: primeiras frases longas da seção 1 ───────────────
+    // Corta no limite de max chars mas sempre termina numa sentença completa
+    function cortarFrase(txt, max){
+      const t=txt.replace(/\s+/g,' ').trim();
+      if(t.length<=max) return t;
+      const sub=t.slice(0,max);
+      // 1. Tentar terminar num ponto final
+      const ponto=Math.max(sub.lastIndexOf('. '),sub.lastIndexOf('! '),sub.lastIndexOf('? '));
+      if(ponto>max*0.5) return t.slice(0,ponto+1).trim();
+      // 2. Tentar terminar numa vírgula (frase incompleta mas natural)
+      const virgula=sub.lastIndexOf(', ');
+      if(virgula>max*0.6) return t.slice(0,virgula).trim()+'…';
+      // 3. Cortar na última palavra completa
+      const espaco=sub.lastIndexOf(' ');
+      return (espaco>max*0.7 ? t.slice(0,espaco) : sub).trimEnd()+'…';
+    }
+    function resumir(txt, max){
+      // Pegar frases completas separadas por ponto, filtrar as curtas
+      const frases=txt.split(/(?<=[.!?])\s+/).filter(f=>f.trim().length>20);
+      const junto=(frases.slice(0,4).join(' ')||txt).replace(/\s+/g,' ').trim();
+      return cortarFrase(junto, max);
+    }
+    const bio=resumir(s1,600);
+    const pos=resumir(s2,600);
+
+    // ── Validação ideológica: seção 3 ────────────────────────
+    const vid=cortarFrase((s3||'').replace(/\s+/g,' ').trim(),600);
+
+    // ── Histórico: seção 1 ───────────────────────────────────
+    const hist=cortarFrase((s1||'').replace(/\s+/g,' ').trim(),600);
+
+    // ── Recomendações: seção 6 ───────────────────────────────
+    const rec=cortarFrase((s6||'').replace(/\s+/g,' ').trim(),800);
+
+    // ── Assuntos sensíveis: seção 5 ──────────────────────────
+    const sens=s5?cortarFrase((s5||'').replace(/\s+/g,' ').trim(),500):'Sem assuntos sensíveis';
+
+    // ── Seguidores: extrai números de "560.000", "560K", "560 mil" etc ──
+    function extrairSeg(rede){
+      const r1=new RegExp(rede+'[^\\d]{0,60}([\\d][\\d.,\\s]*(?:mil|k|m|milh.o|milh.es)?)\\s*seguidores','i');
+      const r2=new RegExp('seguidores[^\\d]{0,30}'+rede+'[^\\d]{0,30}([\\d][\\d.,\\s]*(?:mil|k|m)?)','i');
+      const r3=new RegExp(rede+'[\\s\\S]{0,120}?([\\d][\\d.]{2,})','i');
+      for(const r of [r1,r2,r3]){const m=s4.match(r)||textoProc.match(r);if(m)return parseSegStr(m[1]);}
+      return 0;
+    }
+    function parseSegStr(s){
+      if(!s)return 0;
+      s=s.replace(/\s/g,'').replace(',','.');
+      const n=parseFloat(s.replace(/[^\d.]/g,''));
+      if(/milhão|milhões|m$/i.test(s))return Math.round(n*1000000);
+      if(/mil|k$/i.test(s))return Math.round(n*1000);
+      if(n>1000)return Math.round(n);
+      if(n>1)return Math.round(n*1000); // ex: "1,2" → 1200
+      return 0;
+    }
+
+    const seg_ig  = extrairSeg('instagram');
+    const seg_tt  = extrairSeg('tiktok');
+    const seg_yt  = extrairSeg('youtube');
+    const seg_li  = extrairSeg('linkedin');
+    const seg_tw  = extrairSeg('twitter|x\.com|@');
+    const seg_fb  = extrairSeg('facebook');
+
+    // ── Engajamento ───────────────────────────────────────────
+    const mEng=s4.match(/engajamento[^\d]{0,40}([\d,\.]+\s*%)/i)||texto.match(/([\d,\.]+\s*%)\s*(?:de\s+)?engajamento/i);
+    const engajamento=mEng?mEng[1].trim():'';
+
+    // ── Redes confirmadas ─────────────────────────────────────
+    const redesDetect=[];
+    if(seg_ig>0||/instagram/i.test(s4+s2))redesDetect.push('instagram');
+    if(seg_tt>0||/tiktok/i.test(s4+s2))redesDetect.push('tiktok');
+    if(seg_yt>0||/youtube/i.test(s4+s2))redesDetect.push('youtube');
+    if(seg_li>0||/linkedin/i.test(s4+s2))redesDetect.push('linkedin');
+    if(seg_tw>0||/twitter|\bx\b/i.test(s4+s2))redesDetect.push('twitter');
+    if(seg_fb>0||/facebook/i.test(s4+s2))redesDetect.push('facebook');
+
+    // ── Região/UF: busca no texto ─────────────────────────────
+    const estados={SP:'Sudeste',RJ:'Sudeste',MG:'Sudeste',ES:'Sudeste',RS:'Sul',SC:'Sul',PR:'Sul',BA:'Nordeste',CE:'Nordeste',PE:'Nordeste',MA:'Nordeste',PB:'Nordeste',RN:'Nordeste',AL:'Nordeste',SE:'Nordeste',PI:'Nordeste',PA:'Norte',AM:'Norte',AC:'Norte',RO:'Norte',RR:'Norte',AP:'Norte',TO:'Norte',GO:'Centro-Oeste',MT:'Centro-Oeste',MS:'Centro-Oeste',DF:'Centro-Oeste'};
+    const cidades={
+      'rio de janeiro':'RJ','são paulo':'SP','belo horizonte':'MG','porto alegre':'RS',
+      'salvador':'BA','fortaleza':'CE','recife':'PE','curitiba':'PR','brasília':'DF',
+      'manaus':'AM','belém':'PA','goiânia':'GO','florianópolis':'SC','vitória':'ES',
+    };
+    let uf='', regiao='';
+    for(const [cidade,u] of Object.entries(cidades)){
+      if(texto.toLowerCase().includes(cidade)){uf=u;regiao=estados[u]||'';break;}
+    }
+    if(!uf){const mUF=texto.match(/(SP|RJ|MG|RS|SC|PR|BA|CE|PE|MA|PB|RN|AL|SE|PI|PA|AM|AC|RO|RR|AP|TO|GO|MT|MS|DF|ES)/);if(mUF){uf=mUF[1];regiao=estados[uf]||'';}}
+
+    // ── Tipo de perfil: heurística ────────────────────────────
+    let tipo='';
+    if(/ativista|ativismo|militant/i.test(texto))tipo='Militante';
+    else if(/jornalista|repórter|redator/i.test(texto))tipo='Jornalista';
+    else if(/especialista|consultor|pesquisador|professor|doutor/i.test(texto))tipo='Especialista';
+    else if(/empresa|organização|associação|instituto|fundação/i.test(texto))tipo='Institucional';
+    else if(/ator|atriz|cantor|artista|influenciador|criador/i.test(texto))tipo='Criador';
+    else tipo='Especialista';
+
+    // ── Tier: pelo total de seguidores ────────────────────────
+    const maxSeg=Math.max(seg_ig,seg_tt,seg_yt,seg_li,seg_tw,seg_fb);
+    const tier=maxSeg>=1000000?'Mega':maxSeg>=500000?'Macro':maxSeg>=100000?'Médio':maxSeg>=10000?'Micro':'Nano';
+
+    // ── Montar objeto p ───────────────────────────────────────
+    const p={
+      bio, posicionamento_redes:pos, validacao_ideologica:vid,
+      historico_profissional:hist, recomendacoes:rec, assuntos_sensiveis:sens,
+      regiao, uf, tipo_perfil:tipo, tier,
+      seguidores_instagram:seg_ig, seguidores_tiktok:seg_tt,
+      seguidores_youtube:seg_yt, seguidores_linkedin:seg_li,
+      seguidores_twitter:seg_tw, seguidores_facebook:seg_fb,
+      engajamento_medio:engajamento,
+      redes_confirmadas:redesDetect.join(', '),
+    };
+
+    // ── Preencher campos do card ──────────────────────────────
+    // ── Preencher campos do card ──────────────────────────────────────────────────────────────
+    const bioel=document.getElementById('fBio');
+    const posel=document.getElementById('fPos');
+    if(bio && bioel) bioel.value=bio;
+    if(pos && posel) posel.value=pos;
+
+    // ── Preencher ficha ───────────────────────────────────────
+    const mapa={validacao_ideologica:'f_vid',historico_profissional:'f_hist',
+      recomendacoes:'f_rec',assuntos_sensiveis:'f_sens',regiao:'f_regiao',
+      uf:'f_uf',tipo_perfil:'f_tipo',tier:'f_tier'};
+    Object.entries(mapa).forEach(([k,id])=>{const el=document.getElementById(id);if(el&&p[k])el.value=p[k];});
+
+    // ── Atualizar estado local com todos os campos extraídos ────
+    const item=S.filtrada[S.idx];
+    // Bio e posicionamento
+    if(bio) item.bio=bio;
+    if(pos) item.posicionamento_redes=pos;
+    if(vid) item.validacao_ideologica=vid;
+    if(hist) item.historico_profissional=hist;
+    if(rec) item.recomendacoes=rec;
+    if(sens) item.assuntos_sensiveis=sens;
+    if(regiao) item.regiao=regiao;
+    if(uf) item.uf=uf;
+    if(tipo) item.tipo_perfil=tipo;
+    item.tier=tier;
+    let redesAtualizadas=false;
+    if(p.seguidores_instagram>0){item.seguidores_ig=p.seguidores_instagram;redesAtualizadas=true;}
+    if(p.seguidores_tiktok>0){item.seguidores_tiktok=p.seguidores_tiktok;redesAtualizadas=true;}
+    if(maxSeg>0&&(!item.seguidores||item.seguidores<maxSeg)){item.seguidores=maxSeg;redesAtualizadas=true;}
+    if(p.redes_confirmadas&&(!item.redes||item.redes.trim()===''))item.redes=p.redes_confirmadas;
+    if(p.engajamento_medio){
+      const engStr='Engaj: '+p.engajamento_medio;
+      if(item.justificativa&&!item.justificativa.includes('Engaj'))item.justificativa+=' | '+engStr;
+      else if(!item.justificativa)item.justificativa=engStr;
+    }
+    const li2=S.lista.findIndex(x=>x.id===item.id);if(li2>=0)S.lista[li2]={...S.lista[li2],...item};
+    if(redesAtualizadas)renderCard(item);
+
+    // Preencher temática se estiver vazia
+    const temaEl=document.getElementById('fTematica');
+    if(temaEl&&!temaEl.value.trim()){
+      // Tentar extrair do texto: "setor de X", "segmento de X", "área de X"
+      const mTema=textoProc.match(/setor(?:\s+de)?\s+([\w\s]+?)(?:\s*[,.])/i)
+        ||textoProc.match(/segmento(?:\s+de)?\s+([\w\s]+?)(?:\s*[,.])/i);
+      if(mTema) temaEl.value=mTema[1].trim().slice(0,50);
+    }
+    if(!S.fichaAberta)toggleFicha();
+
+    const camposPreenchidos=[bio,pos,vid,rec].filter(Boolean).length;
+    const segMsg=maxSeg>0?' Seguidores atualizados.':'';
+    toast(camposPreenchidos+' campos preenchidos ✓'+segMsg);
+    closeModal('drModal');
+    await salvar(true);
+
+  }catch(e){toast('Erro ao extrair: '+e.message,'err');}
+  finally{btn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Extrair e preencher campos';btn.disabled=false;}
+}
+
+function closeModal(id){document.getElementById(id)?.classList.remove('open');}
+document.getElementById('drModal')?.addEventListener('click',function(e){if(e.target===this)closeModal('drModal');});
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function toast(msg,type='ok'){const el=document.createElement('div');el.className=`toast t${type}`;el.textContent=msg;document.getElementById('toasts').appendChild(el);setTimeout(()=>el.remove(),4500);}
+
+document.addEventListener('keydown',e=>{
+  if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')nav(1);
+  if(e.key==='ArrowLeft' ||e.key==='ArrowUp')  nav(-1);
+  if(e.key==='a')decidir('aprovado');
+  if(e.key==='r')decidir('reprovado');
+  if(e.key==='s')salvar();
+  if(e.key==='f')toggleFicha();
+});
+</script>
+</body>
+</html>

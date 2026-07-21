@@ -1,0 +1,2594 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HUB.nexus — GuruQuest</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/global.css"/>
+  <!-- Extração de DOCX — carrega diferido para não bloquear render -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+<style> /*Início CSS específico desta página */
+   body { 
+      display: flex; 
+      flex-direction: column;
+      overflow: hidden; 
+      height: 100vh; 
+      background: var(--bg);
+    }
+    .main { flex:1; display:flex; flex-direction:column; overflow:hidden; position:relative; }
+    /* ── Topbar ── */
+    .topbar { display:flex; align-items:center; justify-content:space-between; padding:0 20px; height:52px; flex-shrink:0; backdrop-filter:blur(30px); background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.07); z-index:5; }
+    .topbar-left { display:flex; align-items:center; gap:8px; }
+    .topbar-title { font-size:13px; font-weight:500; color:var(--text-primary); letter-spacing:-0.2px; }
+    .topbar-sub   { font-size:11px; color:var(--accent-light); }
+    body.light .topbar { background:rgba(255,255,255,0.55); border-bottom-color:rgba(180,100,40,0.10); }
+    body.light .topbar-title { color:#3a1200; }
+    body.light .topbar-sub   { color:#b09070; }
+
+    .guru-logo { height:36px; width:auto; display:block; }
+
+    /* Botões */
+    .tbtn { display:inline-flex; align-items:center; gap:5px; padding:6px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); border-radius:var(--r-sm); font-size:11px; color:var(--text-secondary); cursor:pointer; font-family:'Inter',sans-serif; transition:all var(--t-normal); }
+    .tbtn:hover { background:rgba(255,255,255,0.09); }
+    .tbtn svg { width:12px; height:12px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .tbtn-orange { background:rgba(255,101,0,0.12); border-color:rgba(255,101,0,0.28); color:var(--orange-2); }
+    .tbtn-orange:hover { background:rgba(255,101,0,0.22); }
+    .tbtn-green { background:rgba(102,221,136,0.10); border-color:rgba(102,221,136,0.22); color:#66dd88; }
+    .tbtn-green:hover { background:rgba(102,221,136,0.20); }
+    .tbtn-red { background:rgba(255,96,96,0.10); border-color:rgba(255,96,96,0.20); color:#ff9090; }
+    .tbtn-red:hover { background:rgba(255,96,96,0.20); }
+    body.light .tbtn { background:rgba(255,255,255,0.70); border-color:rgba(180,100,40,0.18); color:#7a4a30; }
+    body.light .tbtn-orange { background:rgba(255,101,0,0.08); border-color:rgba(255,101,0,0.25); color:#cc4400; }
+
+    /* ── LAYOUT PRINCIPAL ── */
+    .workspace { flex:1; display:flex; overflow:hidden; position:relative; z-index:1; }
+
+    /* ── COLUNA ESQUERDA: Biblioteca ── */
+    .col-library { width:272px; flex-shrink:0; display:flex; flex-direction:column; border-right:1px solid rgba(255,255,255,0.12); overflow:hidden; background:var(--surface); }
+    body.light .col-library { border-right-color:rgba(180,100,40,0.15); background:var(--surface); }
+
+    .lib-header { padding:10px 12px 8px; border-bottom:1px solid rgba(255, 18, 18, 0.06); flex-shrink:0; }
+    body.light .lib-header { border-bottom-color:rgba(220, 240, 240, 0.831); }
+    
+/* ── BUSCA ── */
+    .lib-search { 
+      display: flex; align-items: center; gap: 6px; 
+      background: var(--surface-2); 
+      border: 1px solid rgba(255,255,255,0.12); 
+      border-radius: var(--r-sm); 
+      padding: 6px 9px; 
+      margin-bottom: 6px; 
+      transition: border-color var(--t-fast);
+    }
+    .lib-search:focus-within { border-color: hsla(var(--theme-h),90%,55%,0.50); }
+    .lib-search svg { width:11px; height:11px; fill:none; stroke:var(--accent-light); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+    .lib-search input { border:none; background:none; outline:none; font-size:11px; color:var(--text-primary); width:100%; font-family:'Inter',sans-serif; }
+    .lib-search input::placeholder { color:var(--text-muted); }
+    body.light .lib-search { background:rgba(255,255,255,0.90); border-color:rgba(180,100,40,0.15); }
+    body.light .lib-search:focus-within { border-color:var(--accent); }
+
+    /* ── BARRA AÇÃO (Filtros + Importar) ── */
+    .lib-action-bar { display:flex; gap:5px; margin-bottom:6px; }
+    .lib-action-btn { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:4px; padding:5px 8px; background:var(--surface-2); border:1px solid rgba(255,255,255,0.12); border-radius:var(--r-sm); font-size:10px; font-weight:500; color:var(--text-secondary); cursor:pointer; font-family:'Inter',sans-serif; transition:all var(--t-fast); white-space:nowrap; }
+    .lib-action-btn:hover { background:var(--surface-2); color:var(--text-primary); }
+    .lib-action-btn svg { width:11px; height:11px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .lib-action-btn.active { background:var(--accent-soft); border-color:var(--accent-mid); color:var(--accent-light); }
+    .filter-badge { background:var(--accent); color:white; border-radius:8px; padding:1px 5px; font-size:9px; font-weight:700; display:none; }
+    .filter-badge.vis { display:inline; }
+    .lib-action-btn.import-btn { background:hsla(var(--theme-h),80%,50%,0.10); border-color:hsla(var(--theme-h),80%,50%,0.22); color:var(--accent-light); }
+    .lib-action-btn.import-btn:hover { background:hsla(var(--theme-h),80%,50%,0.20); }
+    body.light .lib-action-btn { background:white; border-color:rgba(180,100,40,0.15); color:#7a4a30; }
+    body.light .lib-action-btn.active { background:var(--accent-soft); }
+    body.light .lib-action-btn.import-btn { background:rgba(255,101,0,0.07); border-color:rgba(255,101,0,0.22); color:#cc4400; }
+
+   /* ── PAINEL DE FILTROS ── */
+    .filter-panel { display:none; background:var(--surface-2); border:1px solid rgba(255,255,255,0.12); border-radius:var(--r-md); padding:8px; margin-bottom:6px; overflow:hidden; }
+    .filter-panel.open { display:block; }
+    body.light .filter-panel { background:rgba(255,255,255,0.92); border-color:rgba(180,100,40,0.12); box-shadow:0 4px 12px rgba(0,0,0,0.06); }
+    
+    /* NAVEGAÇÃO DAS ABAS DE FILTRO */
+    .fp-tabs { 
+      display: flex; 
+      border-bottom: 1px solid rgba(255,255,255,0.08); 
+      margin-bottom: 10px; 
+      overflow-x: auto; 
+      gap: 12px; 
+    }
+    .fp-tabs::-webkit-scrollbar { display: none; }
+    body.light .fp-tabs { border-bottom-color: rgba(180,100,40,0.15); }
+    
+    .fp-tab { 
+      flex: 0 0 auto; 
+      white-space: nowrap; 
+      background: none; border: none; border-bottom: 2px solid transparent; 
+      padding: 6px 4px 8px; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted); cursor: pointer; font-family: 'Inter', sans-serif; transition: all var(--t-fast); 
+    }
+    .fp-tab:hover:not(.active) { color: var(--text-secondary); }
+    .fp-tab.active { color: var(--accent-light); border-bottom-color: var(--accent); }
+    body.light .fp-tab.active { color: var(--accent-dark); }
+
+    /* CONTEÚDO DAS ABAS */
+    .fp-tab-content { display: none; max-height: 220px; overflow-y: auto; padding-right: 4px; }
+    .fp-tab-content.active { display: block; }
+    .fp-tab-content::-webkit-scrollbar { width: 4px; }
+    .fp-tab-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    body.light .fp-tab-content::-webkit-scrollbar-thumb { background: rgba(180,100,40,0.2); }
+
+    .fp-chips { display:flex; flex-wrap:wrap; gap:3px; }
+    .fchip { padding:2px 7px; border-radius:var(--r-pill); font-size:9px; font-weight:500; background:var(--surface-2); border:1px solid rgba(255,255,255,0.08); color:var(--text-secondary); cursor:pointer; transition:all var(--t-fast); font-family:'Inter',sans-serif; white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis; }
+    .fchip:hover { border-color:var(--accent-mid); color:var(--accent-light); }
+    .fchip.on { background:var(--accent); border-color:var(--accent-dark); color:white; }
+    body.light .fchip { background:#f5f0ea; border-color:rgba(180,100,40,0.15); color:#7a4a30; }
+    body.light .fchip:hover { background:#ffe8d5; border-color:var(--accent); }
+    body.light .fchip.on { background:var(--accent-dark); color:white; border-color:var(--accent-dark); }
+    .fp-footer { display:flex; justify-content:flex-end; margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.06); }
+    body.light .fp-footer { border-top-color:rgba(180,100,40,0.10); }
+    .fp-clear { background:none; border:none; font-size:9px; color:var(--text-muted); cursor:pointer; font-family:'Inter',sans-serif; padding:2px 6px; border-radius:var(--r-pill); transition:all var(--t-fast); }
+    .fp-clear:hover { color:var(--accent-light); background:var(--accent-soft); }
+    body.light .fp-clear:hover { color:var(--accent-dark); }
+
+    .lib-list { 
+      flex:1; 
+      overflow-y: auto !important; /* Garante o comportamento de rolagem */
+      padding:6px 8px 16px; 
+      display:flex; 
+      flex-direction:column; 
+      gap: 4px; 
+      scrollbar-color: #464242 rgba(0, 0, 0, 0.2) !important;
+    }
+    
+    /* Configuração da barra visível*/
+    .lib-list::-webkit-scrollbar { 
+      width: 6px !important; 
+      display: block !important; 
+    }
+    .lib-list::-webkit-scrollbar-track { 
+      background: rgba(0, 0, 0, 0.2) !important; 
+      border-radius: 3px !important;
+    }
+    .lib-list::-webkit-scrollbar-thumb { 
+      background: #D8801B !important; 
+      border-radius: 3px !important; 
+    }
+    .lib-list::-webkit-scrollbar-thumb:hover { 
+      background: #ff9900 !important; 
+    }
+    .lib-section { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:rgb(255, 132, 0); padding:8px 4px 3px; opacity:0.7; }
+    body.light .lib-section { color:#f56200; }
+
+    /* ── CARTÕES DA BIBLIOTECA ── */
+    .qcard { 
+      background: var(--surface-2);
+      border: 1px solid rgba(255,255,255,0.12); 
+      border-left: 3px solid var(--accent);
+      border-radius: var(--r-md);
+      padding: 7px 10px; 
+      cursor: pointer; 
+      transition: all var(--t-fast); 
+      position: relative;
+      margin-bottom: 3px;
+    }
+    .qcard:hover { 
+      background: rgba(255,255,255,0.08);
+      border-color: hsla(var(--theme-h),80%,55%,0.35);
+      border-left-color: var(--accent-light);
+      transform: translateX(2px);
+    }
+    .qcard.sel { 
+      background: var(--accent-soft);
+      border-color: var(--accent-mid);
+      border-left-color: var(--accent-light);
+    }
+    .qcard-saved { border-left-color: var(--green); } 
+    body.light .qcard { background:white; border-color:rgba(180,100,40,0.15); border-left-color:var(--accent-dark); box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+    body.light .qcard:hover { background:var(--surface-2); border-color:rgba(255,101,0,0.22); }
+    body.light .qcard.sel { background:var(--accent-soft); border-color:var(--accent-mid); }
+
+    /* ── TÍTULOS E TEXTOS DOS CARDS ── */
+   .qcard-title { 
+      font-size: 11px;
+      font-weight: 500; 
+      color: var(--text-primary); 
+      margin-bottom: 2px;
+      line-height: 1.2; /* Tira o espaço extra entre as linhas de texto longo */
+      padding-right: 12px; 
+    }
+    .qcard-meta  { display:flex; align-items:center; gap:4px; } /* Menos espaço entre as tags */
+    body.light .qcard-title { color:#3a1200; }
+
+    /* Tags coloridas mais fininhas */
+    .qtag { display:inline-flex; align-items:center; padding:1px 4px; border-radius:4px; font-size:8px; font-weight:700; letter-spacing:0.2px; text-transform:uppercase; }
+    .qtag-marca  { background:rgba(136,170,255,0.15); color:#aaccff; border:1px solid rgba(136,170,255,0.25); }
+    .qtag-eleit  { background:rgba(204,136,255,0.15); color:#ddb3ff; border:1px solid rgba(204,136,255,0.25); }
+    .qtag-post   { background:rgba(255,170,68,0.15);  color:#ffcc88; border:1px solid rgba(255,170,68,0.25); }
+    .qtag-b2b    { background:rgba(102,221,136,0.15); color:#88eeaa; border:1px solid rgba(102,221,136,0.25); }
+    .qtag-mapa   { background:rgba(255,101,0,0.15);   color:#ff9966; border:1px solid rgba(255,101,0,0.25); }
+    .qtag-media  { background:rgba(45,212,191,0.15);  color:#5eead4; border:1px solid rgba(45,212,191,0.25); }
+    .qtag-opiniao{ background:rgba(250,204,21,0.15);  color:#fde047; border:1px solid rgba(250,204,21,0.25); }
+    .qtag-ref    { background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.15); }
+    .qtag-salvo  { background:rgba(102,221,136,0.12); color:#88eeaa; border:1px solid rgba(102,221,136,0.20); }
+
+    .qcard-n { font-size:9px; color:rgba(255,255,255,0.6); margin-left:auto; flex-shrink:0; }
+    body.light .qcard-n { color:#c09070; }
+    /* Tags coloridas */
+    .qtag { display:inline-flex; align-items:center; padding:1px 5px; border-radius:var(--r-pill); font-size:9px; font-weight:600; letter-spacing:0.3px; text-transform:uppercase; }
+    .qtag-marca  { background:rgba(136,170,255,0.12); color:#88aaff; border:1px solid rgba(136,170,255,0.18); }
+    .qtag-eleit  { background:rgba(204,136,255,0.12); color:#cc88ff; border:1px solid rgba(204,136,255,0.18); }
+    .qtag-post   { background:rgba(255,170,68,0.12);  color:#ffaa44; border:1px solid rgba(255,170,68,0.18); }
+    .qtag-b2b    { background:rgba(102,221,136,0.12); color:#66dd88; border:1px solid rgba(102,221,136,0.18); }
+    .qtag-mapa   { background:rgba(255,101,0,0.12);   color:#ff8040; border:1px solid rgba(255,101,0,0.20); }
+    .qtag-media  { background:rgba(45,212,191,0.12);  color:#2dd4bf; border:1px solid rgba(45,212,191,0.20); }
+    .qtag-opiniao{ background:rgba(250,204,21,0.12);  color:#facc15; border:1px solid rgba(250,204,21,0.20); }
+    .qtag-ref    { background:rgba(255,255,255,0.07);  color:rgba(255,200,150,0.6); border:1px solid rgba(255,255,255,0.10); }
+    .qtag-salvo  { background:rgba(102,221,136,0.10); color:#66dd88; border:1px solid rgba(102,221,136,0.15); }
+
+    .qcard-n { font-size:10px; color:var(--text-muted); margin-left:auto; flex-shrink:0; }
+    body.light .qcard-n { color:#c09070; }
+
+    /* Botão deletar no card (hover) */
+    
+
+    .lib-empty { text-align:center; padding:20px 12px; color:var(--text-muted); font-size:11px; line-height:1.6; }
+
+    /* ── COLUNA CENTRAL: Viewer / Editor ── */
+    .col-center { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+    /* Empty state */
+    .center-empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; }
+    .center-empty img { width:200px !important; max-width:200px !important; height:auto !important; opacity:1; }
+    .center-empty h3 { font-size:14px; font-weight:500; color:var(--text-secondary); margin:0; }
+    .center-empty p  { font-size:12px; color:var(--text-muted); text-align:center; max-width:220px; line-height:1.6; margin:0; }
+    body.light .center-empty h3 { color:#7a4a30; }
+    body.light .center-empty p  { color:#c09070; }
+
+    /* Viewer */
+    .viewer { display:none; flex-direction:column; flex:1; overflow:hidden; }
+    .viewer.active { display:flex; }
+
+    .viewer-header { padding:14px 18px 11px; border-bottom:1px solid rgba(255,255,255,0.07); flex-shrink:0; }
+    #viewer-edit { overflow-y:auto; }
+    #viewer-edit::-webkit-scrollbar { width:3px; }
+    #viewer-edit::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.10); border-radius:3px; }
+    #viewer-edit .viewer-header { overflow-y:visible; flex-shrink:1; border-bottom:none; }
+    #viewer-edit .viewer-body { flex:0 0 auto; overflow-y:visible; border-top:1px solid rgba(255,255,255,0.07); }
+    body.light .viewer-header { border-bottom-color:rgba(180,100,40,0.08); }
+    .viewer-title { font-size:15px; font-weight:600; color:var(--text-primary); letter-spacing:-0.3px; margin-bottom:5px; }
+    .viewer-meta  { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+    .viewer-meta-item { font-size:11px; color:var(--text-secondary); display:flex; align-items:center; gap:3px; }
+    .viewer-meta-item svg { width:11px; height:11px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .viewer-actions { display:flex; gap:6px; }
+    body.light .viewer-title { color:#3a1200; }
+    body.light .viewer-meta-item { color:#b09070; }
+
+    .viewer-body { flex:1; overflow-y:auto; padding:14px 18px; display:flex; flex-direction:column; gap:7px; }
+    .viewer-body::-webkit-scrollbar { width:3px; }
+    .viewer-body::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.10); border-radius:3px; }
+    /* Parte de filtros, perfil etc... */
+    .q-section-lbl { font-size:9px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--accent-light); padding:4px 0 2px; opacity:1; }
+
+/* ── ABAS DAS PERGUNTAS DO QUESTIONÁRIO (Mais Preenchidas e Sólidas) ── */
+    .q-item { 
+      background: rgba(255, 255, 255, 0.15) !important; /* Película clara de alto contraste */
+      backdrop-filter: blur(25px) saturate(160%) !important; 
+      padding: 16px 18px; 
+      margin-bottom: 12px; 
+      border: 1px solid rgba(255, 255, 255, 0.25) !important; 
+      border-left: 4px solid #D8801B !important; 
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); 
+      transition: all 0.3s ease;
+    }
+
+    body.light .q-item { background: rgba(255, 255, 255, 0.95); border-color: rgba(180, 100, 40, 0.25); backdrop-filter: blur(12px); }
+    body.light .q-item { background:rgba(255,255,255,0.55); border-color:rgba(180,100,40,0.10); }
+    .q-item-head { display:flex; align-items:flex-start; gap:9px; }
+/* Número identificador (PF0.1 / PF0.2) */
+    .q-num { 
+      font-size: 11px; 
+      font-weight: 700; 
+      color: #ffaa44 !important; /* Laranja vivo para destacar o índice */
+      min-width: 45px; 
+      padding-top: 1px; 
+      flex-shrink: 0; 
+
+      min-width: unset !important;
+      margin-right: 1px !important;
+    }
+    .q-text { font-size:12px; color:var(--text-primary); line-height:1.55; flex:1; }
+    body.light .q-text { color:#222222; }
+    .q-tipo { padding:2px 6px; border-radius:var(--r-pill); font-size:9px; font-weight:600; text-transform:uppercase; margin-left:auto; flex-shrink:0; }
+    .q-tipo-ru  { background:rgba(136,170,255,0.10); color:#88aaff; border:1px solid rgba(136,170,255,0.15); }
+    .q-tipo-rm  { background:rgba(102,221,136,0.10); color:#66dd88; border:1px solid rgba(102,221,136,0.15); }
+    .q-tipo-esp { background:rgba(255,170,68,0.10);  color:#ffaa44; border:1px solid rgba(255,170,68,0.15); }
+    .q-tipo-esc { background:rgba(204,136,255,0.10); color:#cc88ff; border:1px solid rgba(204,136,255,0.15); }
+    .q-tipo-ab  { background:rgba(255,96,96,0.10);   color:#ff9090; border:1px solid rgba(255,96,96,0.15); }
+    .q-opts { margin-top:7px; padding:7px 0 0 35px; border-top:1px solid rgba(255,255,255,0.05); display:flex; flex-direction:column; gap:3px; }
+    body.light .q-opts { border-top-color:rgba(180,100,40,0.08); }
+    .q-answer-box {
+      width:100%;
+      min-height:72px;
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      font-family:'Inter',sans-serif;
+      font-size:12px;
+      line-height:1.4;
+      resize: vertical;
+      outline:none;
+    }
+    body.light .q-answer-box {
+      background: rgba(255,255,255,0.92);
+      border-color: rgba(180,100,40,0.18);
+      color: #1c1c1c;
+    }
+    .q-opt { 
+      display:flex; align-items:center; gap:6px; font-size:11px; 
+      color: white; 
+      cursor: pointer; /* <-- Cursor de mãozinha para indicar que é clicável */
+      transition: all 0.2s ease;
+    }
+    .q-opt:hover { opacity: 0.8; } /* Um efeitinho sutil ao passar o mouse */
+
+    .q-opt-dot { 
+      width:13px; height:13px; border-radius:3px; 
+      background: #ffffff; /* <-- Coloque sua cor aqui para preencher por padrão */
+      flex-shrink:0; transition: all 0.2s ease;      
+    }
+
+    /* ── Selecionar X no quadrado ── */
+   
+    .q-opt.selected .q-opt-dot {
+      background: transparent; /* Removemos o preenchimento laranja sólido */
+      border-color: #ff9900; /* Mantemos a borda laranja */
+      position: relative; /* Necessário para posicionar o "X" lá dentro */
+    }
+
+    /* Desenha as duas linhas do "X" */
+    .q-opt.selected .q-opt-dot::after,
+    .q-opt.selected .q-opt-dot::before {
+      content: "";
+      position: absolute;
+      width: 2px; /* Espessura da linha do X */
+      height: 10px; /* Altura da linha do X (ligeiramente menor que o quadrado de 13px) */
+      background-color: #f7510a; /* Cor do "X" */
+      
+      top: 1px; /* Centralização vertical */
+      left: 5px; /* Centralização horizontal (ajuste conforme necessário) */
+    }
+
+    /* Gira a primeira linha a 45 graus */
+    .q-opt.selected .q-opt-dot::after {
+      transform: rotate(45deg);
+    }
+
+    /* Gira a segunda linha a -45 graus */
+    .q-opt.selected .q-opt-dot::before {
+      transform: rotate(-45deg);
+    }
+
+    /* Ajuste do texto quando selecionado */
+    .q-opt.selected {
+      color: #ffffff; /* Deixa o texto branco e mais visível ao selecionar */
+      font-weight: 600;
+    }
+    .q-enc { color:var(--red); opacity:0.7; font-size:10px; margin-left:auto; font-style:italic; }
+    .q-inst { margin-top:6px; padding:5px 8px 5px 35px; background:hsla(var(--theme-h),75%,32%,0.88); border:1px solid hsla(var(--theme-h),90%,60%,0.20); border-radius:var(--r-sm); font-size:10px; color:#fff; font-style:italic; line-height:1.5; }
+    body.light .q-opt { color:#7a4a30; }
+    body.light .q-inst { background:hsla(var(--theme-h),85%,50%,0.12); border-color:hsla(var(--theme-h),70%,30%,0.22); color:hsl(var(--theme-h),70%,22%); }
+
+    /* ── MODO EDIÇÃO inline ── */
+    .edit-mode .viewer-body .q-item { cursor:default; }
+
+    .form-input, .form-select, .form-textarea {
+      background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.10);
+      border-radius:var(--r-sm); padding:7px 9px; font-size:12px; color:var(--text-primary);
+      font-family:'Inter',sans-serif; outline:none; transition:border-color var(--t-normal);
+      width:100%; box-sizing:border-box;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color:rgba(255,101,0,0.35); }
+    .form-textarea { resize:none; min-height:36px; overflow:hidden; }
+    textarea.form-input { resize:none; overflow:hidden; }
+    .form-select {
+      appearance:none; cursor:pointer; color-scheme:light;
+      padding-right:26px;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23999999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 8px center; background-size:12px 12px;
+    }
+    /* O painel de opções do <select> costuma renderizar com fundo branco nativo do
+       sistema, independente do tema da página — por isso o texto das opções
+       precisa de uma cor escura fixa aqui, ou fica ilegível no modo escuro. */
+    .form-select option { background:#fff; color:#1a1208; }
+    body.light .form-input, body.light .form-select, body.light .form-textarea {
+      background-color:#fff; border-color:rgba(180,100,40,0.25); color:#3a1200;
+    }
+    body.light .form-input:focus, body.light .form-select:focus, body.light .form-textarea:focus {
+      border-color:rgba(255,101,0,0.55); background-color:#fff;
+    }
+    .form-input::placeholder, .form-textarea::placeholder { color:var(--text-muted); }
+    body.light .form-input::placeholder, body.light .form-textarea::placeholder { color:#c09070; }
+    .form-row { display:flex; gap:10px; }
+    .form-group { display:flex; flex-direction:column; gap:4px; flex:1; }
+    .form-label { font-size:9px; font-weight:700; letter-spacing:0.7px; text-transform:uppercase; color:var(--text-muted); }
+    body.light .form-label { color:#b09070; }
+
+    /* Editor de blocos */
+    .ed-bloco { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:var(--r-md); overflow:hidden; margin-bottom:8px; }
+    body.light .ed-bloco { background:rgba(255,255,255,0.45); border-color:rgba(180,100,40,0.12); }
+    .ed-bloco-head { display:flex; align-items:center; gap:8px; padding:9px 11px; border-bottom:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02); }
+    body.light .ed-bloco-head { border-bottom-color:rgba(180,100,40,0.08); }
+    .ed-bloco-titulo { flex:1; background:none; border:none; outline:none; font-size:12px; font-weight:500; color:var(--text-primary); font-family:'Inter',sans-serif; }
+    body.light .ed-bloco-titulo { color:#3a1200; }
+    .ed-bloco-titulo::placeholder { color:var(--text-muted); }
+    .ed-questoes { padding:8px; display:flex; flex-direction:column; gap:6px; }
+    .ed-questao { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:var(--r-sm); padding:8px; display:flex; flex-direction:column; gap:5px; }
+    body.light .ed-questao { background:rgba(255,255,255,0.5); border-color:rgba(180,100,40,0.10); }
+    .ed-q-row1 { display:flex; gap:6px; align-items:center; }
+    .ed-q-num  { width:52px; flex-shrink:0; }
+    .ed-q-tipo { width:108px; flex-shrink:0; }
+    .ed-q-texto { width:100%; }
+    .ed-q-spacer { flex:1; }
+    .ed-q-del { width:26px; height:26px; border-radius:4px; background:rgba(255,96,96,0.08); border:1px solid rgba(255,96,96,0.14); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; transition:all var(--t-fast); }
+    .ed-q-del:hover { background:rgba(255,96,96,0.20); }
+    .ed-q-del svg { width:10px; height:10px; fill:none; stroke:#ff9090; stroke-width:2.5; stroke-linecap:round; }
+    .btn-add-q { display:flex; align-items:center; gap:5px; padding:5px 10px; background:rgba(255,101,0,0.05); border:1px dashed rgba(255,101,0,0.18); border-radius:var(--r-sm); font-size:11px; color:var(--orange-2); cursor:pointer; transition:all var(--t-fast); font-family:'Inter',sans-serif; opacity:0.75; }
+    .btn-add-q:hover { opacity:1; background:rgba(255,101,0,0.10); }
+    .btn-add-bloco { display:flex; align-items:center; gap:6px; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.10); border-radius:var(--r-md); font-size:11px; color:var(--text-muted); cursor:pointer; transition:all var(--t-fast); font-family:'Inter',sans-serif; width:100%; box-sizing:border-box; justify-content:center; }
+    .btn-add-bloco:hover { border-color:rgba(255,101,0,0.25); color:var(--orange-2); }
+    .btn-rm-bloco { width:20px; height:20px; border-radius:3px; background:rgba(255,96,96,0.08); border:1px solid rgba(255,96,96,0.14); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+    .btn-rm-bloco:hover { background:rgba(255,96,96,0.20); }
+    .btn-rm-bloco svg { width:9px; height:9px; fill:none; stroke:#ff9090; stroke-width:2.5; stroke-linecap:round; }
+
+    /* ── COLUNA DIREITA: Guru ── */
+    .col-guru { width:320px; flex-shrink:0; display:flex; flex-direction:column; border-left:1px solid rgba(255,255,255,0.12); overflow:hidden; background:var(--surface); }
+    body.light .col-guru { border-left-color:rgba(180,100,40,0.15); background:var(--surface); }
+
+    /* Header do Guru */
+    .guru-head { padding:10px 13px; border-bottom:1px solid rgba(255,255,255,0.06); flex-shrink:0; display:flex; align-items:center; gap:9px; }
+    body.light .guru-head { border-bottom-color:rgba(180,100,40,0.08); }
+    .guru-head img { height:36px; width:auto; flex-shrink:0; }
+    .guru-head-info .guru-name { font-size:13px; font-weight:600; color:var(--text-primary); }
+    .guru-head-info .guru-sub  { font-size:10px; color:var(--text-muted); line-height:1.4; }
+    body.light .guru-head-info .guru-name { color:#3a1200; }
+    body.light .guru-head-info .guru-sub  { color:#c09070; }
+
+    /* Área de mensagens do chat */
+    .guru-msgs { flex:1; overflow-y:auto; padding:10px 12px; display:flex; flex-direction:column; gap:10px; }
+    .guru-msgs::-webkit-scrollbar { width:3px; }
+    .guru-msgs::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.10); border-radius:3px; }
+
+    /* Balões */
+    .msg { display:flex; flex-direction:column; gap:3px; }
+    .msg-guru  { align-items:flex-start; }
+    .msg-user  { align-items:flex-end; }
+    /* ── BALÃO DO GURU REESTILIZADO ── */
+.msg-guru .bubble { 
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%); 
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12); 
+  border-left: 3px solid #D8801B; /* Um detalhe em laranja na esquerda para dar identidade */
+  border-radius: 4px 16px 16px 16px; /* Pontas mais arredondadas, exceto a do topo esquerdo */
+  color: #E2E8F0; 
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+}
+/* ── TEXTO E ESPAÇAMENTO GERAL ── */
+.bubble { 
+  padding: 10px 12px; /* Aumentado para o texto respirar melhor */
+  font-size: 12px; /* Letra ligeiramente maior e mais legível */
+  line-height: 1.6; 
+  max-width: 97%; 
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── CONTAINER DAS MENSAGENS ── */
+.guru-msgs { 
+  flex: 1; 
+  overflow-y: auto; 
+  padding: 16px; /* Mais afastado das bordas da coluna */
+  display: flex; 
+  flex-direction: column; 
+  gap: 14px; /* Mais espaço entre os balões */
+}
+    body.light .msg-guru .bubble { background:rgba(255,255,255,0.75); border-color:rgba(180,100,40,0.14); color:#3a1200; }
+    body.light .msg-user .bubble { background:rgba(255,101,0,0.09); border-color:rgba(255,101,0,0.18); color:#3a1200; }
+    .msg-time { font-size:9px; color:var(--text-muted); padding:0 2px; }
+    body.light .msg-time { color:#c09070; }
+
+    /* Bloco de prompt gerado dentro do chat */
+    .prompt-bloco { background:rgba(255,101,0,0.05); border:1px solid rgba(255,101,0,0.16); border-radius:var(--r-md); overflow:hidden; margin-top:4px; max-width:94%; }
+    .prompt-bloco-header { display:flex; align-items:center; justify-content:space-between; padding:7px 10px; border-bottom:1px solid rgba(255,101,0,0.12); }
+    .prompt-bloco-label { font-size:10px; font-weight:600; color:var(--orange-2); }
+    .prompt-bloco-text { padding:9px 10px; font-size:10px; color:var(--text-secondary); line-height:1.65; white-space:pre-wrap; font-family:'Inter',sans-serif; max-height:140px; overflow-y:auto; }
+    body.light .prompt-bloco { background:rgba(255,101,0,0.04); border-color:rgba(255,101,0,0.18); }
+    body.light .prompt-bloco-text { color:#7a4a30; }
+    .prompt-bloco-actions { display:flex; gap:6px; padding:7px 10px; border-top:1px solid rgba(255,101,0,0.12); }
+
+    /* Campo colar resposta */
+    .paste-area { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:var(--r-md); padding:9px 10px; margin-top:4px; display:none; max-width:94%; }
+    .paste-area.open { display:block; }
+    .paste-label { font-size:9px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--orange-2); opacity:0.8; margin-bottom:5px; }
+    .paste-ta { width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,101,0,0.20); border-radius:var(--r-sm); padding:7px 9px; font-size:11px; color:var(--text-primary); font-family:'Inter',sans-serif; resize:none; outline:none; line-height:1.5; min-height:80px; box-sizing:border-box; }
+    .paste-ta:focus { border-color:rgba(255,101,0,0.38); }
+    body.light .paste-ta { background:rgba(255,255,255,0.7); border-color:rgba(255,101,0,0.22); color:#3a1200; }
+    .paste-btns { display:flex; gap:6px; margin-top:7px; }
+
+    /* Indicador de digitação */
+    .typing-dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--orange-2); opacity:0.7; animation:typing-bounce 1.2s ease-in-out infinite; }
+    .typing-dot:nth-child(2) { animation-delay:0.2s; }
+    .typing-dot:nth-child(3) { animation-delay:0.4s; }
+    @keyframes typing-bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-5px)} }
+    .guru-loading .bubble { display:flex; align-items:center; gap:4px; min-height:32px; }
+
+    /* Botão salvar na biblioteca dentro do chat */
+    .save-quest-btn { display:flex; align-items:center; gap:6px; margin-top:8px; padding:7px 11px; background:rgba(102,221,136,0.10); border:1px solid rgba(102,221,136,0.22); border-radius:var(--r-sm); font-size:11px; color:#66dd88; cursor:pointer; font-family:'Inter',sans-serif; transition:all var(--t-fast); width:fit-content; }
+    .save-quest-btn:hover { background:rgba(102,221,136,0.20); }
+    .save-quest-btn svg { width:12px; height:12px; fill:none; stroke:currentColor; stroke-width:2.5; stroke-linecap:round; }
+
+    /* Chips de sugestão */
+    .guru-chips { display:flex; gap:4px; padding:7px 12px 5px; overflow-x:auto; flex-shrink:0; border-top:1px solid rgba(255,255,255,0.05); }
+    .guru-chips::-webkit-scrollbar { display:none; }
+    body.light .guru-chips { border-top-color:rgba(180,100,40,0.07); }
+    .chip { padding:4px 9px; border-radius:var(--r-pill); font-size:10px; font-weight:500; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:var(--text-secondary); cursor:pointer; white-space:nowrap; transition:all var(--t-fast); font-family:'Inter',sans-serif; }
+    .chip:hover { background:rgba(255,101,0,0.10); border-color:rgba(255,101,0,0.22); color:var(--orange-2); }
+    body.light .chip { background:rgba(255,255,255,0.7); border-color:rgba(180,100,40,0.15); color:#7a4a30; }
+    body.light .chip:hover { background:rgba(255,101,0,0.08); color:#cc4400; }
+
+    /* Input do chat */
+    .guru-input-wrap { padding:8px 12px 12px; flex-shrink:0; }
+    .guru-input-box { display:flex; align-items:flex-end; gap:7px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); border-radius:var(--r-md); padding:8px 10px; transition:border-color var(--t-normal); }
+    .guru-input-box:focus-within { border-color:rgba(255,101,0,0.30); }
+    body.light .guru-input-box { background:rgba(255,255,255,0.7); border-color:rgba(180,100,40,0.15); }
+    .guru-input-box textarea { flex:1; background:none; border:none; outline:none; font-family:'Inter',sans-serif; font-size:12px; color:var(--text-primary); resize:none; line-height:1.5; max-height:90px; min-height:20px; }
+    .guru-input-box textarea::placeholder { color:var(--text-muted); }
+    body.light .guru-input-box textarea { color:#3a1200; }
+    body.light .guru-input-box textarea::placeholder { color:#c09070; }
+    .send-btn { width:28px; height:28px; border-radius:var(--r-sm); background:rgba(255,101,0,0.15); border:1px solid rgba(255,101,0,0.25); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all var(--t-fast); flex-shrink:0; }
+    .send-btn:hover { background:rgba(255,101,0,0.28); }
+    .send-btn svg { width:12px; height:12px; fill:none; stroke:var(--orange-2); stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+
+    /* Toast */
+    .toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(16px); background:rgba(20,10,2,0.96); border:1px solid rgba(255,101,0,0.25); border-radius:var(--r-md); padding:9px 16px; font-size:12px; color:var(--text-primary); opacity:0; transition:all 0.28s ease; z-index:9999; pointer-events:none; white-space:nowrap; }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    body.light .toast { background:rgba(250,242,230,0.97); color:#3a1200; border-color:rgba(255,101,0,0.28); }
+
+    /* ── MODAL DE IMPORTAÇÃO ── */
+    .import-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.55); backdrop-filter:blur(6px); z-index:1000; display:none; align-items:center; justify-content:center; padding:20px; }
+    .import-overlay.open { display:flex; }
+    .import-modal { background:var(--surface); border:1px solid rgba(255,255,255,0.10); border-radius:var(--r-xl); width:100%; max-width:640px; max-height:88vh; display:flex; flex-direction:column; box-shadow:0 24px 60px rgba(0,0,0,0.45); overflow:hidden; }
+    body.light .import-modal { background:white; border-color:rgba(180,100,40,0.12); box-shadow:0 16px 40px rgba(0,0,0,0.14); }
+    .import-modal-head { display:flex; align-items:center; justify-content:space-between; padding:14px 18px 12px; border-bottom:1px solid rgba(255,255,255,0.07); flex-shrink:0; }
+    body.light .import-modal-head { border-bottom-color:rgba(180,100,40,0.10); }
+    .import-modal-title { font-size:13px; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:7px; }
+    .import-modal-title svg { width:14px; height:14px; fill:none; stroke:var(--accent-light); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .import-close { width:24px; height:24px; border-radius:6px; background:none; border:1px solid rgba(255,255,255,0.09); color:var(--text-muted); cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; transition:all var(--t-fast); }
+    .import-close:hover { background:rgba(255,96,96,0.12); border-color:rgba(255,96,96,0.20); color:#ff9090; }
+    .import-modal-body { flex:1; overflow-y:auto; padding:16px 18px; }
+
+    /* Drop zone */
+    .drop-zone { border:2px dashed rgba(255,255,255,0.12); border-radius:var(--r-lg); padding:28px 20px; text-align:center; cursor:pointer; transition:all var(--t-normal); }
+    .drop-zone:hover, .drop-zone.drag-over { border-color:var(--accent); background:var(--accent-soft); }
+    body.light .drop-zone { border-color:rgba(180,100,40,0.20); }
+    body.light .drop-zone:hover, body.light .drop-zone.drag-over { border-color:var(--accent-dark); background:var(--accent-soft); }
+    .drop-icon { width:36px; height:36px; margin:0 auto 10px; fill:none; stroke:var(--accent-light); stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; opacity:0.7; }
+    .drop-title { font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:4px; }
+    .drop-sub { font-size:11px; color:var(--text-muted); margin-bottom:12px; }
+    .drop-formats { display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:14px; }
+    .fmt-badge { padding:2px 8px; border-radius:var(--r-pill); font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+    .fmt-txt { background:rgba(102,221,136,0.12); color:#66dd88; border:1px solid rgba(102,221,136,0.22); }
+    .fmt-docx { background:rgba(136,170,255,0.12); color:#88aaff; border:1px solid rgba(136,170,255,0.22); }
+    .fmt-pdf { background:rgba(255,96,96,0.12); color:#ff9090; border:1px solid rgba(255,96,96,0.22); }
+    .drop-btn { display:inline-flex; align-items:center; gap:5px; padding:6px 14px; background:var(--accent-soft); border:1px solid var(--accent-mid); border-radius:var(--r-sm); font-size:11px; color:var(--accent-light); cursor:pointer; font-family:'Inter',sans-serif; transition:all var(--t-fast); }
+    .drop-btn:hover { background:var(--accent-mid); }
+    body.light .drop-btn { background:rgba(255,101,0,0.08); border-color:rgba(255,101,0,0.22); color:var(--accent-dark); }
+
+    /* Processing state */
+    .import-processing { display:none; text-align:center; padding:24px 0; }
+    .import-processing.vis { display:block; }
+    .proc-spin { width:32px; height:32px; border:2px solid rgba(255,255,255,0.08); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 10px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .proc-label { font-size:12px; color:var(--text-secondary); }
+    .proc-sub { font-size:10px; color:var(--text-muted); margin-top:3px; }
+
+    /* Preview state */
+    .import-preview { display:none; }
+    .import-preview.vis { display:block; }
+    .import-preview-form { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+    .import-preview-form .full { grid-column:1/-1; }
+    .imp-label { font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted); margin-bottom:3px; }
+    .imp-input { width:100%; background:var(--surface-2); border:1px solid rgba(255,255,255,0.09); border-radius:var(--r-sm); padding:6px 10px; font-size:11px; color:var(--text-primary); font-family:'Inter',sans-serif; outline:none; transition:border-color var(--t-fast); }
+    .imp-input:focus { border-color:hsla(var(--theme-h),90%,55%,0.40); }
+    body.light .imp-input { background:white; border-color:rgba(180,100,40,0.15); }
+    .imp-select {
+      width:100%; background:var(--surface-2); border:1px solid rgba(255,255,255,0.09); border-radius:var(--r-sm);
+      padding:6px 26px 6px 10px; font-size:11px; color:var(--text-primary); font-family:'Inter',sans-serif;
+      outline:none; cursor:pointer; color-scheme:light; appearance:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23999999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 8px center; background-size:12px 12px;
+    }
+    .imp-select option { background:#fff; color:#1a1208; }
+    body.light .imp-select { background-color:white; border-color:rgba(180,100,40,0.15); }
+    .import-q-preview { background:var(--surface-2); border-radius:var(--r-md); padding:10px 12px; max-height:200px; overflow-y:auto; }
+    .import-q-preview .q-section-lbl { margin-bottom:4px; }
+    .imp-q-item { font-size:11px; color:var(--text-secondary); padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+    .imp-q-item:last-child { border-bottom:none; }
+    .imp-q-num { color:var(--accent-light); font-weight:600; margin-right:4px; }
+    .imp-q-count { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; background:var(--accent-soft); border-radius:var(--r-pill); font-size:10px; color:var(--accent-light); margin-bottom:8px; }
+
+    .import-modal-foot { padding:10px 18px 14px; border-top:1px solid rgba(255,255,255,0.07); display:flex; justify-content:flex-end; gap:6px; flex-shrink:0; }
+    body.light .import-modal-foot { border-top-color:rgba(180,100,40,0.10); }
+
+    /* ── MODAL: QUESTIONÁRIO DUPLICADO ── */
+    .dup-modal { background:var(--surface); border:1px solid rgba(255,170,68,0.25); border-radius:var(--r-xl); width:100%; max-width:380px; box-shadow:0 24px 60px rgba(0,0,0,0.45); overflow:hidden; }
+    body.light .dup-modal { background:white; border-color:rgba(255,170,68,0.35); box-shadow:0 16px 40px rgba(0,0,0,0.14); }
+    .dup-modal-body { padding:22px 20px 8px; text-align:center; }
+    .dup-icon { width:38px; height:38px; margin:0 auto 12px; border-radius:50%; background:rgba(255,170,68,0.14); display:flex; align-items:center; justify-content:center; }
+    .dup-icon svg { width:19px; height:19px; fill:none; stroke:#ffaa44; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .dup-title { font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:6px; }
+    .dup-text { font-size:11px; color:var(--text-muted); line-height:1.5; margin-bottom:14px; }
+    .dup-card { background:var(--surface-2); border:1px solid rgba(255,255,255,0.10); border-radius:var(--r-md); padding:10px 12px; margin-bottom:4px; text-align:left; }
+    body.light .dup-card { border-color:rgba(180,100,40,0.15); }
+    .dup-card-title { font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:5px; }
+    .dup-card-meta { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
+    .dup-modal-foot { padding:14px 20px 18px; display:flex; flex-direction:column; gap:7px; }
+    .dup-btn-primary { width:100%; justify-content:center; padding:9px 12px; font-size:12px; box-sizing:border-box; }
+    .dup-btn-secondary { width:100%; justify-content:center; box-sizing:border-box; }
+    .dup-btn-cancel { background:none; border:none; color:var(--text-muted); font-size:11px; cursor:pointer; padding:4px; font-family:'Inter',sans-serif; }
+    .dup-btn-cancel:hover { color:var(--text-primary); }
+
+    /* Orbs */
+    .orb { position:absolute; border-radius:50%; filter:blur(100px); pointer-events:none; z-index:0; }
+    .orb-1 { width:380px; height:380px; background:radial-gradient(circle,#ff5500 0%,transparent 65%); opacity:0.10; top:-130px; right:-80px; animation:drift-1 14s ease-in-out infinite; }
+    .orb-2 { width:260px; height:260px; background:radial-gradient(circle,#ff8800 0%,transparent 65%); opacity:0.07; bottom:-70px; left:60px; animation:drift-2 18s ease-in-out infinite; }
+    * { scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.10) transparent; }
+
+    /* ── Integração com a navbar do hub (renderNavbar) ── */
+    #navbar-container:not(:empty) ~ .main > .topbar .topbar-left { display: none !important; }
+    #navbar-container:not(:empty) ~ .main > .topbar {
+      justify-content: flex-end;
+      padding-left: 8px;
+      height: 46px;
+    }
+    .page-navbar { width: 100%; }
+  </style>
+</head>
+<body>
+
+<div id="navbar-container"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div id="toast" class="toast"></div>
+
+<!-- ══ MODAL DE IMPORTAÇÃO ══ -->
+<div class="import-overlay" id="import-overlay">
+  <div class="import-modal">
+    <div class="import-modal-head">
+      <div class="import-modal-title">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Importar Questionário
+      </div>
+      <button class="import-close" onclick="fecharImport()">✕</button>
+    </div>
+    <div class="import-modal-body">
+
+      <!-- Drop zone -->
+      <div id="imp-drop" class="drop-zone" 
+           ondragover="impDragOver(event)" ondragleave="impDragLeave(event)" ondrop="impDrop(event)"
+           onclick="document.getElementById('imp-file-input').click()">
+        <svg class="drop-icon" viewBox="0 0 24 24">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="12" y1="18" x2="12" y2="12"/>
+          <polyline points="9 15 12 12 15 15"/>
+        </svg>
+        <div class="drop-title">Arraste o arquivo aqui</div>
+        <div class="drop-sub">ou clique para selecionar</div>
+        <div class="drop-formats">
+          <span class="fmt-badge fmt-txt">TXT</span>
+          <span class="fmt-badge fmt-docx">DOCX</span>
+          <span class="fmt-badge fmt-pdf">PDF</span>
+        </div>
+        <button class="drop-btn" onclick="event.stopPropagation(); document.getElementById('imp-file-input').click()">
+          <svg viewBox="0 0 24 24" style="width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Selecionar arquivo
+        </button>
+        <input type="file" id="imp-file-input" accept=".txt,.docx,.pdf" style="display:none" onchange="impFileSelected(event)">
+      </div>
+
+      <!-- Processing (extração de texto) -->
+      <div class="import-processing" id="imp-processing">
+        <div class="proc-spin"></div>
+        <div class="proc-label" id="imp-proc-label">Extraindo texto...</div>
+        <div class="proc-sub" id="imp-proc-sub">Aguarde um momento</div>
+      </div>
+
+      <!-- Passo 2: Copiar prompt / Colar resposta -->
+      <div id="imp-prompt-step" style="display:none;">
+        <div class="imp-q-count" style="margin-bottom:10px;">
+          <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg>
+          Texto extraído — copie o prompt e cole a resposta da IA
+        </div>
+        <div class="prompt-bloco" style="margin-bottom:10px;">
+          <div class="prompt-bloco-header">
+            <span class="prompt-bloco-label">📋 Prompt gerado</span>
+            <span id="imp-prompt-linhas" style="font-size:10px;color:var(--text-muted)"></span>
+          </div>
+          <div id="imp-prompt-preview" class="prompt-bloco-text"></div>
+          <div class="prompt-bloco-actions">
+            <button class="tbtn tbtn-orange" onclick="impCopiarPrompt()">
+              <svg viewBox="0 0 24 24" style="width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Copiar prompt
+            </button>
+          </div>
+        </div>
+        <div class="paste-label">📥 Cole a resposta da IA aqui</div>
+        <textarea id="imp-paste-ta" class="paste-ta" style="width:100%;min-height:100px;margin-top:6px;box-sizing:border-box;"
+          placeholder="Cole a resposta completa da IA (JSON)…"></textarea>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button class="tbtn tbtn-green" onclick="impInterpretarResposta()">
+            <svg viewBox="0 0 24 24" style="width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round"><polyline points="20 6 9 17 4 12"/></svg>
+            Interpretar e continuar
+          </button>
+          <button class="tbtn" onclick="impVoltarDrop()">← Outro arquivo</button>
+        </div>
+      </div>
+
+      <!-- Preview / confirmação -->
+      <div class="import-preview" id="imp-preview">
+        <div class="imp-q-count" id="imp-q-count">
+          <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg>
+          Questionário identificado — revise antes de salvar
+        </div>
+        <div class="import-preview-form">
+          <div class="full">
+            <div class="imp-label">Título</div>
+            <input class="imp-input" id="imp-titulo" placeholder="Título do questionário">
+          </div>
+          <div>
+            <div class="imp-label">Tipo de Pesquisa</div>
+            <select class="imp-select" id="imp-tag">
+              <option>Tracking de Marca</option><option>Eleitoral</option>
+              <option>Pós-teste</option><option>B2B</option>
+              <option>Mapa</option><option>Media Audit</option><option>Pesquisa de Opinião</option>
+              <option selected>Outro</option>
+            </select>
+          </div>
+          <div>
+            <div class="imp-label">Ano</div>
+            <input class="imp-input" id="imp-ano" type="number" placeholder="2024">
+          </div>
+          <div>
+            <div class="imp-label">Cliente</div>
+            <input class="imp-input" id="imp-cliente" placeholder="Nome do cliente">
+          </div>
+          <div>
+            <div class="imp-label">Metodologia</div>
+            <input class="imp-input" id="imp-metodo" placeholder="Ex: Quantitativa · CATI">
+          </div>
+          <div class="full">
+            <div class="imp-label">Descrição</div>
+            <input class="imp-input" id="imp-descricao" placeholder="Objetivo da pesquisa">
+          </div>
+          <div class="full">
+            <div class="imp-label">Prévia das questões</div>
+            <div class="import-q-preview" id="imp-q-preview"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="import-modal-foot">
+      <button class="tbtn" onclick="fecharImport()">Cancelar</button>
+      <button class="tbtn tbtn-green" id="imp-save-btn" onclick="confirmarImport()" style="display:none">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        Salvar na biblioteca
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: QUESTIONÁRIO JÁ EXISTE NO HISTÓRICO ══ -->
+<div class="import-overlay" id="dup-overlay">
+  <div class="dup-modal">
+    <div class="dup-modal-body">
+      <div class="dup-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+      </div>
+      <div class="dup-title" id="dup-modal-titulo">Esse questionário já está na biblioteca</div>
+      <div class="dup-text" id="dup-modal-texto">Encontramos um questionário com o mesmo título no histórico do GuruQuest. Você pode ir até ele ou, se quiser mesmo assim, salvar este como um novo registro.</div>
+      <div class="dup-card">
+        <div class="dup-card-title" id="dup-card-titulo"></div>
+        <div class="dup-card-meta" id="dup-card-meta"></div>
+      </div>
+    </div>
+    <div class="dup-modal-foot">
+      <button class="tbtn tbtn-orange dup-btn-primary" onclick="dupIrParaQuestionario()">
+        <svg viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        Ir para questionário
+      </button>
+      <button class="tbtn dup-btn-secondary" id="dup-btn-confirmar" onclick="dupSalvarMesmoAssim()">Salvar mesmo assim</button>
+      <button class="dup-btn-cancel" onclick="fecharDupModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <img src="../assets/mascoteguruquest.gif" class="guru-logo" alt="" onerror="this.style.display='none'">
+      <span class="topbar-title">GuruQuest</span>
+      <span class="topbar-sub">Biblioteca de questionários</span>
+    </div>
+  </div>
+
+  <!-- Workspace: 3 colunas fixas -->
+  <div class="workspace">
+<div class="col-library">
+      <div class="lib-header">
+        <div class="lib-search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="search-input" placeholder="Buscar questionários" oninput="filtrar()">
+        </div>
+        
+        <!-- Barra de ações: Filtros + Importar -->
+        <div class="lib-action-bar">
+          <button class="lib-action-btn" id="filter-toggle-btn" onclick="toggleFiltros()">
+            <svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            Filtros
+            <span class="filter-badge" id="filter-badge">0</span>
+          </button>
+          <button class="lib-action-btn import-btn" onclick="abrirImport()">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Importar
+          </button>
+        </div>
+
+       <div class="filter-panel" id="filter-panel">
+  
+  <div class="fp-tabs">
+    <button class="fp-tab active" onclick="mudarAbaFiltro(this, 'tab-metodo')">Metodologia</button>
+    <button class="fp-tab" onclick="mudarAbaFiltro(this, 'tab-tipo')">Tipo de pesquisa</button>
+    <button class="fp-tab" onclick="mudarAbaFiltro(this, 'tab-periodo')">Período</button>
+    <button class="fp-tab" onclick="mudarAbaFiltro(this, 'tab-cliente')">Cliente</button>
+    <button class="fp-tab" onclick="mudarAbaFiltro(this, 'tab-amostra')">Amostra</button>
+  </div>
+
+  <div class="fp-tab-content active" id="tab-metodo">
+    <div class="fp-chips">
+      <span class="fchip" data-dim="metodo" data-val="Presencial" onclick="toggleChip(this)">Presencial</span>
+      <span class="fchip" data-dim="metodo" data-val="Telefone" onclick="toggleChip(this)">Telefone</span>
+      <span class="fchip" data-dim="metodo" data-val="Online" onclick="toggleChip(this)">Online/CAWI</span>
+      <span class="fchip" data-dim="metodo" data-val="Qualitativa" onclick="toggleChip(this)">Qualitativa</span>
+    </div>
+  </div>
+
+  <div class="fp-tab-content" id="tab-tipo">
+    <div class="fp-chips">
+      <span class="fchip" data-dim="tag" data-val="Tracking de Marca" onclick="toggleChip(this)">Tracking</span>
+      <span class="fchip" data-dim="tag" data-val="Eleitoral" onclick="toggleChip(this)">Eleitoral</span>
+      <span class="fchip" data-dim="tag" data-val="Pós-teste" onclick="toggleChip(this)">Pós-teste</span>
+      <span class="fchip" data-dim="tag" data-val="B2B" onclick="toggleChip(this)">B2B</span>
+      <span class="fchip" data-dim="tag" data-val="Mapa" onclick="toggleChip(this)">Mapa</span>
+      <span class="fchip" data-dim="tag" data-val="Media Audit" onclick="toggleChip(this)">Media Audit</span>
+      <span class="fchip" data-dim="tag" data-val="Pesquisa de Opinião" onclick="toggleChip(this)">Opinião</span>
+    </div>
+  </div>
+
+  <div class="fp-tab-content" id="tab-periodo">
+    <div class="fp-chips">
+      <span class="fchip" data-dim="periodo" data-val="antigo" onclick="toggleChip(this)">até 2014</span>
+      <span class="fchip" data-dim="periodo" data-val="medio" onclick="toggleChip(this)">2015–2019</span>
+      <span class="fchip" data-dim="periodo" data-val="recente" onclick="toggleChip(this)">2020–2022</span>
+      <span class="fchip" data-dim="periodo" data-val="atual" onclick="toggleChip(this)">2023+</span>
+    </div>
+  </div>
+
+  <div class="fp-tab-content" id="tab-cliente">
+    <div class="fp-chips" id="fp-clientes"></div>
+  </div>
+
+<div class="fp-tab-content" id="tab-amostra">
+    <div class="fp-chips">
+      <span class="fchip" data-dim="amostra" data-val="Local" onclick="toggleChip(this)">Estadual</span>
+      <span class="fchip" data-dim="amostra" data-val="Nacional" onclick="toggleChip(this)">Nacional</span>
+      <span class="fchip" data-dim="amostra" data-val="Regional" onclick="toggleChip(this)">Local</span>
+      <span class="fchip" data-dim="amostra" data-val="Regional" onclick="toggleChip(this)">Regional</span>
+    </div>
+  </div>
+
+  <div class="fp-footer">
+    <button class="fp-clear" onclick="limparFiltros()">Limpar todos</button>
+  </div>
+</div>
+
+      </div>
+      <div class="lib-list" id="lib-list"></div>
+    </div>
+
+    <!-- ══ COLUNA 2: VIEWER / EDITOR ══ -->
+    <div class="col-center">
+
+      <!-- Empty state -->
+      <div class="center-empty" id="center-empty">
+        <img src="../assets/mascoteguruquest.gif" alt=""
+             style="width:200px;max-width:200px;height:auto;display:block"
+             onerror="this.style.display='none'">
+        <h3>Selecione um questionário</h3>
+        <p>Escolha um item da biblioteca ao lado.</p>
+      </div>
+
+      <!-- Viewer (leitura) -->
+      <div class="viewer" id="viewer-read">
+        <div class="viewer-header" id="vh-header"></div>
+        <div class="viewer-body"  id="vh-body"></div>
+      </div>
+
+      <!-- Viewer (edição) -->
+      <div class="viewer edit-mode" id="viewer-edit">
+        <div class="viewer-header">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:14px;font-weight:600;color:var(--text-primary);">Editar questionário</div>
+            <div style="display:flex;gap:6px;">
+              <button class="tbtn" onclick="cancelarEdicao()">Cancelar</button>
+              <button class="tbtn tbtn-green" onclick="salvarEdicao()">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                Salvar
+              </button>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <div class="form-label">Título</div>
+              <input class="form-input" id="ed-titulo" placeholder="Título do questionário">
+            </div>
+          </div>
+          <div class="form-row" style="margin-top:8px;">
+            <div class="form-group">
+              <div class="form-label">Tag</div>
+              <select class="form-select" id="ed-tag">
+                <option>Tracking de Marca</option><option>Eleitoral</option>
+                <option>Pós-teste</option><option>B2B</option>
+                <option>Mapa</option><option>Media Audit</option><option>Pesquisa de Opinião</option>
+                <option>Outro</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <div class="form-label">Cliente</div>
+              <input class="form-input" id="ed-cliente" placeholder="Nome do cliente">
+            </div>
+            <div class="form-group">
+              <div class="form-label">Duração</div>
+              <input class="form-input" id="ed-duracao" placeholder="~15 min">
+            </div>
+          </div>
+          <div class="form-row" style="margin-top:8px;">
+            <div class="form-group">
+              <div class="form-label">Método</div>
+              <input class="form-input" id="ed-metodo" placeholder="Ex: Quantitativa · CATI">
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:8px;">
+            <div class="form-label">Descrição</div>
+            <textarea class="form-textarea" id="ed-descricao" placeholder="Objetivo da pesquisa" oninput="autoH(this)"></textarea>
+          </div>
+        </div>
+        <div class="viewer-body" id="ed-body" style="padding-top:10px;"></div>
+      </div>
+
+    </div>
+
+    <!-- ══ COLUNA 3: GURU ══ -->
+    <div class="col-guru">
+      <div class="guru-head">
+        <img src="../assets/mascoteguruquest.gif" alt="" onerror="this.style.display='none'">
+        <div class="guru-head-info">
+          <div class="guru-name">Guru</div>
+          <div class="guru-sub">Especialista em pesquisa da Nexus.<br>Descreva o que precisa — monto o prompt.</div>
+        </div>
+      </div>
+
+      <div class="guru-msgs" id="guru-msgs">
+        <div class="msg msg-guru">
+          <div class="bubble">Olá! 👋 Sou o Guru. Selecione um questionário para ver ou editar, ou me peça para criar um do zero.<br><br>Quando estiver pronto, <strong>copie o prompt</strong>, cole em qualquer IA e <strong>traga a resposta de volta</strong> — eu salvo automaticamente na biblioteca.</div>
+        </div>
+      </div>
+
+      <div class="guru-chips" id="guru-chips">
+        <button class="chip" onclick="usarChip(this)">Criar tracking de marca</button>
+        <button class="chip" onclick="usarChip(this)">Pesquisa eleitoral</button>
+        <button class="chip" onclick="usarChip(this)">Pós-teste campanha</button>
+        <button class="chip" onclick="usarChip(this)">Media audit com jornalistas</button>
+        <button class="chip" onclick="usarChip(this)">Pesquisa de opinião pública</button>
+        <button class="chip" onclick="usarChip(this)">Adaptar o selecionado para B2B</button>
+        <button class="chip" onclick="usarChip(this)">Adicionar bloco ABEP</button>
+        <button class="chip" onclick="usarChip(this)">Reduzir para 10 perguntas</button>
+        <button class="chip" onclick="usarChip(this)">Adicionar NPS</button>
+        <button class="chip" onclick="usarChip(this)">Versão telefônica (CATI)</button>
+      </div>
+
+      <div class="guru-input-wrap">
+        <div class="guru-input-box">
+          <textarea id="guru-input" placeholder="Descreva o questionário que precisa…" rows="1"
+            onkeydown="handleKey(event)" oninput="autoH(this)"></textarea>
+          <div class="send-btn" onclick="enviar()">
+            <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /workspace -->
+</div>
+
+<script src="../js/utils.js"></script>
+<script src="../js/theme.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════════
+//  CONHECIMENTO METODOLÓGICO EMBUTIDO NO PROMPT
+// ══════════════════════════════════════════════════════════════
+const GURU_CONTEXT = `VOCÊ É O GURU — ESPECIALISTA EM PESQUISA DA NEXUS
+
+BASE METODOLÓGICA NEXUS:
+
+ESTRUTURA PADRÃO DE QUESTIONÁRIO:
+1. Apresentação + LGPD ("anonimato, dados agregados, duração estimada")
+2. Filtros/screeners — eliminam inelegíveis ANTES do perfil
+3. Perfil sociodemográfico (gênero, idade, escolaridade, raça/cor IBGE, renda/ABEP)
+4. Blocos temáticos (do geral ao específico)
+5. Fechamento + agradecimento
+
+FUNIL DE MARCA (Brand Tracking):
+- Top of Mind espontâneo → awareness espontâneo → awareness estimulado (lista randomizada) → consideração → uso atual → preferência → rejeição → NPS
+
+TIPOS DE PERGUNTA:
+- RU (Resposta Única) — perfil, filtros, preferências
+- RM (Resposta Múltipla) — recall estimulado, hábitos, exposição a mídia
+- Espontânea — Top of Mind, intenção de voto 1ª menção, motivações abertas
+- Escala Likert 5pts — Ótimo/Bom/Regular/Ruim/Péssimo | Concorda totalmente→Discorda
+- NPS — escala 0–10 (Promotores=9–10, Passivos=7–8, Detratores=0–6) + pergunta aberta motivacional
+- Aberta — motivações, mensagem apreendida, sugestões
+
+BOAS PRÁTICAS OBRIGATÓRIAS:
+• Espontâneas SEMPRE antes das estimuladas
+• Randomizar listas de marcas/candidatos (evitar viés de primazia)
+• Sem dupla negação, sem indução de resposta
+• Escalas simétricas (igual nº de opções + e -)
+• Oferecer NS/NR em questões de opinião
+• Instruções ao entrevistador em CAIXA ALTA (não lidas ao respondente)
+• Lógica de salto explícita: "Se SIM → continuar", "Se NÃO → ir para Px"
+
+CRITÉRIO BRASIL ABEP 2024:
+Avalia posse de bens (automóvel, computador, geladeira, lavadora etc), escolaridade do chefe de família e infraestrutura (água encanada, rua pavimentada).
+Classes: A(≥45pts) | B1(38–44) | B2(29–37) | C1(23–28) | C2(17–22) | D-E(≤16)
+
+PESQUISA ELEITORAL:
+- Intenção espontânea ANTES da estimulada
+- Usar disco de candidatos para evitar viés de posição
+- Avaliação de governo: Ótimo/Bom/Regular/Ruim/Péssimo + NS/NR
+- Potencial de voto por candidato (4 opções: votaria só nele / poderia votar / não votaria / não conhece)
+- Rejeição absoluta em lista separada
+
+PÓS-TESTE DE CAMPANHA:
+- Recall espontâneo → recall estimulado (apresentar peça) → compreensão da mensagem → avaliação (clareza, agradabilidade, credibilidade) → intenção de ação
+
+B2B / CORPORATIVO:
+- Fase I: Desk Research (faturamento, porte, segmento — levantar antes da entrevista)
+- Fase II: Entrevista (estrutura org, nº colaboradores, budget comunicação, KPIs, ferramentas)
+- Duração: 30–60 min, semi-estruturado
+
+MEDIA AUDIT:
+- Público: jornalistas e formadores de opinião (não consumidor final)
+- Eixos: Top of Mind de empresas do setor (espontâneo) → percepção e imagem institucional → qualidade do relacionamento com a área de comunicação/assessoria → avaliação de porta-vozes e disponibilidade pra entrevistas → canais de contato preferidos → comparação com concorrentes
+- Perguntar histórico de pauta/cobertura sobre a empresa nos últimos meses
+
+PESQUISA DE OPINIÃO PÚBLICA:
+- Amostra representativa (sexo, idade, escolaridade, região) com cotas e pós-ponderação quando aplicável
+- Sequência: conhecimento/familiaridade com o tema → opinião ou concordância (escala) → intensidade da opinião → comparação com momento anterior, se houver
+- Evitar perguntas indutoras; sempre oferecer NS/NR
+
+HISTÓRICO DE PESQUISAS NEXUS:
+{HISTORICO}
+
+QUESTIONÁRIO DE REFERÊNCIA SELECIONADO:
+{REFERENCIA}
+
+═══════════════════════════════════════════════
+PEDIDO DA EQUIPE:
+{PEDIDO}
+
+═══════════════════════════════════════════════
+RESPONDA SOMENTE COM JSON VÁLIDO (sem texto antes ou depois):
+{
+  "titulo": "Nome completo",
+  "tag": "Tracking de Marca | Eleitoral | Pós-teste | B2B | Mapa | Media Audit | Pesquisa de Opinião | Outro",
+  "cliente": "cliente ou vazio",
+  "metodo": "ex: Quantitativa · CATI · n=500",
+  "duracao": "ex: ~20 min",
+  "descricao": "1–2 frases sobre o objetivo",
+  "blocos": [
+    {
+      "titulo": "Nome do bloco",
+      "questoes": [
+        {
+          "num": "P1",
+          "texto": "Texto completo da pergunta",
+          "tipo": "ru | rm | esp | esc | ab",
+          "opcoes": ["opção 1", "opção 2"],
+          "instrucao": "INSTRUÇÃO EM CAIXA ALTA (opcional)"
+        }
+      ]
+    }
+  ]
+}`;
+
+// ══════════════════════════════════════════════════════════════
+//  BIBLIOTECA FIXA
+// ══════════════════════════════════════════════════════════════
+const FIXA = [
+  { id:'f1', titulo:'BTG Pactual — Tracking de Marca', cliente:'BTG Pactual', tag:'Tracking de Marca', ano:2024, metodo:'Quantitativa · CATI/CAWI', duracao:'~15 min', descricao:'Funil de marca completo no mercado de investimentos: awareness → consideração → uso → NPS.', fonte:'historico',
+    blocos:[
+      { titulo:'I — Filtros', questoes:[
+        {num:'PF0.1',texto:'Renda mensal individual superior a R$8.000?',tipo:'ru',opcoes:['Sim → Continue','Não → Encerre'],instrucao:'FILTRO DE ELEGIBILIDADE POR RENDA'},
+        {num:'PF0.2',texto:'Qual frase melhor define seu perfil de investimentos?',tipo:'ru',opcoes:['Invisto em poupança e outros produtos → Continue','Apenas poupança → Encerre','Apenas outros produtos → Continue','Não invisto → Encerre']},
+      ]},
+      { titulo:'II — Perfil', questoes:[
+        {num:'PF1',texto:'Gênero',tipo:'ru',opcoes:['Feminino','Masculino'],instrucao:'CONTROLE INTERNO DE COTA — NÃO PERGUNTAR'},
+        {num:'PF2',texto:'Em qual estado você mora?',tipo:'ru',opcoes:['[Lista de UFs]']},
+        {num:'PF3',texto:'Qual é a sua idade?',tipo:'ru',opcoes:['Até 24 → Encerre','25–34','35–44','45–54','55–64','65+']},
+      ]},
+      { titulo:'III — Funil de Marca', questoes:[
+        {num:'P1',texto:'Qual a primeira instituição financeira que vem à mente?',tipo:'esp',instrucao:'ESPONTÂNEA — ATÉ 3 MENÇÕES'},
+        {num:'P2',texto:'Quais dessas instituições você conhece, mesmo que só de ouvir falar?',tipo:'rm',opcoes:['BTG Pactual','XP Investimentos','Nubank','Itaú Personalité','Bradesco Prime','Safra','Santander Select','Genial','C6','Inter','Rico','Modalmais','Banco Pan','Toro'],instrucao:'RANDOMIZAR ITENS'},
+        {num:'P3',texto:'Em quais possui relacionamento (conta, investimentos ou cartão)?',tipo:'rm',instrucao:'REPETIR LISTA DA P2'},
+        {num:'P4',texto:'Para cada marca conhecida, até que ponto a conhece?',tipo:'esc',opcoes:['Sei muito','Sei bastante','Sei um pouco','Já ouvi falar'],instrucao:'RU POR LINHA — APENAS MARCAS CONHECIDAS NA P2'},
+        {num:'P5',texto:'Qual considera a melhor?',tipo:'ru',instrucao:'RANDOMIZAR ITENS'},
+        {num:'P6',texto:'Por que essa é a melhor?',tipo:'esp'},
+        {num:'P7',texto:'Em qual você não seria correntista de jeito nenhum?',tipo:'ru'},
+        {num:'P8',texto:'Em escala de 0 a 10, qual a probabilidade de indicar [MARCA] a um amigo?',tipo:'esc',opcoes:['0 — Nunca indicaria','…','10 — Com certeza indicaria'],instrucao:'NPS — APENAS PARA MARCAS ONDE É CLIENTE'},
+      ]},
+      { titulo:'IV — Atributos', questoes:[
+        {num:'P9',texto:'Qual característica mais importante em uma instituição financeira? 1º? 2º?',tipo:'esp',instrucao:'ESPONTÂNEA ATÉ 2 — RANDOMIZAR LISTA'},
+        {num:'P10',texto:'Para cada frase, selecione as marcas que considera adequadas',tipo:'rm',instrucao:'RU POR LINHA — 26 atributos vs. 17 marcas'},
+      ]},
+    ]},
+  { id:'f2', titulo:'Pesquisa Eleitoral — Estado do RJ', cliente:'FSB Pesquisa', tag:'Eleitoral', ano:2018, metodo:'Quantitativa · Face a face domiciliar', duracao:'~20 min', descricao:'Avaliação de candidatos ao governo do RJ. Inclui avaliação de governo, intenção de voto e rejeição.', fonte:'historico',
+    blocos:[
+      { titulo:'Filtros', questoes:[
+        {num:'F1',texto:'Você tem título de eleitor na cidade?',tipo:'ru',opcoes:['Sim → Continue','Não → Encerre']},
+      ]},
+      { titulo:'Perfil', questoes:[
+        {num:'P1',texto:'Sexo (anotar sem perguntar)',tipo:'ru',opcoes:['Masculino','Feminino']},
+        {num:'P2',texto:'Quantos anos você tem?',tipo:'esp',instrucao:'ANOTAR. SE <16 → ENCERRAR. CLASSIFICAR EM FAIXAS.'},
+        {num:'P3',texto:'Grau de escolaridade',tipo:'ru',opcoes:['Analfabeto','Fund. Incompleto','Fund. Completo','Médio Incompleto','Médio Completo','Superior Incompleto','Superior Completo','Pós-grad.']},
+      ]},
+      { titulo:'Avaliação & Intenção de Voto', questoes:[
+        {num:'E1',texto:'Acompanha notícias sobre política?',tipo:'ru',opcoes:['Muito','Pouco','Não acompanha','NS/NR']},
+        {num:'E2',texto:'Como avalia o governo atual do Estado do RJ?',tipo:'ru',opcoes:['Ótimo','Bom','Regular','Ruim','Péssimo','NS/NR']},
+        {num:'E3',texto:'Se a eleição fosse hoje, em quem votaria? (espontânea)',tipo:'esp'},
+        {num:'E5',texto:'Dentre os nomes a seguir, em qual votaria?',tipo:'ru',instrucao:'ESTIMULADA — APRESENTAR DISCO COM CANDIDATOS EM ORDEM ALEATÓRIA'},
+        {num:'E6',texto:'Em quem NÃO votaria de jeito nenhum?',tipo:'rm',instrucao:'REJEIÇÃO — MESMA LISTA'},
+      ]},
+    ]},
+  { id:'f3', titulo:'Pós-Teste Campanha Censo 2022', cliente:'IBGE', tag:'Pós-teste', ano:2022, metodo:'Quantitativa · CATI nacional', duracao:'~15 min', descricao:'Impacto da campanha do Censo 2022. Recall, compreensão da mensagem e intenção de participar.', fonte:'historico',
+    blocos:[
+      { titulo:'Perfil', questoes:[
+        {num:'P1',texto:'Estado civil',tipo:'ru',opcoes:['Solteiro(a)','Casado(a)/união estável','Separado(a)','Viúvo(a)']},
+        {num:'P3',texto:'Quantos anos você tem?',tipo:'esp',instrucao:'SE <16 → ENCERRAR. CLASSIFICAR EM FAIXAS.'},
+        {num:'P4',texto:'Grau de escolaridade',tipo:'ru',opcoes:['Analfabeto','Fund. Incompleto','Fund. Completo','Médio Incompleto','Médio Completo','Superior+']},
+      ]},
+      { titulo:'Recall da Campanha', questoes:[
+        {num:'C1',texto:'Viu propaganda sobre o Censo 2022 nos últimos dias?',tipo:'ru',opcoes:['Sim → C2','Não → C3']},
+        {num:'C2',texto:'Em que meio?',tipo:'rm',opcoes:['TV aberta','TV fechada','Rádio','Internet/redes sociais','Jornal','Outdoor','Outro']},
+        {num:'C3',texto:'Recall estimulado — descrever/mostrar peça',tipo:'ru',instrucao:'APRESENTAR ANÚNCIO OU ROTEIRO DA CAMPANHA'},
+        {num:'C4',texto:'O que você entendeu como mensagem principal?',tipo:'esp'},
+        {num:'C5',texto:'Intenção de participar do Censo 2022',tipo:'ru',opcoes:['Com certeza vou','Provavelmente vou','Talvez','Provavelmente não','Com certeza não','NS/NR']},
+      ]},
+    ]},
+  { id:'f4', titulo:'Mapa da Comunicação — Setor Privado', cliente:'FSB Pesquisa', tag:'B2B', ano:2009, metodo:'Qualitativa · Entrevistas em profundidade', duracao:'~40 min', descricao:'Estrutura dos departamentos de comunicação das maiores empresas privadas do Brasil.', fonte:'historico',
+    blocos:[
+      { titulo:'Desk Research (pré-entrevista)', questoes:[
+        {num:'QA10',texto:'Faturamento da empresa nos últimos 5 anos',tipo:'ab',instrucao:'LEVANTAR EM ANUÁRIOS ANTES DA ENTREVISTA'},
+        {num:'QA12',texto:'Segmento de atuação',tipo:'ru',opcoes:['Financeiro','Tecnologia','Alimentos/bebidas','Saúde','Comunicações','Varejo','Indústria','Outro']},
+      ]},
+      { titulo:'Entrevista: Estrutura & Investimento', questoes:[
+        {num:'QB1',texto:'Quantas pessoas na empresa?',tipo:'esp'},
+        {num:'QB2',texto:'Na equipe de comunicação?',tipo:'esp'},
+        {num:'QB3',texto:'Como é a estrutura organizacional da área?',tipo:'ab',instrucao:'EXPLORAR: hierarquia, reporte ao C-level'},
+        {num:'QB7',texto:'% do faturamento dedicado à comunicação',tipo:'ru',opcoes:['<0,5%','0,5–1%','1–2%','>2%','NS/NR']},
+      ]},
+    ]},
+  { id:'f5', titulo:'Pós-Teste Adimplência 2024 — Caixa', cliente:'Caixa Econômica Federal', tag:'Pós-teste', ano:2024, metodo:'Quantitativa · Domiciliar presencial · n=2.000', duracao:'~60 min', descricao:'Impacto da campanha Adimplência 2024. PF+PJ, classes BCDE, 18+.', fonte:'historico',
+    blocos:[
+      { titulo:'Perfil', questoes:[
+        {num:'P2',texto:'Faixa etária',tipo:'ru',opcoes:['18–24','25–34','35–44','45–59','60+']},
+        {num:'P4',texto:'Renda familiar',tipo:'ru',opcoes:['Até 1 SM','1–2 SM','2–3 SM','3–5 SM','5–10 SM','>10 SM']},
+        {num:'P5',texto:'Possui contrato com a Caixa?',tipo:'ru',opcoes:['Sim, atualmente','Já tive','Nunca','NS/NR']},
+      ]},
+      { titulo:'Recall & Campanha', questoes:[
+        {num:'C1',texto:'Viu propaganda da Caixa sobre renegociação?',tipo:'ru',opcoes:['Sim → C2','Não → C3']},
+        {num:'C2',texto:'Em qual mídia?',tipo:'rm',opcoes:['TV','Rádio','Internet','Jornal','Outdoor','SMS/WhatsApp']},
+        {num:'C3',texto:'Probabilidade de buscar renegociação',tipo:'ru',opcoes:['Muito provável','Provável','Pouco provável','Improvável']},
+      ]},
+    ]},
+  { id:'f6', titulo:'Mapa da Comunicação — Setor Público', cliente:'FSB Pesquisa', tag:'Mapa', ano:2009, metodo:'Qualitativa · Entrevistas em profundidade', duracao:'~45 min', descricao:'Estrutura de comunicação de órgãos públicos federais, estaduais e municipais.', fonte:'historico',
+    blocos:[
+      { titulo:'Desk Research', questoes:[
+        {num:'QA11',texto:'Orçamento do órgão nos últimos 5 anos',tipo:'ab',instrucao:'LEVANTAR EM PORTAIS DE TRANSPARÊNCIA'},
+        {num:'QA12',texto:'Tipo de estrutura',tipo:'ru',opcoes:['Gov. Federal – Ministério','Gov. Estadual','Prefeitura','Legislativo','Tribunal','Empresa pública']},
+      ]},
+      { titulo:'Entrevista', questoes:[
+        {num:'QB1',texto:'Quadro de servidores total',tipo:'esp'},
+        {num:'QB2',texto:'Servidores na área de comunicação',tipo:'esp'},
+        {num:'QB4',texto:'Usa pesquisas de opinião como insumo?',tipo:'ru',opcoes:['Sim, regularmente','Ocasionalmente','Raramente','Não utiliza']},
+      ]},
+    ]},
+
+{ id:'f7', titulo:'Imagem e Reputação CNC 2026 — Empresários', cliente:'CNC / Sistema Comércio', tag:'Tracking de Marca', ano:2026, metodo:'Quantitativa · Telefônica/CATI', duracao:'~20 min', descricao:'Pesquisa de imagem, reputação e representatividade do Sistema Comércio (CNC, Fecomércio, Sindicatos, Sesc e Senac) junto aos empresários do setor terciário.', fonte:'historico',
+    blocos:[
+      { titulo:'I — Perfil da Empresa e Entrevistado', questoes:[
+        {num:'P1',texto:'Qual é o cargo que o(a) Sr(a) ocupa atualmente na empresa onde trabalha?',tipo:'ru',opcoes:['Sócio/ proprietário','CEO','Presidente','Vice-presidente','Diretor','Superintendente','Gerente','Outros → ENCERRE'],instrucao:'ESTIMULADA E ÚNICA. SE OUTROS, PEDIR PARA FALAR COM O RESPONSÁVEL.'},
+        {num: 'P2', texto: 'Cidade e estado em que a empresa está localizada?' },
+        {num:'P3',texto:'Região geográfica em que está localizada a empresa no Brasil',tipo:'ru',opcoes:['Sudeste','Sul','Nordeste','Norte','Centro Oeste']},
+        {num:'P4',texto:'Sexo do(a) Sr(a)',tipo:'ru',opcoes:['Masculino','Feminino','Prefiro não informar']},
+        {num:'P5',texto:'Faixa etária do(a) Sr(a)',tipo:'ru',opcoes:['Até 24 anos','25–34','35–44','45–54','55–64','65 ou mais']},
+        {num:'P6',texto:'O principal ramo de atividade da sua empresa é:',tipo:'ru',opcoes:['Comércio Atacadista','Comércio Varejista','Prestação de Serviços','Turismo e hospitalidade','Agentes autônomos','Comércio armazenador','Outra resposta → ENCERRE']},
+        {num:'P7',texto:'Aproximadamente quantos colaboradores contratados em regime CLT essa empresa possui no Brasil, contabilizando a matriz e as filiais?',tipo:'ru',opcoes:['Menos de 1 colaborador → ENCERRE','de 1 a 9 (micro)','de 10 a 49 (pequeno)','de 50 a 99 (médio)','100 a 499 (grande)','500 ou mais colaboradores']},
+        {num:'P8',texto:'Qual o segmento da empresa? (Autoclassificação a partir do CNAE)',tipo:'ru',opcoes:['Comércio de Bens','Serviços','Turismo']},
+        {num:'P9',texto:'Aproximadamente quantos colaboradores contratados em regime CLT essa empresa possui no Brasil, contabilizando a matriz e as filiais e excluindo os terceirizados?',tipo:'ru',opcoes:['Menos de 1 colaborador → ENCERRE','de 1 a 9 (micro)','de 10 a 49 (pequeno)','de 50 a 99 (médio)','100 a 499 (grande)','500 ou mais colaboradores']},
+
+      ]},
+      { titulo:'II — Conhecimento Geral e Imagem Institucional', questoes:[
+        {num:'P13',texto:'Pelo que você sabe ou ouviu falar, qual é a entidade/confederação que representa as empresas do comércio de bens, serviços e turismo no Brasil, defendendo interesses dos empresários junto aos governos?',tipo:'esp',instrucao:'ESPONTÂNEA E MÚLTIPLA. ANOTAR MENÇÕES COMO CNC, SESC, SENAC, SEBRAE, CNI, ETC.'},
+        {num:'P14',texto:'Qual é o grau de conhecimento que o(a) Sr(a) tem com cada uma destas entidades, considerando uma escala de 0 a 10?',tipo:'esc',opcoes:['0 — Nenhum conhecimento','...','10 — Alto conhecimento','Não sabe'],instrucao:'RU POR LINHA. AVALIAR: CNC, FECOMÉRCIO, FEDERAÇÕES NACIONAIS, SINDICATOS, SESC E SENAC.'},
+        {num:'P16',texto:'Considerando uma escala de 0 a 10, que nota o(a) Sr(a) dá para a avaliação da gestão destas entidades em relação aos serviços prestados, credibilidade, eficiência e qualidade?',tipo:'esc',opcoes:['0 — Menor nota','...','10 — Maior nota','Não sabe'],instrucao:'RU POR LINHA. LER LISTA DE ENTIDADES (CNC, FECOMÉRCIO, SINDICATOS, SESC, SENAC).'}
+      ]},
+      { titulo:'III — Avaliação: Sesc, Senac, Sindicatos e Federações', questoes:[
+        {num:'P18',texto:'Qual a importância do SENAC e tudo o que eles oferecem para sua empresa e colaboradores?',tipo:'esc',opcoes:['0','1', '2','3','4','5','6','7','8','9','10','Não sabe']},
+        {num:'P20',texto:'E qual a importância do SESC e tudo o que eles oferecem para sua empresa e colaboradores?',tipo:'esc',opcoes:['0 — Nada importante','...','10 — Muito importante','Não sabe']},
+        {num:'P21',texto:'A empresa do(a) sr(a) é filiada a algum sindicato empresarial?',tipo:'ru',opcoes:['Sim','Não','Não sei']},
+        {num:'P21B',texto:'Como você avalia a sua relação ou da sua empresa com o Sindicato empresarial que representa sua organização?',tipo:'ru',opcoes:['Muito próximo','Pouco próximo','Neutro','Um pouco distante','Muito distante','Não sabe']},
+        {num:'P25',texto:'Como o(a) Sr(a) avalia a atuação da Federação do seu estado quanto à defesa dos interesses das empresas?',tipo:'esc',opcoes:['0 — Menor nota','...','10 — Maior nota','Não sabe'],instrucao:'AVALIAR SEPARADAMENTE A DEFESA PARA EMPRESAS MÉDIAS/GRANDES E PEQUENAS/MICRO.'}
+      ]},
+      { titulo:'IV — Atuação e Importância da CNC', questoes:[
+        {num:'P27',texto:'Na sua opinião, quais são os objetivos da CNC? Mais alguma coisa?',tipo:'esp',instrucao:'EXPLORE BEM E ESCLAREÇA - ESPONTÂNEA E MÚLTIPLA'},
+        {num:'P28',texto:'Que nota o(a) Sr(a) daria quanto à importância das frentes de atuação da CNC (defesa de interesses, eventos, pesquisas, assessoria jurídica) para o seu negócio?',tipo:'esc',opcoes:['0 — Nada importante','...','10 — Muito importante'],instrucao:'RU POR LINHA PARA CADA FRENTE DE ATUAÇÃO LIDA.'},
+        {num:'P32',texto:'O quanto o(a) senhor(a) associa a CNC com estes atributos (Transparência, Boa gestão, Credibilidade, Inovação, etc)?',tipo:'esc',opcoes:['1 — Nada','2','3','4','5 — Muito'],instrucao:'ESCALA DE 1 A 5. RU POR LINHA PARA CADA ATRIBUTO.'},
+        {num:'P33',texto:'Qual a importância da CNC e tudo o que ela oferece para sua empresa e colaboradores?',tipo:'esc',opcoes:['0 — Nada importante','...','10 — Muito importante','Não sabe']}
+      ]},
+      { titulo:'V — Contribuições, Eventos e Finalização', questoes:[
+        {num:'P34',texto:'Que nota de 0 a 10 o(a) Sr(a) dá para a importância de realizar o pagamento da contribuição para manter o Sistema CNC?',tipo:'esc',opcoes:['0 — Nada importante','...','10 — Muito importante','Não sabe']},
+        {num:'P36',texto:'O que Federações e Sindicatos empresariais deveriam fazer para que os empresários se sentissem motivados a contribuir financeiramente?',tipo:'rm',opcoes:['Oferecer consultorias de gestão','Oferecer produtos e serviços','Defender os empresários junto ao poder público','Pesquisas segmentadas e tendências de mercado','Soluções em Inovação e Tecnologia','Alguma outra'],instrucao:'ESTIMULADA E MÚLTIPLA. RODIZIAR FRASES.'},
+        {num:'P37',texto:'Caso a entidade (CNC, Fecomércio, Sesc, Senac, Sindicato) deixasse de existir, quanta falta ela faria para o(a) Sr(a)?',tipo:'ru',opcoes:['Muita falta','Alguma falta','Indiferente','Pouca falta','Nenhuma falta','Não sabe'],instrucao:'RU POR LINHA PARA CADA ENTIDADE DO SISTEMA COMÉRCIO.'},
+        {num:'P40',texto:'O(A) sr(a) ouviu falar do evento Semana S promovido pela Fecomércio junto com a CNC, Sindicatos empresariais, Sesc e Senac em seu estado?',tipo:'ru',opcoes:['Sim','Não']},
+        {num:'P42',texto:'Qual nota o(a) sr(a) daria para o evento Semana S, considerando sua organização, conteúdo e relevância para o seu negócio?',tipo:'esc',opcoes:['0 — Menor nota','...','10 — Maior nota','Não participou'],instrucao:'APENAS PARA QUEM PARTICIPOU DO EVENTO.'},
+      ]}
+    ]},
+{ id:'f8', titulo:'Coca-Cola — Pesquisa Media Audit - Jornalistas', cliente:'Coca-Cola Brasil', tag:'Media Audit', ano:2026, metodo:'Quantitativa · Telefônica', duracao:'~15 min', descricao:'Estudo nacional com jornalistas para entender a percepção, imagem corporativa e o relacionamento de grandes empresas com a imprensa.', fonte:'historico',
+    blocos:[
+      { titulo:'I — Apresentação e Consentimento', questoes:[
+        {num:'I5',texto:'Nome do aplicador e entrevistado:',tipo:'ab',opcoes:[],instrucao:'ENTREVISTADOR: INFORMAR NOME DO APLICADOR E NOME DO ENTREVISTADO PARA CONTROLE INTERNO.'},
+        {num:'APRESENTACAO',texto:'Apresentação institucional e convite: "Meu nome é, sou pesquisador(a) da Nexus - Pesquisa e Inteligência de Dados... Reforço que suas respostas são anônimas... Você poderia participar?"',tipo:'ru',opcoes:['1. Sim, aceita participar e continua','2. Não aceita → AGRADEÇA E ENCERRE'],instrucao:'LEIA O TEXTO DE APRESENTAÇÃO INTEGRAL PARA O JORNALISTA.'}
+      ]},
+      { titulo:'II — Perfil do(a) Entrevistado(a)', questoes:[
+        {num:'PF1',texto:'Tipo de veículo:',tipo:'ru',opcoes:['1. Veículos nacionais mais relevantes','2. Veículos regionais com ampla circulação'],instrucao:'PREENCHER CONFORME MAILING'},
+        {num:'PF2',texto:'Meio de comunicação:',tipo:'ru',opcoes:['1. TV','2. Rádio','3. Meios digitais','4. Meios impressos'],instrucao:'PREENCHER CONFORME MAILING'},
+        {num:'PF3',texto:'Gênero:',tipo:'ru',opcoes:['1. Feminino','2. Masculino'],instrucao:'APENAS MARCAR, NÃO PERGUNTAR'},
+        {num:'PF4',texto:'Cargo do jornalista:',tipo:'ab',opcoes:[],instrucao:'ANOTE · ESPONTÂNEA'},
+        {num:'PF5',texto:'Nome da instituição/órgão/entidade em que trabalha atualmente:',tipo:'ab',opcoes:[],instrucao:'ANOTE · ESPONTÂNEA'},
+        {num:'PF6',texto:'Em que ano você nasceu?',tipo:'ab',opcoes:[],instrucao:'DIGITE O NÚMERO EXATO (ENTRADA NUMÉRICA)'},
+        {num:'PF7',texto:'Quais das seguintes áreas/editorias você costuma cobrir ou tem mais experiência?',tipo:'rm',opcoes:['1. Economia / Negócios','2. Política / Governo / Assuntos Regulatórios','3. Saúde / Bem-Estar','4. Meio Ambiente / Sustentabilidade','5. Agronegócio','6. Varejo / Consumo / Comportamento do Consumidor','7. Assuntos Corporativos / Comunicação Empresarial','8. Outro → ENCERRAR PESQUISA'],instrucao:'SCRIPT: SE O ENTREVISTADO NÃO MARCAR NENHUMA DAS OPÇÕES DE 1 A 7, ENCERRAR A PESQUISA.'}
+      ]},
+      { titulo:'III — Benchmarking Corporativo', questoes:[
+        {num:'P10',texto:'Quando eu falo em grandes empresas que atuam no Brasil, qual a primeira palavra ou imagem que lhe vem à mente?',tipo:'ab',opcoes:[],instrucao:'ESPONTÂNEA'},
+        {num:'P11.A',texto:'Opinião Geral: Coca-Cola (Quão favorável ou desfavorável é sua opinião geral)?',tipo:'ru',opcoes:['1. Muito favorável','2. Favorável','3. Mais ou menos favorável (NÃO LER)','4. Desfavorável','5. Muito Desfavorável','98. NS','99. NR'],instrucao:'ESTIMULADA · RANDOMIZAR EMPRESAS'},
+        {num:'P11.B',texto:'Opinião Geral: AmBev (Quão favorável ou desfavorável é sua opinião geral)?',tipo:'ru',opcoes:['1. Muito favorável','2. Favorável','3. Mais ou menos favorável (NÃO LER)','4. Desfavorável','5. Muito Desfavorável','98. NS','99. NR'],instrucao:'ESTIMULADA · RANDOMIZAR EMPRESAS'},
+        {num:'P11.C',texto:'Opinião Geral: Nestlé (Quão favorável ou desfavorável é sua opinião geral)?',tipo:'ru',opcoes:['1. Muito favorável','2. Favorável','3. Mais ou menos favorável (NÃO LER)','4. Desfavorável','5. Muito Desfavorável','98. NS','99. NR'],instrucao:'ESTIMULADA · RANDOMIZAR EMPRESAS'},
+        {num:'P11.D',texto:'Opinião Geral: Natura (Quão favorável ou desfavorável é sua opinião geral)?',tipo:'ru',opcoes:['1. Muito favorável','2. Favorável','3. Mais ou menos favorável (NÃO LER)','4. Desfavorável','5. Muito Desfavorável','98. NS','99. NR'],instrucao:'ESTIMULADA · RANDOMIZAR EMPRESAS'},
+        {num:'P11.E',texto:'Opinião Geral: Toyota (Quão favorável ou desfavorável é sua opinião geral)?',tipo:'ru',opcoes:['1. Muito favorável','2. Favorável','3. Mais ou menos favorável (NÃO LER)','4. Desfavorável','5. Muito Desfavorável','98. NS','99. NR'],instrucao:'ESTIMULADA · RANDOMIZAR EMPRESAS'},
+        {num:'P11.F',texto:'Opinião Geral: Danone (Quão favorável ou desfavorável é sua opinião geral)?',tipo:'ru',opcoes:['1. Muito favorável','2. Favorável','3. Mais ou menos favorável (NÃO LER)','4. Desfavorável','5. Muito Desfavorável','98. NS','99. NR'],instrucao:'ESTIMULADA · RANDOMIZAR EMPRESAS'},
+        {num:'P12',texto:'E qual o principal motivo de você ter essa imagem da empresa sorteada?',tipo:'ab',opcoes:[],instrucao:'ESPONTÂNEA · PUXAR RESPOSTA E EMPRESA DA QUESTÃO ANTERIOR'},
+        {num:'P13.A',texto:'Confiança: Coca-Cola (O quanto você diria que confia nela)?',tipo:'ru',opcoes:['1. Muito confiável','2. Confiável','3. Mais ou menos confiável (NÃO LER)','4. Pouco confiável','5. Nada confiável','98. NS','99. NR'],instrucao:'ESTIMULADA · RANDOMIZAR EMPRESAS'},
+        {num:'P13.B',texto:'Confiança: AmBev (O quanto você diria que confia nela)?',tipo:'ru',opcoes:['1. Muito confiável','2. Confiável','3. Mais ou menos confiável (NÃO LER)','4. Pouco confiável','5. Nada confiável','98. NS','99. NR'],instrucao:'ESTIMULADA · RANDOMIZAR EMPRESAS'},
+        {num:'P13.C',texto:'Confiança: Nestlé (O quanto você diria que confia nela)?',tipo:'ru',opcoes:['1. Muito confiável','2. Confiável','3. Mais ou menos confiável (NÃO LER)','4. Pouco confiável','5. Nada confiável','98. NS','99. NR'],instrucao:'ESTIMULADA · RANDOMIZAR EMPRESAS'},
+        {num:'P13.D',texto:'Confiança: Natura (O quanto você diria que confia nela)?',tipo:'ru',opcoes:['1. Muito confiável','2. Confiável','3. Mais ou menos confiável (NÃO LER)','4. Pouco confiável','5. Nada confiável','98. NS','99. NR'],instrucao:'ESTIMULADA · RANDOMIZAR EMPRESAS'},
+        {num:'P13.E',texto:'Confiança: Toyota (O quanto você diria que confia nela)?',tipo:'ru',opcoes:['1. Muito confiável','2. Confiável','3. Mais ou menos confiável (NÃO LER)','4. Pouco confiável','5. Nada confiável','98. NS','99. NR'],instrucao:'ESTIMULADA · RANDOMIZAR EMPRESAS'},
+        {num:'P13.F',texto:'Confiança: Danone (O quanto você diria que confia nela)?',tipo:'ru',opcoes:['1. Muito confiável','2. Confiável','3. Mais ou menos confiável (NÃO LER)','4. Pouco confiável','5. Nada confiável','98. NS','99. NR'],instrucao:'ESTIMULADA · RANDOMIZAR EMPRESAS'},
+        {num:'P14.A',texto:'Admiração: Indique se concorda ou discorda com: "Esta é uma empresa que admiro e respeito." (Coca-Cola)',tipo:'ru',opcoes:['1. Concordo plenamente','2. Concordo','3. Nem concordo nem discordo (NÃO LER)','4. Discordo em parte','5. Discordo totalmente','98. NS','99. NR'],instrucao:'ESTIMULADA · RANDOMIZAR EMPRESAS'},
+        {num:'P14.B',texto:'Admiração: Indique se concorda ou discorda com: "Esta é uma empresa que admiro e respeito." (AmBev)',tipo:'ru',opcoes:['1. Concordo plenamente','2. Concordo','3. Nem concordo nem discordo (NÃO LER)','4. Discordo em parte','5. Discordo totalmente','98. NS','99. NR'],instrucao:'ESTIMULADA · RANDOMIZAR EMPRESAS'},
+        {num:'P14.C',texto:'Admiração: Indique se concorda ou discorda com: "Esta é uma empresa que admiro e respeito." (Nestlé)',tipo:'ru',opcoes:['1. Concordo plenamente','2. Concordo','3. Nem concordo nem discordo (NÃO LER)','4. Discordo em parte','5. Discordo totalmente','98. NS','99. NR'],instrucao:'ESTIMULADA · RANDOMIZAR EMPRESAS'},
+        {num:'P14.D',texto:'Admiração: Indique se concorda ou discorda com: "Esta é uma empresa que admiro e respeito." (Natura)',tipo:'ru',opcoes:['1. Concordo plenamente','2. Concordo','3. Nem concordo nem discordo (NÃO LER)','4. Discordo em parte','5. Discordo totalmente','98. NS','99. NR'],instrucao:'ESTIMULADA · RANDOMIZAR EMPRESAS'},
+        {num:'P14.E',texto:'Admiração: Indique se concorda ou discorda com: "Esta é uma empresa que admiro e respeito." (Toyota)',tipo:'ru',opcoes:['1. Concordo plenamente','2. Concordo','3. Nem concordo nem discordo (NÃO LER)','4. Discordo em parte','5. Discordo totalmente','98. NS','99. NR'],instrucao:'ESTIMULADA · RANDOMIZAR EMPRESAS'},
+        {num:'P14.F',texto:'Admiração: Indique se concorda ou discorda com: "Esta é uma empresa que admiro e respeito." (Danone)',tipo:'ru',opcoes:['1. Concordo plenamente','2. Concordo','3. Nem concordo nem discordo (NÃO LER)','4. Discordo em parte','5. Discordo totalmente','98. NS','99. NR'],instrucao:'ESTIMULADA · RANDOMIZAR EMPRESAS'}
+      ]},
+      { titulo:'IV — Foco Especial: Coca-Cola Brasil', questoes:[
+        {num:'P15',texto:'Quando eu falo na empresa Coca-Cola Brasil, qual a primeira palavra ou imagem que lhe vem à mente?',tipo:'ab',opcoes:[],instrucao:'ESPONTÂNEA (O entrevistado foi sorteado para responder essa seção)'},
+        {num:'P16.A',texto:'Comunicação CNC: "A Coca-Cola mantém um diálogo aberto e transparente com a imprensa."',tipo:'ru',opcoes:['1. Discordo Totalmente','2','3','4','5. Concordo Totalmente','98. NS','99. NR'],instrucao:'ESCALA DE 1 A 5 · RANDOMIZAR FRASES'},
+        {num:'P16.B',texto:'Comunicação CNC: "A Coca-Cola responde prontamente os pedidos da imprensa."',tipo:'ru',opcoes:['1. Discordo Totalmente','2','3','4','5. Concordo Totalmente','98. NS','99. NR'],instrucao:'ESCALA DE 1 A 5 · RANDOMIZAR FRASES'},
+        {num:'P16.C',texto:'Comunicação CNC: "A Coca-Cola fornece informações e dados relevantes e confiáveis para os jornalistas."',tipo:'ru',opcoes:['1. Discordo Totalmente','2','3','4','5. Concordo Totalmente','98. NS','99. NR'],instrucao:'ESCALA DE 1 A 5 · RANDOMIZAR FRASES'},
+        {num:'P16.D',texto:'Comunicação CNC: "A Coca-Cola atua de forma proativa no relacionamento com a imprensa."',tipo:'ru',opcoes:['1. Discordo Totalmente','2','3','4','5. Concordo Totalmente','98. NS','99. NR'],instrucao:'ESCALA DE 1 A 5 · RANDOMIZAR FRASES'},
+        {num:'P17',texto:'Na sua opinião, qual é o principal ponto positivo da atuação da Coca-Cola Brasil atualmente?',tipo:'ab',opcoes:[],instrucao:'ESPONTÂNEA'},
+        {num:'P18',texto:'E, por outro lado, qual é o principal ponto negativo da atuação da Coca-Cola Brasil atualmente?',tipo:'ab',opcoes:[],instrucao:'ESPONTÂNEA'}
+      ]},
+      { titulo:'V — Atuação Macroeconômica e ESG', questoes:[
+        {num:'P19.A',texto:'Nota para o papel da Coca-Cola em: Contribuir positivamente para a economia brasileira, gerando emprego e renda no país.',tipo:'ru',opcoes:['0','1','2','3','4','5','6','7','8','9','10','98. NS','99. NR'],instrucao:'ESCALA DE 0 A 10 (0=Muito ruim, 10=Excelente) · RANDOMIZAR'},
+        {num:'P19.B',texto:'Nota para o papel da Coca-Cola em: Ser uma boa pagadora de impostos.',tipo:'ru',opcoes:['0','1','2','3','4','5','6','7','8','9','10','98. NS','99. NR'],instrucao:'ESCALA DE 0 A 10 (0=Muito ruim, 10=Excelente) · RANDOMIZAR'},
+        {num:'P19.C',texto:'Nota para o papel da Coca-Cola em: Utilizar benefícios fiscais de forma justa.',tipo:'ru',opcoes:['0','1','2','3','4','5','6','7','8','9','10','98. NS','99. NR'],instrucao:'ESCALA DE 0 A 10 (0=Muito ruim, 10=Excelente) · RANDOMIZAR'},
+        {num:'P20',texto:'O quanto você se considera informado(a) sobre as initiatives da Coca-Cola Brasil relacionadas à sustentabilidade e meio ambiente (ESG)?',tipo:'ru',opcoes:['1. Muito informado','2. Informado','3. Mais ou menos informado','4. Pouco informado','5. Nada informado','98. Não Sabe','99. Não respondeu'],instrucao:'RESPOSTA ÚNICA'},
+        {num:'P21.A',texto:'Percepção Temas: "A Coca-Cola Brasil possui políticas e práticas eficazes para o uso sustentável da água em suas operações."',tipo:'ru',opcoes:['1. Discordo totalmente','2. Discordo em parte','3. Nem concordo nem discordo','4. Concordo','5. Concordo plenamente','98. NS','99. NR'],instrucao:'ESCALA DE 1 A 5 · RANDOMIZAR'},
+        {num:'P21.B',texto:'Percepção Temas: "A Coca-Cola Brasil atua de forma responsável em relação às questões de saúde associadas aos seus produtos."',tipo:'ru',opcoes:['1. Discordo totalmente','2. Discordo em parte','3. Nem concordo nem discordo','4. Concordo','5. Concordo plenamente','98. NS','99. NR'],instrucao:'ESCALA DE 1 A 5 · RANDOMIZAR'},
+        {num:'P21.C',texto:'Percepção Temas: "A Coca-Cola Brasil atua de forma ética e justa em relação ao pagamento de impostos e utilização de benefícios fiscais."',tipo:'ru',opcoes:['1. Discordo totalmente','2. Discordo em parte','3. Nem concordo nem discordo','4. Concordo','5. Concordo plenamente','98. NS','99. NR'],instrucao:'ESCALA DE 1 A 5 · RANDOMIZAR'},
+        {num:'P21.D',texto:'Percepção Temas: "A Coca-Cola Brasil contribui positivamente para a economia brasileira, gerando emprego e renda no país."',tipo:'ru',opcoes:['1. Discordo totalmente','2. Discordo em parte','3. Nem concordo nem discordo','4. Concordo','5. Concordo plenamente','98. NS','99. NR'],instrucao:'ESCALA DE 1 A 5 · RANDOMIZAR'},
+        {num:'P21.E',texto:'Percepção Temas: "A Coca-Cola Brasil comunica de forma eficaz o seu impacto positivo na economia brasileira."',tipo:'ru',opcoes:['1. Discordo totalmente','2. Discordo em parte','3. Nem concordo nem discordo','4. Concordo','5. Concordo plenamente','98. NS','99. NR'],instrucao:'ESCALA DE 1 A 5 · RANDOMIZAR'},
+        {num:'P22',texto:'Você diria que tem algum conhecimento sobre parcerias ou colaborações da Coca-Cola Brasil com outros setores ou grupos, como pequenos varejistas, setor de reciclagem ou comunidades agrícolas?',tipo:'ru',opcoes:['1. Sim','2. Não','98. Não Sabe','99. Não respondeu'],instrucao:'RESPOSTA ÚNICA'}
+      ]},
+      { titulo:'VI — Visibilidade de Pautas e Posição Institucional', questoes:[
+        {num:'P23',texto:'Entre os temas abaixo, qual você percebe como MAIS presente e evidente na comunicação institucional da Coca-Cola Brasil? (Indique o 1º, 2º e 3º)',tipo:'rm',opcoes:['1. Sustentabilidade e meio ambiente','2. Responsabilidade social / impacto comunitário','3. Inovação em produtos e embalagens','4. Posicionamento institucional da marca (valores, missão, visão)','5. Marketing e campanhas publicitárias','6. Relação com o consumidor','7. Impacto econômico (geração de empregos, investimentos, cadeia produtiva)','98. Não Sabe','99. Não respondeu'],instrucao:'ACEITA MÚLTIPLA SELEÇÃO DE ATÉ 3 ITENS ORDENADOS'},
+        {num:'P24',texto:'E entre os mesmos temas, qual você percebe como MENOS presente e evidente na comunicação institucional da Coca-Cola Brasil? (Indique o 1º, 2º e 3º)',tipo:'rm',opcoes:['1. Sustentabilidade e meio ambiente','2. Responsabilidade social / impacto comunitário','3. Inovação em produtos e embalagens','4. Posicionamento institucional da marca (valores, missão, visão)','5. Marketing e campanhas publicitárias','6. Relação com o consumidor','7. Impacto econômico (geração de empregos, investimentos, cadeia produtiva)','98. Não Sabe','99. Não respondeu'],instrucao:'ACEITA MÚLTIPLA SELEÇÃO DE ATÉ 3 ITENS ORDENADOS'},
+        {num:'P25',texto:'Na sua percepção, nos últimos anos, a comunicação institucional da Coca-Cola Brasil (sobre seu papel na sociedade, economia etc.) tem estado:',tipo:'ru',opcoes:['1. Muito mais presente','2. Mais presente','3. Não houve mudança','4. Menos presente','5. Muito menos presente','98. Não Sabe','99. Não respondeu'],instrucao:'ESTIMULADA E ÚNICA'},
+        {num:'P26',texto:'Você conhece ou já ouviu falar em programas, iniciativas ou ações relacionadas a práticas de sustentabilidade ou de proteção do meio ambiente desenvolvidas pela Coca-Cola Brasil?',tipo:'ru',opcoes:['1. Sim. Qual ou quais?','2. Não','98. Não Sabe','99. Não respondeu'],instrucao:'ESTIMULADA E ÚNICA. SE OPCÃO 1, PERMITIR ESCREVER NA CAIXA.'}
+      ]},
+      { titulo:'VII — Avaliação da Assessoria de Imprensa', questoes:[
+        {num:'P27',texto:'Você entrou em contato com a assessoria de imprensa da Coca-Cola nos últimos 12 meses?',tipo:'ru',opcoes:['1. Sim, muitas vezes','2. Sim, ao menos 1 vez','3. Não','98. Não Sabe','99. Não respondeu'],instrucao:'ESTIMULADA · SE RESPONDEU OPCÃO 3, 98 OU 99, PULAR PARA O BLOCO VIII'},
+        {num:'P28',texto:'Pensando no seu contato e interação com a assessoria de imprensa da Coca-Cola Brasil, que nota de 0 a 10 (onde 0 é péssimo e 10 é excelente) você daria para o relacionamento, de forma geral?',tipo:'ru',opcoes:['0','1','2','3','4','5','6','7','8','9','10'],instrucao:'APENAS SE ENTROU EM CONTATO (SIM NA P27) · ENTRADA NUMÉRICA CRUA'},
+        {num:'P29.A',texto:'Aspectos Assessoria: Agilidade no retorno das demandas',tipo:'ru',opcoes:['1. Muito ruim','2. Ruim','3. Mais ou menos','4. Bom','5. Muito bom','98. NS','99. NR'],instrucao:'APENAS SE ENTROU EM CONTATO · RANDOMIZAR LINHAS'},
+        {num:'P29.B',texto:'Aspectos Assessoria: Clareza e qualidade das informações fornecidas',tipo:'ru',opcoes:['1. Muito ruim','2. Ruim','3. Mais ou menos','4. Bom','5. Muito bom','98. NS','99. NR'],instrucao:'APENAS SE ENTROU EM CONTATO · RANDOMIZAR LINHAS'},
+        {num:'P29.C',texto:'Aspectos Assessoria: Proatividade no envio de pautas ou sugestões de conteúdo',tipo:'ru',opcoes:['1. Muito ruim','2. Ruim','3. Mais ou menos','4. Bom','5. Muito bom','98. NS','99. NR'],instrucao:'APENAS SE ENTROU EM CONTATO · RANDOMIZAR LINHAS'},
+        {num:'P29.D',texto:'Aspectos Assessoria: Abertura e disponibilidade para entrevistas com porta-vozes.',tipo:'ru',opcoes:['1. Muito ruim','2. Ruim','3. Mais ou menos','4. Bom','5. Muito bom','98. NS','99. NR'],instrucao:'APENAS SE ENTROU EM CONTATO · RANDOMIZAR LINHAS'},
+        {num:'P29.E',texto:'Aspectos Assessoria: Cordialidade e profissionalismo no atendimento',tipo:'ru',opcoes:['1. Muito ruim','2. Ruim','3. Mais ou menos','4. Bom','5. Muito bom','98. NS','99. NR'],instrucao:'APENAS SE ENTROU EM CONTATO · RANDOMIZAR LINHAS'},
+        {num:'P29.F',texto:'Aspectos Assessoria: Conhecimento e domínio sobre os temas abordados',tipo:'ab',opcoes:[],instrucao:'APENAS SE ENTROU EM CONTATO · RESPOSTA ABERTA'},
+        {num:'P30',texto:'Em sua experiência, o conteúdo enviado pela assessoria contribui para enriquecer ou facilitar sua cobertura jornalística sobre a empresa?',tipo:'ru',opcoes:['1. Contribui totalmente','2. Contribui parcialmente','3. Contribui pouco','4. Não contribui','98. Não Sabe','99. Não respondeu'],instrucao:'APENAS SE ENTROU EM CONTATO (SIM NA P27)'}
+      ]},
+      { titulo:'VIII — Experiência Profissional e Fechamento', questoes:[
+        {num:'PF9',texto:'Há quantos anos você trabalha como jornalista?',tipo:'ab',opcoes:[],instrucao:'RESPOSTA ÚNICA · ENTRADA NUMÉRICA CRUA'},
+        {num:'PF10',texto:'E desde que ano você cobre/pauta/edita matérias na sua atual área de especialização?',tipo:'ab',opcoes:[],instrucao:'RESPOSTA ÚNICA · ENTRADA NUMÉRICA CRUA'}
+      ]}
+    ]
+  },
+
+];
+
+// ══════════════════════════════════════════════════════════════
+//  ESTADO
+// ══════════════════════════════════════════════════════════════
+let DB          = [];
+let filtrosAtivos = { metodo: new Set(), tag: new Set(), periodo: new Set(), ano: new Set(), cliente: new Set(), amostra: new Set() };
+let selId       = null;
+let modoEdicao  = false;
+let editandoId  = null;
+let promptAtual = '';
+let pasteId     = null;
+let emailUser   = '';
+let importDados = null; // dados parseados para importação
+
+const TAG_CLS = { 'Tracking de Marca':'qtag-marca','Eleitoral':'qtag-eleit','Pós-teste':'qtag-post','B2B':'qtag-b2b','Mapa':'qtag-mapa','Media Audit':'qtag-media','Pesquisa de Opinião':'qtag-opiniao','Perfil':'qtag-ref','NPS':'qtag-b2b' };
+const TIPO_LBL = { ru:'RU', rm:'RM', esp:'Espontânea', esc:'Escala', ab:'Aberta' };
+const TIPO_CLS = { ru:'q-tipo-ru', rm:'q-tipo-rm', esp:'q-tipo-esp', esc:'q-tipo-esc', ab:'q-tipo-ab' };
+
+// ══════════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  if (typeof renderSidebar === 'function')
+    document.getElementById('navbar-container').innerHTML = renderNavbar('guruquest');
+  if (typeof initTheme === 'function') initTheme();
+  if (typeof initMode === 'function') initMode();
+  if (typeof updateModeButtons === 'function') updateModeButtons();
+  if (typeof setNavLabel === 'function') setNavLabel('GuruQuest');
+  try { emailUser = JSON.parse(localStorage.getItem('hubnexus-auth')||'{}').email || ''; } catch {}
+  await carregarDB();
+  renderLib();
+  popularFiltroClientes();
+  popularFiltroAnos();
+});
+
+// ══════════════════════════════════════════════════════════════
+//  BANCO
+// ════════════════════════════════════════════════
+async function carregarDB() {
+  try {
+    const url = '/api/guruquest';
+    const r = await fetch(url);
+    if (r.ok) DB = ((await r.json()).data || []).map(q => ({...q, fonte:'banco'}));
+  } catch {}
+}
+
+async function salvarDB(q) {
+  try {
+    // _dupConfirmado é um marcador interno (ver verificarESalvar) — nunca deve ir pro back-end
+    const { _dupConfirmado, ...campos } = q || {};
+    const r = await fetch('/api/guruquest', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({...campos, criado_por: emailUser}),
+    });
+    const d = await r.json();
+    if (d.ok) { await carregarDB(); renderLib(); toast('✓ Salvo na biblioteca'); return d.id; }
+  } catch { toast('Erro ao salvar'); }
+  return null;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  VERIFICAÇÃO DE DUPLICIDADE — avisa antes de adicionar um
+//  questionário que já existe no histórico (DB + Histórico Nexus).
+//  Não remove nem altera nada do que já está salvo — apenas
+//  intercepta a ação de CRIAR um novo registro, o mais cedo possível
+//  em cada fluxo (já no arquivo solto, antes mesmo de extrair o texto;
+//  e já na resposta da IA, antes de abrir a tela de revisão).
+// ══════════════════════════════════════════════════════════════
+let _dupExistenteId = null; // id do questionário já existente no histórico
+let _dupSalvarFn    = null; // callback a executar se o usuário confirmar
+
+// Normaliza um texto para comparação: remove acentos, pontuação,
+// caixa e espaços extras, para não deixar passar nem gerar falso positivo.
+function _normTitulo(str) {
+  return (str || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[_\W]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// ── 1) Verificação PRECISA, pelo título (usada na resposta da IA) ──
+
+// Procura no histórico inteiro (criados pela equipe + Histórico Nexus)
+// um questionário com o título igual (já normalizado). Retorna o item ou null.
+function encontrarDuplicata(titulo) {
+  const alvo = _normTitulo(titulo);
+  if (!alvo) return null;
+  return getAll().find(q => _normTitulo(q.titulo) === alvo) || null;
+}
+
+// Ponto único usado nos fluxos de criação (chat e importação) sempre que o
+// título do questionário já é conhecido: se houver duplicata, mostra o aviso
+// e SUSPENDE a ação até o usuário decidir; se não houver, segue chamando `acaoFn`.
+// `opts.labelConfirmar` ajusta o texto do botão de confirmação ao contexto
+// (ex.: "Continuar mesmo assim" quando ainda falta revisar antes de salvar,
+// ou "Salvar mesmo assim" quando o clique já grava no banco).
+function verificarESalvar(dados, acaoFn, opts = {}) {
+  const tituloNorm = _normTitulo(dados?.titulo);
+  // Já foi avisado e confirmado para este exato título — não repete o aviso.
+  if (dados && dados._dupConfirmado === tituloNorm) { acaoFn(); return; }
+
+  const dup = encontrarDuplicata(dados?.titulo);
+  if (dup) {
+    _dupExistenteId = dup.id;
+    _dupSalvarFn = () => { if (dados) dados._dupConfirmado = tituloNorm; acaoFn(); };
+    abrirDupModal(dup, {
+      titulo: 'Esse questionário já está na biblioteca',
+      texto: 'Encontramos um questionário com o mesmo título no histórico do GuruQuest. Você pode ir até ele ou seguir mesmo assim, caso seja realmente um novo registro.',
+      labelConfirmar: opts.labelConfirmar || 'Salvar mesmo assim',
+    });
+    return;
+  }
+  acaoFn();
+}
+
+// ── 2) Verificação ANTECIPADA, pelo nome do arquivo (1ª etapa da importação) ──
+// Mais cedo no fluxo ainda não existe um título real (só depois que a IA
+// responde). Por isso comparamos o NOME DO ARQUIVO com os títulos já salvos,
+// por sobreposição de palavras-chave. É uma estimativa — por isso o aviso
+// usa um texto mais cauteloso e nunca bloqueia, só avisa antes de gastar
+// tempo extraindo o arquivo e montando o prompt.
+const _STOP_ARQ = new Set([
+  'questionario','pesquisa','formulario','survey','final','rascunho','draft',
+  'copia','revisado','novo','atualizado','versao','v1','v2','v3',
+  'de','da','do','das','dos','em','no','na','nos','nas','ao','aos',
+  'um','uma','uns','umas','e','ou','com','para','por','a','o','os','as',
+]);
+
+function _palavrasChave(str) {
+  return _normTitulo(str).split(' ').filter(w => w.length > 1 && !_STOP_ARQ.has(w));
+}
+
+// ── CLIENTE NÃO IDENTIFICADO ──
+// A IA às vezes "chuta" um cliente quando o texto não menciona nenhum
+// (frequentemente cai em "Nexus" — que é a própria agência que conduz a
+// pesquisa, nunca a cliente dela). Em vez de aceitar esse palpite, tratamos
+// como não identificado e pedimos pra pessoa confirmar/preencher.
+function _clientePrecisaRevisao(cliente) {
+  const c = _normTitulo(cliente);
+  if (!c) return true;
+  if (c.startsWith('nexus')) return true; // "Nexus", "Nexus Pesquisa...", etc.
+  return ['nao informado','n a','desconhecido','indefinido','nao identificado'].includes(c);
+}
+
+function encontrarPossivelDuplicataPorArquivo(filename) {
+  const base = (filename || '').replace(/\.[^.]+$/, '');
+  const palavrasArq = _palavrasChave(base);
+  if (!palavrasArq.length) return null; // nome muito genérico pra comparar com confiança
+  const setArq = new Set(palavrasArq);
+
+  let melhor = null, melhorScore = 0;
+  for (const q of getAll()) {
+    const palavrasTit = _palavrasChave(q.titulo);
+    if (palavrasTit.length < 2) continue;
+    const comunsLista = palavrasTit.filter(w => setArq.has(w));
+    const comuns = comunsLista.length;
+    if (comuns === 0) continue;
+    // 1 palavra em comum só conta se for específica o bastante (5+ letras);
+    // palavra curta sozinha (ex: "sp", "rj") é fraca demais pra confiar.
+    const temPalavraForte = comunsLista.some(w => w.length >= 5);
+    if (comuns < 2 && !temPalavraForte) continue;
+    const score  = comuns / Math.min(palavrasArq.length, palavrasTit.length);
+    const limiar = comuns >= 2 ? 0.5 : 0.3;
+    if (score >= limiar && score > melhorScore) { melhorScore = score; melhor = q; }
+  }
+  return melhor;
+}
+
+// ── Modal de aviso (compartilhado pelas duas verificações acima) ──
+
+function abrirDupModal(dup, opts = {}) {
+  const nQ = (dup.blocos||[]).reduce((a,b)=>a+(b.questoes||[]).length,0);
+  document.getElementById('dup-modal-titulo').textContent = opts.titulo || 'Esse questionário já está na biblioteca';
+  document.getElementById('dup-modal-texto').textContent  = opts.texto  ||
+    'Encontramos um questionário com o mesmo título no histórico do GuruQuest. Você pode ir até ele ou seguir mesmo assim, caso seja realmente um novo registro.';
+  document.getElementById('dup-btn-confirmar').textContent = opts.labelConfirmar || 'Salvar mesmo assim';
+  document.getElementById('dup-card-titulo').textContent = dup.titulo;
+  document.getElementById('dup-card-meta').innerHTML = `
+    <span class="qtag ${TAG_CLS[dup.tag]||'qtag-ref'}">${dup.tag||'Geral'}</span>
+    <span style="font-size:10px;color:var(--text-muted)">${dup.ano||''}</span>
+    ${dup.cliente ? `<span style="font-size:9px;color:var(--text-muted)">${esc(dup.cliente)}</span>` : ''}
+    <span class="qcard-n">${nQ||'?'} q.</span>`;
+  document.getElementById('dup-overlay').classList.add('open');
+}
+
+function fecharDupModal() {
+  document.getElementById('dup-overlay').classList.remove('open');
+  _dupExistenteId = null;
+  _dupSalvarFn    = null;
+}
+
+// Botão "Ir para questionário": abandona o registro novo e leva
+// o usuário até o questionário já existente na biblioteca.
+function dupIrParaQuestionario() {
+  const id = _dupExistenteId;
+  fecharDupModal();
+  if (document.getElementById('import-overlay')?.classList.contains('open')) fecharImport();
+  if (id != null) setTimeout(() => selecionar(id), 50);
+}
+
+// Botão "Salvar/Continuar mesmo assim": usuário confirma que quer
+// seguir mesmo havendo uma possível duplicata.
+function dupSalvarMesmoAssim() {
+  const fn = _dupSalvarFn;
+  fecharDupModal();
+  if (typeof fn === 'function') fn();
+}
+
+async function atualizarDB(id, campos) {
+  try {
+    const r = await fetch('/api/guruquest', {
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({id, ...campos}),
+    });
+    if ((await r.json()).ok) { await carregarDB(); renderLib(); toast('✓ Alterações salvas'); return true; }
+  } catch { toast('Erro ao salvar'); }
+  return false;
+}
+
+async function deletarDB(id, ev) {
+  ev?.stopPropagation();
+  if (!confirm('Remover da biblioteca?')) return;
+  await fetch(`/api/guruquest?id=${id}`, {method:'DELETE'});
+  DB = DB.filter(q => q.id !== id);
+  if (selId === id) { selId = null; mostrarEmpty(); }
+  renderLib(); toast('Removido');
+}
+
+
+//BIBLIOTECA
+function getAll() { return [...DB, ...FIXA]; }
+
+// ── FILTROS MULTI-DIMENSIONAIS ──────────────────────────────
+function toggleFiltros() {
+  const panel = document.getElementById('filter-panel');
+  const btn   = document.getElementById('filter-toggle-btn');
+  panel.classList.toggle('open');
+  btn.classList.toggle('active', panel.classList.contains('open'));
+}
+
+function mudarAbaFiltro(botaoClicado, idConteudo) {
+  document.querySelectorAll('.fp-tab').forEach(aba => aba.classList.remove('active'));
+  document.querySelectorAll('.fp-tab-content').forEach(conteudo => conteudo.classList.remove('active'));
+  botaoClicado.classList.add('active');
+  document.getElementById(idConteudo).classList.add('active');
+}
+
+function toggleChip(el) {
+  const dim = el.dataset.dim;
+  const val = el.dataset.val;
+  if (!filtrosAtivos[dim]) filtrosAtivos[dim] = new Set();
+  if (filtrosAtivos[dim].has(val)) { filtrosAtivos[dim].delete(val); el.classList.remove('on'); }
+  else { filtrosAtivos[dim].add(val); el.classList.add('on'); }
+  atualizarBadge();
+  filtrar();
+}
+
+function limparFiltros() {
+  Object.keys(filtrosAtivos).forEach(d => filtrosAtivos[d].clear());
+  document.querySelectorAll('.fchip.on').forEach(c => c.classList.remove('on'));
+  atualizarBadge();
+  filtrar();
+}
+
+function atualizarBadge() {
+  const total = Object.values(filtrosAtivos).reduce((a, s) => a + s.size, 0);
+  const badge = document.getElementById('filter-badge');
+  badge.textContent = total;
+  badge.classList.toggle('vis', total > 0);
+}
+
+function popularFiltroClientes() {
+  const clientes = [...new Set(getAll().map(q => q.cliente).filter(Boolean))].sort();
+  const cont = document.getElementById('fp-clientes');
+  if (!cont) return;
+  cont.innerHTML = clientes.map(c =>
+    `<span class="fchip" data-dim="cliente" data-val="${c}" onclick="toggleChip(this)">${c}</span>`
+  ).join('');
+}
+
+function popularFiltroAnos() {
+  const anos = [...new Set(getAll().map(q => q.ano).filter(Boolean))].sort((a, b) => b - a);
+  const cont = document.getElementById('fp-anos');
+  if (!cont) return;
+  cont.innerHTML = anos.map(a => {
+    const isAtivo = (filtrosAtivos.ano && filtrosAtivos.ano.has(a.toString())) ? 'on' : '';
+    return `<span class="fchip ${isAtivo}" data-dim="ano" data-val="${a}" onclick="toggleChip(this)">${a}</span>`;
+  }).join('');
+}
+
+function filtrar() {
+  const t = (document.getElementById('search-input')?.value || '').toLowerCase();
+  let lista = getAll();
+
+  // 1. Texto livre
+  if (t) {
+    lista = lista.filter(q =>
+      q.titulo.toLowerCase().includes(t) || (q.cliente||'').toLowerCase().includes(t)
+    );
+  }
+
+  // 2. Tipo de pesquisa
+  if (filtrosAtivos.tag?.size) {
+    lista = lista.filter(q => filtrosAtivos.tag.has(q.tag));
+  }
+
+  // 3. Cliente
+  if (filtrosAtivos.cliente?.size) {
+    lista = lista.filter(q => filtrosAtivos.cliente.has(q.cliente));
+  }
+
+  // 4. Metodologia
+  if (filtrosAtivos.metodo?.size) {
+    lista = lista.filter(q => {
+      const m = (q.metodo||'').toLowerCase();
+      return [...filtrosAtivos.metodo].some(v => {
+        if (v === 'Presencial') return m.includes('presencial') || m.includes('face a face') || m.includes('domiciliar');
+        if (v === 'Telefone')   return m.includes('cati') || m.includes('telefônica') || m.includes('telefonica');
+        if (v === 'Online')     return m.includes('cawi') || m.includes('online') || m.includes('web');
+        if (v === 'Qualitativa') return m.includes('qualitativa');
+        return false;
+      });
+    });
+  }
+
+  // 5. Período
+  if (filtrosAtivos.periodo?.size) {
+    lista = lista.filter(q => {
+      const ano = q.ano || 0;
+      return [...filtrosAtivos.periodo].some(v => {
+        if (v === 'antigo')  return ano > 0 && ano <= 2014;
+        if (v === 'medio')   return ano >= 2015 && ano <= 2019;
+        if (v === 'recente') return ano >= 2020 && ano <= 2022;
+        if (v === 'atual')   return ano >= 2023;
+        return false;
+      });
+    });
+  }
+
+  // 6. Ano exato
+  if (filtrosAtivos.ano?.size) {
+    lista = lista.filter(q => filtrosAtivos.ano.has(String(q.ano)));
+  }
+
+  // 7. Amostra
+  if (filtrosAtivos.amostra?.size) {
+    lista = lista.filter(q => {
+      const campoAmostra = (q.amostra || '').toLowerCase();
+      const txtMetodo = (q.metodo || '').toLowerCase();
+      
+      return [...filtrosAtivos.amostra].some(v => {
+        const val = v.toLowerCase();
+        return campoAmostra === val || txtMetodo.includes(val.replace('mais de ', '').replace(' a ', '')); 
+      });
+    });
+  }
+
+  // Renderiza a lista no final
+  renderLib(lista);
+}
+
+function renderLib(lista) {
+  lista = lista || getAll();
+  const html = lista.length ? lista.map(cardHTML).join('') : `<div class="lib-empty">Nenhum questionário encontrado.</div>`;
+  document.getElementById('lib-list').innerHTML = html;
+}
+
+function cardHTML(q) {
+  const nQ      = (q.blocos||[]).reduce((a,b)=>a+(b.questoes||[]).length,0);
+  const sel     = String(selId) === String(q.id) ? 'sel' : '';
+  const isEquipe = q.fonte === 'banco';
+  return `<div class="qcard ${sel} ${isEquipe ? 'qcard-saved' : ''}" onclick="selecionar('${q.id}')">
+    <div class="qcard-title">${q.titulo}</div>
+    <div class="qcard-meta">
+      <span class="qtag ${TAG_CLS[q.tag]||'qtag-ref'}">${q.tag||'Geral'}</span>
+      <span style="font-size:10px;color:var(--text-muted)">${q.ano||''}</span>
+      ${q.cliente ? `<span style="font-size:9px;color:var(--text-muted)">${esc(q.cliente)}</span>` : ''}
+      <span class="qcard-n">${nQ||'?'} q.</span>
+    </div>
+  </div>`;
+}
+
+function renderViewer(q) {
+  const nQ      = (q.blocos||[]).reduce((a,b)=>a+(b.questoes||[]).length,0);
+  const isEquipe = q.fonte === 'banco';
+  document.getElementById('vh-header').innerHTML = `
+    <div class="viewer-meta">
+      <span class="qtag ${TAG_CLS[q.tag]||'qtag-ref'}">${q.tag||''}</span>
+      ${q.ano ? `<span class="viewer-meta-item"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${q.ano}</span>` : ''}
+      ${q.duracao ? `<span class="viewer-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${q.duracao}</span>` : ''}
+      ${q.cliente ? `<span class="viewer-meta-item">${q.cliente}</span>` : ''}
+    </div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+      <div>
+        <div class="viewer-title">${q.titulo}</div>
+        ${q.descricao ? `<div style="font-size:12px;color:var(--text-secondary);line-height:1.55;margin-top:4px;max-width:480px;">${q.descricao}</div>` : ''}
+      </div>
+      <div class="viewer-actions" style="flex-shrink:0;">
+        ${isEquipe ? `<button class="tbtn" onclick="abrirEdicao('${q.id}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar</button>` : ''}
+        <button class="tbtn" onclick="baixarQuestionario('${q.id}')">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Baixar
+        </button>
+        <button class="tbtn tbtn-orange" onclick="pedirAoGuru('${q.id}')">
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Pedir ao Guru
+        </button>
+      </div>
+    </div>`;
+
+  document.getElementById('vh-body').innerHTML = (q.blocos||[]).map(b => {
+    return `
+      <div class="q-section-lbl">${b.titulo}</div>
+      ${(b.questoes||[]).map(qu => {
+        const saved = qu.resposta || localStorage.getItem(`guruquest_resp_${q.id}_${qu.num}`) || '';
+        const selected = qu.selecionado || localStorage.getItem(`guruquest_sel_${q.id}_${qu.num}`) || '';
+        const hasAnotar = qu.opcoes?.some(o => /anotar/i.test(o));
+        if (saved && qu.resposta !== saved) qu.resposta = saved;
+        if (selected && qu.selecionado !== selected) qu.selecionado = selected;
+        const opts = qu.opcoes?.length ? `<div class="q-opts">${qu.opcoes.map(o => `
+          <div class="q-opt${selected===o ? ' selected' : ''}" data-opcao="${escHtml(o)}" onclick="selecionarOpcao(this, '${qu.tipo}')">
+            <div class="q-opt-dot"></div>
+            <span>${o.replace(/ → (Encerre|Continue|[A-Z]\d.*)/,'').replace(/ → .*/,'')}</span>
+            ${o.includes('Encerre') ? `<span class="q-enc">→ encerra</span>` : ''}
+          </div>`).join('')}</div>` : '';
+        const showText = qu.tipo === 'ab' || /anotar/i.test(selected);
+        const textarea = (qu.tipo === 'ab' || hasAnotar)
+          ? `<textarea class="q-answer-box" data-qnum="${qu.num}" placeholder="Escreva sua resposta aqui..." rows="3" oninput="guardarResposta(this)" style="display:${showText ? 'block' : 'none'}">${saved}</textarea>`
+          : '';
+        return `
+          <div class="q-item">
+            <div class="q-item-head">
+              <span class="q-num">${qu.num}</span>
+              <span class="q-text">${qu.texto}</span>
+              <span class="q-tipo ${TIPO_CLS[qu.tipo]||''}">${TIPO_LBL[qu.tipo]||qu.tipo}</span>
+            </div>
+            ${qu.instrucao ? `<div class="q-inst">${qu.instrucao}</div>` : ''}
+            ${opts}
+            ${textarea}
+          </div>`;
+      }).join('')}
+    `;
+  }).join('');
+
+  mostrarViewer('read');
+
+//função para marcar opções selecionadas mesmo após atualizar a página ou sair e voltar depois de um tempo
+  const dadosSalvos = localStorage.getItem('guruquest_respostas_salvas');
+  if (dadosSalvos) {
+    const marcadas = JSON.parse(dadosSalvos);
+    document.querySelectorAll('.q-opt').forEach(opt => {
+      const texto = opt.querySelector('span')?.innerText.trim() || opt.innerText.trim();
+      if (marcadas.includes(texto)) {
+        opt.classList.add('selected');
+      }
+    });
+  }
+} 
+
+function guardarResposta(el) {
+  const num = el.dataset.qnum;
+  if (!selId || !num) return;
+  const q = getAll().find(x => String(x.id) === String(selId));
+  if (!q) return;
+  const questao = (q.blocos||[]).flatMap(b => b.questoes||[]).find(x => String(x.num) === String(num));
+  if (!questao) return;
+  questao.resposta = el.value;
+  localStorage.setItem(`guruquest_resp_${q.id}_${num}`, el.value);
+}
+
+function mostrarViewer(modo) {
+  document.getElementById('center-empty').style.display  = modo===null ? 'flex' : 'none';
+  document.getElementById('viewer-read').classList.toggle('active', modo==='read');
+  document.getElementById('viewer-edit').classList.toggle('active', modo==='edit');
+  modoEdicao = modo === 'edit';
+}
+function mostrarEmpty() { mostrarViewer(null); }
+function selecionar(id) {
+  selId = id;
+  const q = getAll().find(x => String(x.id) === String(id));
+  
+  if (q) {
+    renderLib(); // Atualiza a lista lateral para destacar o card selecionado
+    renderViewer(q); // Abre o questionário na tela central
+  } else {
+    mostrarEmpty();
+  }
+}
+
+//  EDITOR
+function abrirEdicao(id) {
+  const q = DB.find(x => String(x.id) === String(id));
+  if (!q) { toast('Só é possível editar questionários salvos pela equipe'); return; }
+  editandoId = id;
+  document.getElementById('ed-titulo').value    = q.titulo    || '';
+  document.getElementById('ed-tag').value       = q.tag       || 'Outro';
+  document.getElementById('ed-cliente').value   = q.cliente   || '';
+  document.getElementById('ed-duracao').value   = q.duracao   || '';
+  document.getElementById('ed-metodo').value    = q.metodo    || '';
+  document.getElementById('ed-descricao').value = q.descricao || '';
+  renderEdBlocos(q.blocos || []);
+  mostrarViewer('edit');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.querySelectorAll('#viewer-edit textarea').forEach(autoH);
+  }));
+}
+
+function cancelarEdicao() {
+  editandoId = null;
+  if (selId) { const q = getAll().find(x=>String(x.id)===String(selId)); if(q) renderViewer(q); }
+  else mostrarEmpty();
+}
+
+function renderEdBlocos(blocos) {
+  document.getElementById('ed-body').innerHTML = blocos.map((b,bi) => edBlocoHTML(b,bi)).join('')
+    + `<button class="btn-add-bloco" onclick="addBloco()"><svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Adicionar bloco</button>`;
+}
+
+function edBlocoHTML(b, bi) {
+  return `<div class="ed-bloco" data-bi="${bi}">
+    <div class="ed-bloco-head">
+      <input class="ed-bloco-titulo" data-field="titulo" placeholder="Título do bloco" value="${esc(b.titulo||'')}">
+      <div class="btn-rm-bloco" onclick="rmBloco(${bi})"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+    </div>
+    <div class="ed-questoes" data-qi="${bi}">
+      ${(b.questoes||[]).map((q,qi)=>edQHTML(q,bi,qi)).join('')}
+    </div>
+    <div style="padding:4px 8px 8px;">
+      <button class="btn-add-q" onclick="addQ(${bi})">
+        <svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Adicionar questão
+      </button>
+    </div>
+  </div>`;
+}
+
+function edQHTML(q, bi, qi) {
+  const tipos = ['ru','rm','esp','esc','ab'].map(t =>
+    `<option value="${t}" ${q.tipo===t?'selected':''}>${TIPO_LBL[t]}</option>`).join('');
+  return `<div class="ed-questao" data-qid="${bi}-${qi}">
+    <div class="ed-q-row1">
+      <input class="form-input ed-q-num" data-f="num" placeholder="P1" value="${esc(q.num||'')}">
+      <select class="form-select ed-q-tipo" data-f="tipo">${tipos}</select>
+      <div class="ed-q-spacer"></div>
+      <div class="ed-q-del" onclick="rmQ(${bi},${qi})"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+    </div>
+    <textarea class="form-input ed-q-texto" data-f="texto" placeholder="Texto da pergunta" oninput="autoH(this)">${esc(q.texto||'')}</textarea>
+    <textarea class="form-textarea" data-f="instrucao" placeholder="INSTRUÇÃO DE CAMPO (opcional)" oninput="autoH(this)">${esc(q.instrucao||'')}</textarea>
+    <textarea class="form-textarea" data-f="opcoes"    placeholder="Opções — uma por linha"    oninput="autoH(this)">${(q.opcoes||[]).join('\n')}</textarea>
+  </div>`;
+}
+
+function addBloco() {
+  const cont = document.getElementById('ed-body');
+  const btn  = cont.querySelector('.btn-add-bloco');
+  const bi   = cont.querySelectorAll('.ed-bloco').length;
+  const div  = document.createElement('div');
+  div.innerHTML = edBlocoHTML({titulo:'',questoes:[]}, bi);
+  cont.insertBefore(div.firstElementChild, btn);
+}
+
+function rmBloco(bi) { document.querySelector(`[data-bi="${bi}"]`)?.remove(); }
+
+function addQ(bi) {
+  const cont = document.querySelector(`[data-qi="${bi}"]`);
+  if (!cont) return;
+  const qi = cont.querySelectorAll('.ed-questao').length;
+  const div = document.createElement('div');
+  div.innerHTML = edQHTML({num:'',tipo:'ru',texto:'',instrucao:'',opcoes:[]}, bi, qi);
+  cont.appendChild(div.firstElementChild);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    cont.querySelectorAll('.ed-questao:last-child textarea').forEach(autoH);
+  }));
+}
+
+function rmQ(bi, qi) { document.querySelector(`[data-qid="${bi}-${qi}"]`)?.remove(); }
+
+function coletarForm() {
+  const titulo    = document.getElementById('ed-titulo').value.trim();
+  const tag       = document.getElementById('ed-tag').value;
+  const cliente   = document.getElementById('ed-cliente').value.trim();
+  const duracao   = document.getElementById('ed-duracao').value.trim();
+  const metodo    = document.getElementById('ed-metodo').value.trim();
+  const descricao = document.getElementById('ed-descricao').value.trim();
+  const blocos = [];
+  document.querySelectorAll('#ed-body .ed-bloco').forEach(bEl => {
+    const titulo = bEl.querySelector('[data-field="titulo"]')?.value?.trim() || '';
+    const questoes = [];
+    bEl.querySelectorAll('.ed-questao').forEach(qEl => {
+      const num       = qEl.querySelector('[data-f="num"]')?.value?.trim() || '';
+      const tipo      = qEl.querySelector('[data-f="tipo"]')?.value || 'ru';
+      const texto     = qEl.querySelector('[data-f="texto"]')?.value?.trim() || '';
+      const instrucao = qEl.querySelector('[data-f="instrucao"]')?.value?.trim() || '';
+      const opRaw     = qEl.querySelector('[data-f="opcoes"]')?.value?.trim() || '';
+      const opcoes    = opRaw ? opRaw.split('\n').map(s=>s.trim()).filter(Boolean) : [];
+      if (texto) questoes.push({num, tipo, texto, instrucao, opcoes});
+    });
+    if (titulo || questoes.length) blocos.push({titulo, questoes});
+  });
+  return {titulo, tag, cliente, duracao, metodo, descricao, blocos,
+    nQuestoes: blocos.reduce((a,b)=>a+b.questoes.length, 0)};
+}
+
+async function salvarEdicao() {
+  if (!editandoId) return;
+  const dados = coletarForm();
+  if (!dados.titulo) { toast('Título obrigatório'); return; }
+  const ok = await atualizarDB(editandoId, dados);
+  if (ok) { cancelarEdicao(); }
+}
+
+
+//GURU — CHAT
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); }
+}
+
+function autoH(el) {
+  el.style.height = '0';
+  void el.offsetHeight; // força reflow
+  el.style.height = el.scrollHeight + 'px';
+}
+
+function usarChip(el) {
+  const ta = document.getElementById('guru-input');
+  ta.value = el.textContent.trim();
+  ta.focus();
+  enviar();
+}
+
+function pedirAoGuru(id) {
+  const q = getAll().find(x => String(x.id) === String(id));
+  if (!q) return;
+  document.getElementById('guru-input').value =
+    `Tenho o questionário "${q.titulo}" selecionado. O que posso fazer com ele?`;
+  enviar();
+}
+
+function enviar() {
+  const ta = document.getElementById('guru-input');
+  const texto = ta.value.trim();
+  if (!texto) return;
+  ta.value = '';
+  autoH(ta);
+
+  addMsg('user', texto);
+
+  const histCtx = getAll().map(q =>
+    `• "${q.titulo}" — ${q.tag}, ${q.ano||'s/ano'}, ${q.metodo||''}${q.cliente ? ', cliente: '+q.cliente : ''}`
+  ).join('\n');
+
+  let refCtx = 'Nenhum selecionado.';
+  if (selId) {
+    const q = getAll().find(x => String(x.id) === String(selId));
+    if (q) {
+      const blocoRes = (q.blocos||[]).map(b =>
+        `  - ${b.titulo} (${(b.questoes||[]).length} questões)`).join('\n');
+      refCtx = `"${q.titulo}" (${q.tag}, ${q.metodo})\nBlocos:\n${blocoRes}`;
+    }
+  }
+
+  const promptCompleto = GURU_CONTEXT
+    .replace('{HISTORICO}', histCtx)
+    .replace('{REFERENCIA}', refCtx)
+    .replace('{PEDIDO}', texto);
+
+  promptAtual = promptCompleto;
+
+  const pid = 'p-' + Date.now();
+  pasteId = pid;
+  addPromptBloco(pid, promptCompleto);
+  scrollGuru();
+}
+
+function addMsg(role, text) {
+  const msgs = document.getElementById('guru-msgs');
+  const d = document.createElement('div');
+  d.className = `msg msg-${role === 'user' ? 'user' : 'guru'}`;
+  d.innerHTML = `<div class="bubble">${escHtml(text)}</div><div class="msg-time">${hora()}</div>`;
+  msgs.appendChild(d);
+  scrollGuru();
+}
+
+function addPromptBloco(pid, prompt) {
+  const msgs = document.getElementById('guru-msgs');
+  const preview = prompt.length > 300 ? prompt.slice(0,300) + '…' : prompt;
+  const d = document.createElement('div');
+  d.className = 'msg msg-guru';
+  d.id = 'msg-' + pid;
+  d.innerHTML = `
+    <div class="bubble">Prompt pronto! ✨ Copie, cole em qualquer IA e traga a resposta de volta.</div>
+    <div class="prompt-bloco">
+      <div class="prompt-bloco-header">
+        <span class="prompt-bloco-label">📋 Prompt gerado</span>
+        <span style="font-size:10px;color:var(--text-muted)">${prompt.split('\n').length} linhas</span>
+      </div>
+      <div class="prompt-bloco-text">${escHtml(preview)}</div>
+      <div class="prompt-bloco-actions">
+        <button class="tbtn tbtn-orange" onclick="copiarPrompt()">
+          <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copiar prompt
+        </button>
+        <button class="tbtn" onclick="abrirPaste('${pid}')">
+          <svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+          Colar resposta
+        </button>
+      </div>
+    </div>
+    <div class="paste-area" id="paste-${pid}">
+      <div class="paste-label">📥 Cole a resposta da IA aqui</div>
+      <textarea class="paste-ta" id="ta-${pid}" placeholder="Cole a resposta completa da IA…"></textarea>
+      <div class="paste-btns">
+        <button class="tbtn tbtn-green" onclick="processarResposta('${pid}')">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Interpretar e salvar
+        </button>
+        <button class="tbtn" onclick="fecharPaste('${pid}')">Cancelar</button>
+      </div>
+    </div>
+    <div class="msg-time">${hora()}</div>`;
+  msgs.appendChild(d);
+  scrollGuru();
+}
+
+function copiarPrompt() {
+  if (!promptAtual) return;
+  navigator.clipboard.writeText(promptAtual).then(() => toast('✓ Prompt copiado!'));
+}
+
+function abrirPaste(pid) {
+  document.getElementById('paste-' + pid)?.classList.add('open');
+  document.getElementById('ta-' + pid)?.focus();
+}
+
+function fecharPaste(pid) {
+  document.getElementById('paste-' + pid)?.classList.remove('open');
+  const ta = document.getElementById('ta-' + pid);
+  if (ta) ta.value = '';
+}
+
+async function processarResposta(pid) {
+  const raw = document.getElementById('ta-' + pid)?.value?.trim() || '';
+  if (!raw) { toast('Cole a resposta primeiro'); return; }
+
+  let parsed = null;
+  const m = raw.match(/\{[\s\S]*\}/);
+  if (m) { try { parsed = JSON.parse(m[0]); } catch {} }
+
+  if (!parsed?.titulo || !parsed?.blocos) {
+    addMsg('guru', '⚠️ Não consegui identificar um JSON válido na resposta. Verifique se a IA retornou no formato solicitado e tente novamente.');
+    fecharPaste(pid);
+    return;
+  }
+
+  parsed.nQuestoes = (parsed.blocos||[]).reduce((a,b)=>a+(b.questoes?.length||0), 0);
+  parsed.ano    = new Date().getFullYear();
+  parsed.origem = 'chat';
+
+  // O chat não tem uma tela de revisão antes de salvar — por isso, se o
+  // cliente não for confiável (vazio ou "Nexus", a própria agência), salva
+  // sem cliente e avisa, em vez de manter um palpite errado da IA.
+  const clienteNaoIdentificado = _clientePrecisaRevisao(parsed.cliente);
+  if (clienteNaoIdentificado) parsed.cliente = '';
+
+  fecharPaste(pid); // a partir daqui o resultado aparece como aviso de duplicata ou confirmação de salvo
+
+  verificarESalvar(parsed, async () => {
+    const id = await salvarDB(parsed);
+    if (id) {
+      const avisoCliente = clienteNaoIdentificado
+        ? ' Não consegui identificar o cliente — edite o questionário pra preencher esse campo.'
+        : '';
+      addMsg('guru', `Questionário "${parsed.titulo}" salvo com sucesso! (${parsed.nQuestoes} questões). Aparece na biblioteca ao lado.${avisoCliente}`);
+      setTimeout(() => { selecionar(id); }, 400);
+    }
+  });
+}
+
+
+// ══════════════════════════════════════════════════════════════
+//  IMPORTAÇÃO DE ARQUIVOS
+// ══════════════════════════════════════════════════════════════
+
+function abrirImport() {
+  importDados = null;
+  _impPromptCompleto = '';
+  document.getElementById('imp-drop').style.display = '';
+  document.getElementById('imp-processing').classList.remove('vis');
+  document.getElementById('imp-prompt-step').style.display = 'none';
+  document.getElementById('imp-preview').classList.remove('vis');
+  document.getElementById('imp-save-btn').style.display = 'none';
+  document.getElementById('imp-file-input').value = '';
+  document.getElementById('import-overlay').classList.add('open');
+}
+
+function fecharImport() {
+  document.getElementById('import-overlay').classList.remove('open');
+  importDados = null;
+  _impPromptCompleto = '';
+}
+
+function impDragOver(e) {
+  e.preventDefault();
+  document.getElementById('imp-drop').classList.add('drag-over');
+}
+function impDragLeave(e) {
+  document.getElementById('imp-drop').classList.remove('drag-over');
+}
+function impDrop(e) {
+  e.preventDefault();
+  document.getElementById('imp-drop').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processarArquivo(file);
+}
+function impFileSelected(e) {
+  const file = e.target.files[0];
+  if (file) processarArquivo(file);
+}
+
+// ── IMPORTAÇÃO — FLUXO EXTERNO DE IA ────────────────────────
+
+let _impPromptCompleto = '';
+
+function setProc(cls, label, sub) {
+  const el = document.getElementById('imp-processing');
+  el.className = 'import-processing' + (cls ? ' ' + cls : '');
+  if (label) document.getElementById('imp-proc-label').textContent = label;
+  if (sub)   document.getElementById('imp-proc-sub').textContent   = sub;
+}
+
+function _buildParsePrompt(texto, filename) {
+  return `Você é um especialista em pesquisa de opinião.
+Analise o texto abaixo (extraído do arquivo "${filename}") e retorne SOMENTE um JSON válido com esta estrutura exata — sem texto fora do JSON, sem markdown, sem blocos de código:
+
+{
+  "titulo": "Título do questionário",
+  "tag": "Tracking de Marca | Eleitoral | Pós-teste | B2B | Mapa | Media Audit | Pesquisa de Opinião | Outro",
+  "cliente": "Nome do cliente",
+  "metodo": "Ex: Quantitativa · CATI",
+  "duracao": "Ex: ~15 min",
+  "descricao": "Objetivo em 1-2 frases",
+  "ano": ${new Date().getFullYear()},
+  "blocos": [
+    {
+      "titulo": "Nome do bloco (ex: I — Filtros)",
+      "questoes": [
+        {
+          "num": "P1",
+          "texto": "Texto completo da pergunta",
+          "tipo": "ru | rm | esp | esc | ab",
+          "opcoes": ["Opção 1", "Opção 2"],
+          "instrucao": "INSTRUÇÃO EM CAIXA ALTA (omitir se não houver)"
+        }
+      ]
+    }
+  ]
+}
+
+Tipos: ru=resposta única, rm=múltipla, esp=espontânea, esc=escala, ab=aberta.
+Preserve a numeração original (P1, PF1, E1...). Inclua todas as opções de resposta.
+Retorne SOMENTE o JSON.
+
+Texto do arquivo:
+${texto.slice(0, 18000)}`;
+}
+
+function processarArquivo(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['txt','docx','pdf'].includes(ext)) { toast('Formato não suportado. Use .txt, .docx ou .pdf'); return; }
+
+  // Aviso o mais cedo possível: nome do arquivo parecido com um questionário
+  // que já está na biblioteca. Ainda não sabemos o título real (só a IA vai
+  // gerar isso depois) — por isso é uma estimativa, e por isso não bloqueia,
+  // só avisa antes de gastar tempo extraindo o arquivo e montando o prompt.
+  const possivelDup = encontrarPossivelDuplicataPorArquivo(file.name);
+  if (possivelDup) {
+    _dupExistenteId = possivelDup.id;
+    _dupSalvarFn = () => _extrairEGerarPrompt(file, ext);
+    abrirDupModal(possivelDup, {
+      titulo: 'Pode ser que você já tenha esse questionário',
+      texto: 'O nome deste arquivo é parecido com um questionário que já está na biblioteca. Veja se não é o caso antes de seguir com a importação.',
+      labelConfirmar: 'Continuar mesmo assim',
+    });
+    return;
+  }
+  _extrairEGerarPrompt(file, ext);
+}
+
+async function _extrairEGerarPrompt(file, ext) {
+  document.getElementById('imp-drop').style.display = 'none';
+  document.getElementById('imp-preview').classList.remove('vis');
+  document.getElementById('imp-prompt-step').style.display = 'none';
+  document.getElementById('imp-save-btn').style.display = 'none';
+  setProc('vis', 'Extraindo texto do arquivo...', file.name);
+
+  let texto = '';
+  try {
+    if (ext === 'txt')       texto = await lerTxt(file);
+    else if (ext === 'docx') texto = await lerDocx(file);
+    else if (ext === 'pdf')  texto = await lerPdf(file);
+  } catch (err) {
+    setProc('', '', '');
+    document.getElementById('imp-drop').style.display = '';
+    toast('Erro ao ler o arquivo: ' + err.message);
+    return;
+  }
+
+  if (!texto || texto.trim().length < 50) {
+    setProc('', '', '');
+    document.getElementById('imp-drop').style.display = '';
+    toast('Arquivo vazio ou sem texto legível.');
+    return;
+  }
+
+  // Gera prompt e mostra etapa de cópia/colagem
+  _impPromptCompleto = _buildParsePrompt(texto, file.name);
+  setProc('', '', '');
+
+  const preview = _impPromptCompleto.length > 400
+    ? _impPromptCompleto.slice(0, 400) + '…'
+    : _impPromptCompleto;
+  document.getElementById('imp-prompt-preview').textContent = preview;
+  document.getElementById('imp-prompt-linhas').textContent  =
+    _impPromptCompleto.split('\n').length + ' linhas';
+  document.getElementById('imp-paste-ta').value = '';
+  document.getElementById('imp-prompt-step').style.display = '';
+}
+
+function impCopiarPrompt() {
+  if (!_impPromptCompleto) return;
+  navigator.clipboard.writeText(_impPromptCompleto).then(() => toast('✓ Prompt copiado!'));
+}
+
+function impVoltarDrop() {
+  document.getElementById('imp-prompt-step').style.display = 'none';
+  document.getElementById('imp-drop').style.display = '';
+  document.getElementById('imp-file-input').value = '';
+  _impPromptCompleto = '';
+}
+
+function impInterpretarResposta() {
+  const raw = document.getElementById('imp-paste-ta')?.value?.trim() || '';
+  if (!raw) { toast('Cole a resposta da IA primeiro'); return; }
+
+  let parsed = null;
+  for (const src of [raw, raw.match(/```(?:json)?\s*([\s\S]*?)```/)?.[1], raw.match(/\{[\s\S]*\}/)?.[0]]) {
+    if (!src) continue;
+    try { parsed = JSON.parse(src.trim()); break; } catch {}
+  }
+
+  if (!parsed?.titulo || !Array.isArray(parsed?.blocos)) {
+    toast('⚠️ JSON inválido — verifique se a IA retornou no formato solicitado');
+    return;
+  }
+
+  parsed.nQuestoes = (parsed.blocos||[]).reduce((a,b)=>a+(b.questoes?.length||0),0);
+  parsed.origem = 'importacao';
+
+  verificarESalvar(parsed, () => {
+    importDados = parsed;
+    document.getElementById('imp-prompt-step').style.display = 'none';
+    mostrarPreviewImport(parsed);
+  }, { labelConfirmar: 'Continuar mesmo assim' });
+}
+
+// ── PREVIEW E CONFIRMAÇÃO DE IMPORTAÇÃO ──────────────────────
+
+function mostrarPreviewImport(d) {
+  document.getElementById('imp-titulo').value    = d.titulo    || '';
+  document.getElementById('imp-tag').value       = d.tag       || 'Outro';
+  document.getElementById('imp-ano').value       = d.ano       || new Date().getFullYear();
+
+  const clientePendente = _clientePrecisaRevisao(d.cliente);
+  const elCliente = document.getElementById('imp-cliente');
+  elCliente.value       = clientePendente ? '' : d.cliente;
+  elCliente.placeholder = clientePendente ? '⚠️ Não identificado — preencha o cliente' : 'Nome do cliente';
+  elCliente.style.borderColor = clientePendente ? 'rgba(255,101,0,0.6)' : '';
+
+  document.getElementById('imp-metodo').value    = d.metodo    || '';
+  document.getElementById('imp-descricao').value = d.descricao || '';
+
+  const nQ = (d.blocos||[]).reduce((a,b)=>a+(b.questoes?.length||0),0);
+  document.getElementById('imp-q-count').innerHTML = `
+    <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg>
+    ${nQ} questões identificadas em ${(d.blocos||[]).length} bloco(s) — revise os metadados antes de salvar`;
+
+  const prev = document.getElementById('imp-q-preview');
+  prev.innerHTML = (d.blocos||[]).map(b => `
+    <div class="q-section-lbl">${esc(b.titulo||'Bloco')}</div>
+    ${(b.questoes||[]).slice(0,5).map(q => `
+      <div class="imp-q-item">
+        <span class="imp-q-num">${esc(q.num||'')}</span>${esc(q.texto||'')}
+        <span class="q-tipo ${TIPO_CLS[q.tipo]||''}" style="margin-left:4px;">${TIPO_LBL[q.tipo]||q.tipo}</span>
+      </div>`).join('')}
+    ${(b.questoes||[]).length > 5 ? `<div class="imp-q-item" style="opacity:0.5">+ ${(b.questoes||[]).length - 5} mais...</div>` : ''}
+  `).join('');
+
+  document.getElementById('imp-preview').classList.add('vis');
+  document.getElementById('imp-save-btn').style.display = '';
+}
+
+async function confirmarImport() {
+  if (!importDados) return;
+  importDados.titulo    = document.getElementById('imp-titulo').value.trim()    || importDados.titulo;
+  importDados.tag       = document.getElementById('imp-tag').value               || importDados.tag;
+  importDados.ano       = parseInt(document.getElementById('imp-ano').value)     || importDados.ano;
+  importDados.cliente   = document.getElementById('imp-cliente').value.trim();
+  importDados.metodo    = document.getElementById('imp-metodo').value.trim()    || importDados.metodo;
+  importDados.descricao = document.getElementById('imp-descricao').value.trim() || importDados.descricao;
+  importDados.nQuestoes = (importDados.blocos||[]).reduce((a,b)=>a+(b.questoes?.length||0),0);
+  importDados.origem = 'importacao';
+  if (!importDados.titulo) { toast('Título obrigatório'); return; }
+  if (!importDados.cliente) {
+    toast('Não identificamos o cliente — preencha esse campo antes de salvar');
+    document.getElementById('imp-cliente').focus();
+    return;
+  }
+
+  verificarESalvar(importDados, async () => {
+    document.getElementById('imp-save-btn').textContent = 'Salvando...';
+    document.getElementById('imp-save-btn').disabled = true;
+    const id = await salvarDB(importDados);
+    if (id) { fecharImport(); popularFiltroClientes(); setTimeout(() => selecionar(id), 400); }
+    document.getElementById('imp-save-btn').textContent = 'Salvar na biblioteca';
+    document.getElementById('imp-save-btn').disabled = false;
+  });
+}
+
+// ── EXTRATORES DE TEXTO ───────────────────────────────────────
+
+function lerTxt(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = e => resolve(e.target.result);
+    r.onerror = () => reject(new Error('Falha ao ler TXT'));
+    r.readAsText(file, 'UTF-8');
+  });
+}
+
+async function lerDocx(file) {
+  if (typeof mammoth === 'undefined') throw new Error('Biblioteca mammoth não carregada');
+  const buf = await file.arrayBuffer();
+  const result = await mammoth.extractRawText({ arrayBuffer: buf });
+  return result.value || '';
+}
+
+async function lerPdf(file) {
+  // Carrega pdf.js sob demanda
+  if (typeof pdfjsLib === 'undefined') {
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+
+  const buf    = await file.arrayBuffer();
+  const pdf    = await pdfjsLib.getDocument({ data: buf }).promise;
+  const partes = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page    = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    partes.push(content.items.map(it => it.str).join(' '));
+  }
+  return partes.join('\n');
+}
+
+function scrollGuru() {
+  const msgs = document.getElementById('guru-msgs');
+  setTimeout(() => { msgs.scrollTop = msgs.scrollHeight; }, 50);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  DOWNLOAD — EXPORTA EM PDF COM LAYOUT
+// ══════════════════════════════════════════════════════════════
+function baixarQuestionario(id) {
+  const q = getAll().find(x => String(x.id) === String(id));
+  if (!q) return;
+
+  // Mostra um aviso para o usuário saber que está processando
+  toast('Gerando PDF, aguarde...');
+
+  // 1. Função que monta e baixa o PDF
+  const gerarPDF = () => {
+    const TIPO_FULL = { ru:'Resposta Única', rm:'Resposta Múltipla', esp:'Espontânea', esc:'Escala', ab:'Aberta' };
+
+    let conteudoHTML = '';
+    (q.blocos || []).forEach(b => {
+      conteudoHTML += `<div class="q-section-lbl">${b.titulo}</div>`;
+      (b.questoes || []).forEach(qu => {
+        conteudoHTML += `
+          <div class="q-item">
+            <div class="q-item-head">
+              <span class="q-num">${qu.num}.</span>
+              <span class="q-text">${qu.texto} <span style="color:#999; font-size:11px; font-weight:normal;">[${TIPO_FULL[qu.tipo] || qu.tipo}]</span></span>
+            </div>
+            ${qu.instrucao ? `<div class="q-inst">⚑ ${qu.instrucao}</div>` : ''}
+            ${qu.opcoes && qu.opcoes.length ? `
+              <div class="q-opts">
+                ${qu.opcoes.map(o => `
+                  <div class="q-opt">
+                    <div class="q-opt-dot"></div>
+                    <span>${o.replace(/ → (Encerre|Continue|[A-Z]\d.*)/,'').replace(/ → .*/,'')}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+    });
+
+    // Cria um container invisível para montar o visual
+    const container = document.createElement('div');
+    container.innerHTML = `
+      <style>
+        .pdf-wrapper { font-family: 'Inter', sans-serif; background: #ffffff; color: #222222; padding: 30px; }
+        .header { border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 30px; }
+        h1 { color: #D8801B; font-size: 24px; margin: 0 0 10px 0; }
+        .meta { font-size: 12px; color: #666; margin-bottom: 5px; }
+        .desc { font-size: 14px; color: #444; margin-top: 15px; line-height: 1.5; }
+        
+        .q-section-lbl { font-size: 12px; font-weight: 700; color: #666666; text-transform: uppercase; letter-spacing: 1px; margin: 40px 0 15px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .q-item { background: #ffffff !important; border: 1px solid #e0e0e0 !important; border-radius: 8px; padding: 15px 20px; margin-bottom: 15px; page-break-inside: avoid; }
+        .q-item-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; font-weight: 600; }
+        .q-num { color: #D8801B !important; }
+        .q-text { flex: 1; font-size: 14px !important; line-height: 1.5; color: #222222 !important; }
+        .q-inst { font-size: 11px !important; color: #666666 !important; font-style: italic; margin-bottom: 15px; background: #f5f5f5 !important; padding: 6px 10px; border-radius: 4px; border: none !important; }
+        .q-opts { margin-left: 25px; }
+        .q-opt { display: flex; align-items: center; gap: 10px; font-size: 13px !important; margin-bottom: 8px; color: #444444 !important; }
+        .q-opt-dot { width: 14px; height: 14px; border: 1.5px solid #cccccc !important; border-radius: 3px; background: #ffffff !important; }
+        
+        .footer { margin-top: 50px; text-align: center; font-size: 10px; color: #999; }
+      </style>
+      <div class="pdf-wrapper">
+        <div class="header">
+          <h1>${q.titulo}</h1>
+          ${q.cliente ? `<div class="meta"><strong>Cliente:</strong> ${q.cliente}</div>` : ''}
+          ${q.metodo ? `<div class="meta"><strong>Método:</strong> ${q.metodo}</div>` : ''}
+          ${q.duracao ? `<div class="meta"><strong>Duração:</strong> ${q.duracao}</div>` : ''}
+          ${q.descricao ? `<div class="desc">${q.descricao}</div>` : ''}
+        </div>
+        ${conteudoHTML}
+        <div class="footer">Gerado por GuruQuest · HUB.nexus · ${new Date().toLocaleDateString('pt-BR')}</div>
+      </div>
+    `;
+// Configurações do PDF
+    const opt = {
+      margin:       10, 
+      filename:     `${q.titulo.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`,
+      
+      // JPEG em 0.95 comprime muito mais rápido que 1.0 e visualmente é idêntico!
+      image:        { type: 'jpeg', quality: 0.95 }, 
+      
+      html2canvas:  { 
+        scale: 3, // O número mágico: leitura muito nítida, mas sem o peso colossal do 4
+        useCORS: true,
+        letterRendering: true
+      }, 
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // Gera e baixa o arquivo
+    html2pdf().set(opt).from(container).save().then(() => {
+      toast('✓ Download concluído!');
+    });
+  };
+
+  // 2. Carrega a biblioteca html2pdf magicamente só quando precisar
+  if (typeof html2pdf === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    script.onload = gerarPDF; // Assim que a biblioteca baixar, ele gera o PDF
+    document.head.appendChild(script);
+  } else {
+    // Se já tiver clicado antes, ela já existe, então só gera o PDF
+    gerarPDF();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  UTILITÁRIOS (Corrigidos para evitar erros no código)
+// ══════════════════════════════════════════════════════════════
+function toast(msg) { 
+  const t = document.getElementById('toast'); 
+  t.textContent = msg; 
+  t.classList.add('show'); 
+  setTimeout(() => t.classList.remove('show'), 2600); 
+} 
+
+function hora() { 
+  return new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); 
+} 
+
+// Usando o método split/join que é à prova de erros ao copiar e colar
+function esc(s) { 
+  return String(s)
+    .split('&').join('&amp;')
+    .split('<').join('&lt;')
+    .split('>').join('&gt;')
+    .split('"').join('&quot;'); 
+} 
+
+function escHtml(s) { 
+  return String(s)
+    .split('&').join('&amp;')
+    .split('<').join('&lt;')
+    .split('>').join('&gt;')
+    .split('\n').join('<br>'); 
+} 
+
+function selecionarOpcao(elemento, tipo) { 
+  if (tipo === 'ru' || tipo === 'esc') { 
+    const irmaos = elemento.parentElement.querySelectorAll('.q-opt'); 
+    irmaos.forEach(op => { 
+      if (op !== elemento) op.classList.remove('selected'); 
+    }); 
+  } 
+  elemento.classList.toggle('selected'); 
+
+  // >>> SALVA AS RESPOSTAS NO NAVEGADOR APÓS O CLIQUE <<<
+  const marcadas = [];
+  document.querySelectorAll('.q-opt.selected').forEach(opt => {
+    const texto = opt.querySelector('span')?.innerText.trim() || opt.innerText.trim();
+    if (texto) marcadas.push(texto);
+  });
+  localStorage.setItem('guruquest_respostas_salvas', JSON.stringify(marcadas));
+}
+
+</script>
+</body>
+</html>
+
+

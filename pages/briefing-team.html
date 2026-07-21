@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HUB.nexus — Briefing Equipe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/global.css"/>
+  <style>
+    body { display: flex; flex-direction: column; overflow:hidden; height:100vh; background:var(--bg); }
+    .main { flex:1; display:flex; flex-direction:column; overflow:hidden; position:relative; }
+    
+    /* ── Topbar ── */
+    .topbar {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:0 20px; height:52px; flex-shrink:0;
+      backdrop-filter:blur(30px);
+      background:rgba(255,255,255,0.03);
+      border-bottom:1px solid rgba(255,255,255,0.07);
+      z-index:5;
+    }
+    .topbar-left { display:flex; flex-direction:row; align-items:center; gap:10px; }
+    .topbar-title { font-size:13px; font-weight:500; color:var(--text-primary); letter-spacing:-0.2px; }
+    .topbar-sub   { font-size:11px; color:var(--text-muted); }
+    .topbar-right { display:flex; align-items:center; gap:8px; }
+    .tbtn {
+      display:inline-flex; align-items:center; gap:5px;
+      padding:6px 12px;
+      background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.09);
+      border-radius:var(--r-sm);
+      font-size:11px; color:var(--text-secondary);
+      cursor:pointer; font-family:'Inter',sans-serif;
+      transition:all var(--t-normal);
+    }
+    .tbtn:hover { background:rgba(255,255,255,0.09); }
+    .tbtn svg { width:11px; height:11px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .tbtn-primary { background:hsla(var(--theme-h),90%,50%,0.12); border-color:hsla(var(--theme-h),90%,50%,0.28); color:var(--orange-2); }
+    .tbtn-primary:hover { background:hsla(var(--theme-h),90%,50%,0.22); }
+    
+    body.light .topbar { background:rgba(255,255,255,0.55); border-bottom-color:rgba(180,100,40,0.10); }
+    body.light .topbar-title { color:#3a1200; }
+    body.light .topbar-sub   { color:#b09070; }
+    body.light .tbtn { background:rgba(255,255,255,0.70); border-color:rgba(180,100,40,0.18); color:#7a4a30; }
+    
+    /* ── Layout dois painéis ── */
+    .content { flex:1; display:flex; overflow:hidden; position:relative; z-index:1; }
+    
+    /* ── PAINEL ESQUERDO: lista de briefings ── */
+    .left-panel {
+      width:280px; flex-shrink:0;
+      display:flex; flex-direction:column;
+      border-right:1px solid rgba(255,255,255,0.07);
+      overflow:hidden;
+    }
+    .list-header {
+      padding:14px 16px 10px;
+      border-bottom:1px solid rgba(255,255,255,0.06);
+      flex-shrink:0;
+    }
+    .list-search {
+      display:flex; align-items:center; gap:7px;
+      background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.09);
+      border-radius:var(--r-sm);
+      padding:7px 10px;
+    }
+    .list-search svg { width:12px; height:12px; fill:none; stroke:var(--text-muted); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+    .list-search input {
+      background:transparent; border:none; outline:none;
+      font-size:12px; color:var(--text-primary); font-family:'Inter',sans-serif;
+      width:100%;
+    }
+    .list-search input::placeholder { color:var(--text-muted); }
+    .briefing-list { flex:1; overflow-y:auto; padding:8px; display:flex; flex-direction:column; gap:4px; }
+    
+    /* Item da lista */
+    .b-item {
+      padding:11px 12px;
+      border-radius:var(--r-md);
+      cursor:pointer;
+      border:1px solid transparent;
+      transition:all var(--t-normal);
+      position:relative;
+    }
+    .b-item:hover { background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.08); }
+    .b-item.active { background:hsla(var(--theme-h),90%,50%,0.08); border-color:hsla(var(--theme-h),90%,50%,0.22); }
+    .b-item-top { display:flex; align-items:flex-start; justify-content:space-between; gap:6px; margin-bottom:4px; }
+    .b-item-name { font-size:12px; font-weight:500; color:var(--text-primary); line-height:1.35; flex:1; }
+    .b-status {
+      font-size:9px; font-weight:500; padding:2px 7px;
+      border-radius:var(--r-pill); border:1px solid; flex-shrink:0; white-space:nowrap;
+    }
+    .b-status.novo     { color:var(--orange-2); border-color:hsla(var(--theme-h),90%,50%,0.30); background:hsla(var(--theme-h),90%,50%,0.10); }
+    .b-status.lido     { color:var(--text-muted); border-color:rgba(255,255,255,0.08); background:rgba(255,255,255,0.04); }
+    .b-status.gerado   { color:#a87ffb; border-color:rgba(136,85,255,0.30); background:rgba(136,85,255,0.10); }
+    .b-status.convertido { color:var(--green); border-color:rgba(102,221,136,0.30); background:rgba(102,221,136,0.10); }
+    .b-item-meta { font-size:10px; color:var(--text-muted); }
+    .b-trilha-dot {
+      display:inline-block; width:5px; height:5px; border-radius:50%;
+      margin-right:5px; vertical-align:middle;
+    }
+    
+    body.light .left-panel { border-right-color:rgba(180,100,40,0.10); }
+    body.light .list-header { border-bottom-color:rgba(180,100,40,0.08); }
+    body.light .list-search { background:rgba(255,255,255,0.70); border-color:rgba(180,100,40,0.18); }
+    body.light .list-search input { color:#3a1200; }
+    body.light .list-search svg   { stroke:#b09070; }
+    body.light .b-item-name { color:#3a1200; }
+    body.light .b-item-meta { color:#c09070; }
+    body.light .b-item:hover { background:rgba(255,255,255,0.65); border-color:rgba(180,100,40,0.14); }
+    body.light .b-item.active { background:hsla(var(--theme-h),90%,50%,0.06); border-color:hsla(var(--theme-h),90%,50%,0.20); }
+    
+    /* ── PAINEL DIREITO: detalhes do briefing ── */
+    .right-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+    
+    .empty-state {
+      flex:1; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:12px;
+      color:var(--text-muted);
+    }
+    .empty-state svg { width:40px; height:40px; fill:none; stroke:var(--text-faint); stroke-width:1.2; stroke-linecap:round; stroke-linejoin:round; }
+    .empty-state p { font-size:13px; }
+    
+    /* Detalhe header */
+    .detail-header {
+      padding:16px 20px 0;
+      border-bottom:1px solid rgba(255,255,255,0.07);
+      flex-shrink:0;
+    }
+    .detail-top {
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+      margin-bottom:12px;
+    }
+    .detail-info { flex:1; min-width:0; }
+    .detail-name {
+      font-size:16px; font-weight:500; color:var(--text-primary);
+      letter-spacing:-0.4px; margin-bottom:4px; line-height:1.3;
+    }
+    .detail-meta { font-size:11px; color:var(--text-muted); display:flex; align-items:center; gap:10px; }
+    .detail-actions { display:flex; gap:7px; flex-shrink:0; }
+    
+    /* Abas */
+    .tabs-row { display:flex; gap:2px; }
+    .tab-btn {
+      padding:8px 16px;
+      border-radius:8px 8px 0 0;
+      font-size:12px; font-weight:400;
+      color:var(--text-muted);
+      cursor:pointer; border:none; background:transparent;
+      font-family:'Inter',sans-serif;
+      transition:all var(--t-normal);
+      border:1px solid transparent;
+      border-bottom:none;
+    }
+    .tab-btn.active {
+      color:var(--orange-2);
+      background:hsla(var(--theme-h),90%,50%,0.08);
+      border-color:hsla(var(--theme-h),90%,50%,0.20);
+    }
+    .tab-btn:hover:not(.active) { color:var(--text-secondary); background:rgba(255,255,255,0.04); }
+    
+    body.light .detail-header { border-bottom-color:rgba(180,100,40,0.10); }
+    body.light .detail-name   { color:#3a1200; }
+    body.light .detail-meta   { color:#b09070; }
+    body.light .tab-btn { color:#b09070; }
+    body.light .tab-btn.active { color:var(--accent-dark); background:hsla(var(--theme-h),90%,50%,0.06); border-color:hsla(var(--theme-h),90%,50%,0.18); }
+    
+    .tab-content { flex:1; overflow-y:auto; padding:20px; }
+    
+    /* ── ABA: Respostas Padrão ── */
+    .respostas-list { display:flex; flex-direction:column; gap:14px; }
+    .resp-item {
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:var(--r-lg);
+      padding:14px 16px;
+    }
+    .resp-q {
+      font-size:11px; font-weight:500; color:var(--text-muted);
+      text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;
+    }
+    .resp-a { font-size:13px; color:var(--text-primary); line-height:1.6; font-weight:400; }
+    
+    /* ── VOX.IA Dashboard Styles ── */
+    .voxia-dashboard { display: flex; flex-direction: column; gap: 20px; }
+    .voxia-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .voxia-card {
+      background: rgba(136, 85, 255, 0.08); border: 1px solid rgba(136, 85, 255, 0.2);
+      border-radius: var(--r-md); padding: 14px;
+    }
+    .voxia-card h4 { font-size: 10px; text-transform: uppercase; color: #a87ffb; margin-bottom: 6px; font-weight: 600; letter-spacing: 0.5px; }
+    .voxia-card p { font-size: 14px; color: var(--text-primary); font-weight: 500; margin:0; line-height: 1.4; }
+    .voxia-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .voxia-tag { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+    .voxia-tag.positive { background: rgba(102, 221, 136, 0.15); color: #66dd88; border: 1px solid rgba(102, 221, 136, 0.3); }
+    .voxia-tag.negative { background: rgba(255, 85, 85, 0.15); color: #ff5555; border: 1px solid rgba(255, 85, 85, 0.3); }
+    
+    .voxia-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+    .voxia-list li {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+      padding: 10px 14px; border-radius: var(--r-sm); font-size: 13px; color: var(--text-secondary);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .voxia-list li::before {
+      content: '■'; color: #a87ffb; font-size: 10px;
+    }
+    
+    body.light .resp-item { background:rgba(255,255,255,0.65); border-color:rgba(180,100,40,0.14); }
+    body.light .resp-q    { color:#c09070; }
+    body.light .resp-a    { color:#3a1200; }
+    body.light .voxia-card { background: rgba(136, 85, 255, 0.04); border-color: rgba(136, 85, 255, 0.15); }
+    body.light .voxia-card p { color: #222; }
+    
+    /* ── ABA: Transcrição ── */
+    .transcr-area {
+      display:flex; flex-direction:column; gap:14px;
+    }
+    .transcr-textarea {
+      width:100%; min-height:220px;
+      padding:14px 16px;
+      background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.10);
+      border-radius:var(--r-lg);
+      font-size:13px; color:var(--text-primary);
+      font-family:'Inter',sans-serif;
+      outline:none; resize:vertical; line-height:1.65;
+      transition:border-color var(--t-normal);
+    }
+    .transcr-textarea::placeholder { color:var(--text-muted); }
+    .transcr-textarea:focus { border-color:hsla(var(--theme-h),90%,50%,0.38); background:rgba(255,255,255,0.07); }
+    
+    body.light .transcr-textarea { background:rgba(255,255,255,0.65); border-color:rgba(180,100,40,0.18); color:#3a1200; }
+    body.light .transcr-textarea:focus { border-color:hsla(var(--theme-h),90%,50%,0.38); background:rgba(255,255,255,0.85); }
+    
+    /* ── ABA: Documento IA (Hacker Console Style) ── */
+    .doc-area { display:flex; flex-direction:column; gap:14px; height: 100%; }
+    .doc-controls { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .doc-controls-left { font-size:12px; color:var(--text-muted); }
+    .doc-controls-right { display:flex; gap:8px; }
+    
+    .ia-btn, .kanban-btn {
+      display:inline-flex; align-items:center; gap:7px;
+      padding:8px 16px; border-radius:var(--r-sm);
+      font-size:12px; font-weight:500; cursor:pointer; font-family:'Inter',sans-serif;
+      transition:all var(--t-normal); border:1px solid;
+    }
+    .ia-btn { background:hsla(var(--theme-h),90%,50%,0.12); border-color:hsla(var(--theme-h),90%,50%,0.28); color:var(--orange-2); }
+    .ia-btn:hover { background:hsla(var(--theme-h),90%,50%,0.22); }
+    .ia-btn:disabled { opacity:0.5; cursor:not-allowed; }
+    .kanban-btn { background:rgba(102,221,136,0.10); border-color:rgba(102,221,136,0.28); color:var(--green); }
+    .kanban-btn:hover { background:rgba(102,221,136,0.18); }
+    .ia-btn svg, .kanban-btn svg { width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    
+    .spinner {
+      width:13px; height:13px; border:2px solid rgba(255,128,64,0.3); border-top-color:var(--orange-2);
+      border-radius:50%; animation:spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    
+    /* Estilo "Hacker" para a IA */
+    .doc-output {
+      background: #0d0d0d;
+      border: 1px solid #333;
+      border-radius: var(--r-xl);
+      padding: 24px;
+      min-height: 250px;
+      font-size: 13px; 
+      color: #e0e0e0;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      position: relative;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+      overflow-y: auto;
+    }
+    .doc-output.empty {
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:10px; color:#555; text-align:center;
+      background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.08); font-family: 'Inter', sans-serif;
+    }
+    .doc-section-title {
+      font-size: 13px; font-weight: 600;
+      color: #00ff41; /* Verde Matrix */
+      letter-spacing: 0.5px;
+      text-transform: uppercase; margin: 20px 0 8px;
+      text-shadow: 0 0 5px rgba(0, 255, 65, 0.3);
+    }
+    .doc-section-title:first-child { margin-top:0; }
+    .doc-cursor {
+      display:inline-block; width:8px; height:15px;
+      background: #00ff41; vertical-align:middle;
+      margin-left:4px; animation:blink 0.9s step-end infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    
+    /* ── Orbs bg ── */
+    .bg-orbs { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+    
+    /* ── Print / PDF ── */
+    @media print {
+      body { background: white !important; display: block !important; height: auto !important; }
+      .sidebar, #sidebar-container, .topbar, .left-panel, .bg-orbs,
+      .tabs-row, .detail-actions, .tbtn, .ia-btn, .kanban-btn, .doc-controls { display: none !important; }
+      .main { overflow: visible !important; }
+      .content { display: block !important; overflow: visible !important; }
+      .right-panel { overflow: visible !important; display: block !important; }
+      .tab-content { overflow: visible !important; padding: 0 !important; }
+      #printHeader { display: block !important; }
+      .resp-item { background: #f9f9f9 !important; border: 1px solid #ddd !important; break-inside: avoid; margin-bottom: 10px; }
+      .resp-q { color: #888 !important; }
+      .resp-a { color: #111 !important; }
+      .voxia-card { break-inside: avoid; border: 1px solid #ccc !important; }
+      .doc-output { background: white !important; color: black !important; font-family: 'Inter', sans-serif !important; border: none !important; box-shadow: none !important; }
+      .doc-section-title { color: var(--accent) !important; text-shadow: none !important; }
+      .detail-header { border-bottom: 2px solid #eee !important; }
+      .detail-name { color: #111 !important; font-size: 20px !important; }
+      .detail-meta { color: #666 !important; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+    #printHeader { display: none; }
+    
+    /* Errata Styles */
+    .errata-toggle {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10px; font-weight: 500; color: var(--orange-2);
+      cursor: pointer; transition: all var(--t-normal);
+      padding: 3px 9px; border-radius: 6px;
+      border: 1px solid hsla(var(--theme-h),90%,50%,0.28);
+      background: hsla(var(--theme-h),90%,50%,0.08);
+      user-select: none;
+      white-space: nowrap;
+    }
+    .errata-toggle:hover { background: hsla(var(--theme-h),90%,50%,0.16); border-color: hsla(var(--theme-h),90%,50%,0.45); color: var(--accent-light); }
+    .errata-toggle.active {
+      color: var(--accent); background: rgba(255,68,68,0.12); border-color: rgba(255,68,68,0.35);
+    }
+    .errata-toggle svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 2.2; }
+    .resp-item-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .resp-item.flagged { border-color: rgba(255,68,68,0.3); background: rgba(255,68,68,0.03); }
+  
+    /* Hub navbar: hide only the logo/title part of old topbar */
+    #navbar-container:not(:empty) ~ .main > .topbar .topbar-left { display: none !important; }
+    #navbar-container:not(:empty) ~ .main > .topbar {
+      justify-content: flex-end;
+      padding-left: 8px;
+      height: 46px;
+    }
+    .page-navbar { width: 100%; }
+
+  </style>
+</head>
+<body>
+
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div id="navbar-container"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <img src="../assets/logo.png" alt="HUB.nexus" style="height:32px;width:auto;object-fit:contain;filter:drop-shadow(0 0 4px hsla(var(--theme-h),90%,50%,0.2));flex-shrink:0;"/>
+        <div style="display:flex;flex-direction:column;line-height:1.2;">
+          <span class="topbar-title">Briefings</span>
+          <span class="topbar-sub">Diagnósticos recebidos + Documentação IA + D1</span>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <button class="tbtn" onclick="toggleMode()">
+          <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        </button>
+        <button class="tbtn" onclick="exportarBriefingsXLSX()">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+          Exportar XLSX
+        </button>
+        <button class="tbtn" onclick="exportarDocxAtivo()">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 12 18 15 15"/><line x1="12" y1="18" x2="12" y2="12"/></svg>
+          Exportar DOCX
+        </button>
+        <button class="tbtn tbtn-primary" onclick="abrirSeletorProduto()">
+          <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+          Enviar Briefing
+        </button>
+        <button class="tbtn tbtn-primary" id="errataLinkBtn" style="display:none;" onclick="copiarLinkErrata()">
+          <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Link Errata (<span id="errataCount">0</span>)
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="left-panel">
+        <div class="list-header">
+          <div class="list-search">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Buscar briefing..." id="searchInput" oninput="filterList(this.value)"/>
+            <button style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:6px;padding:5px 8px;cursor:pointer;color:var(--text-muted);font-size:10px;margin-top:4px;width:100%;font-family:inherit;" onclick="carregarBriefingsD1()">↺ Atualizar</button>
+          </div>
+        </div>
+        <div class="briefing-list" id="briefingList"></div>
+      </div>
+
+      <div class="right-panel" id="rightPanel">
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <p>Selecione um briefing para visualizar</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- ── MODAL: Seletor de Produto ── -->
+  <div id="produtoModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); align-items:center; justify-content:center;">
+    <div style="background:#1a1a24; border:1px solid rgba(255,255,255,0.10); border-radius:16px; padding:28px; width:min(540px,92vw); max-height:90vh; overflow-y:auto; position:relative; box-shadow:0 24px 60px rgba(0,0,0,0.5);">
+      <button onclick="fecharSeletorProduto()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:6px 10px;cursor:pointer;color:#888;font-size:12px;font-family:inherit;">&#x2715;</button>
+      <div style="font-size:13px;font-weight:600;color:#fff;margin-bottom:4px;">Enviar Briefing para Cliente</div>
+      <div style="font-size:11px;color:#888;margin-bottom:20px;">Escolha qual produto o cliente vai preencher. O link ser&aacute; gerado e copiado automaticamente.</div>
+      <div id="produtoGrid" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <div id="linkCopiado" style="display:none;margin-top:16px;padding:12px 14px;background:rgba(102,221,136,0.10);border:1px solid rgba(102,221,136,0.25);border-radius:10px;">
+        <div style="font-size:11px;color:#66dd88;font-weight:600;margin-bottom:6px;">&#x2713; Link copiado para a &aacute;rea de transfer&ecirc;ncia</div>
+        <code id="linkText" style="font-size:10px;color:#888;word-break:break-all;line-height:1.5;display:block;"></code>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/theme.js"></script>
+  <script src="../js/roadmap.js"></script>
+  <script>
+    checkAuth();
+    initMode();
+    document.getElementById('navbar-container').innerHTML = renderNavbar('briefing');
+    if(typeof initTheme==='function'){initTheme();updateModeButtons();}
+
+    /* ── DICIONÁRIO COMPLETO (Tradução de Inteligência Legado) ── */
+    const DICTIONARY = {
+      perguntas: {
+        0: 'Qual é a sua principal necessidade hoje?',
+        1: 'Com que frequência você precisa acompanhar a cobertura?',
+        2: 'O que você quer medir nas redes sociais?',
+        3: 'Que tipo de diagnóstico você precisa?',
+        4: 'Qual decisão estratégica você precisa embasar?',
+        5: 'Como você descreveria o porte do que você precisa monitorar?',
+        6: 'Descreva a dor ou desafio que você quer resolver'
+      },
+      respostas: {
+        0: { A:'Monitoramento Estruturado de Imprensa', B:'Inteligência de Redes Sociais', C:'Diagnóstico Especializado', D:'Dashboard de Business Intelligence', E:'Vox.ia — Análise de IAs' },
+        1: { A:'Diariamente', B:'Semanalmente', C:'Sob demanda', D:'Mensalmente' },
+        2: { A:'Meu próprio desempenho', B:'O que falam da minha marca', C:'Mapeamento de concorrentes', D:'Visão 360 integrada' },
+        3: { A:'Análise de crise/momento', B:'Diagnóstico periódico', C:'Mapeamento de narrativas', D:'Análise completa de comunicação' },
+        4: { A:'Posicionamento contra concorrentes', B:'Antecipar tendências de mercado', C:'Medir ROI e impacto de ações', D:'Governança via painel de indicadores' },
+        5: { A:'Focado (uma marca principal)', B:'Médio (marca + concorrentes diretos)', C:'Amplo (múltiplas marcas e setor)', D:'Em definição' }
+      }
+    };
+
+    const TRILHA_MAP = { A:'imprensa', B:'redes', C:'diagnostico', D:'bi', E:'voxia' };
+    const TRILHA_COLORS = {
+      imprensa: '#88aaff', redes: '#66dd88', diagnostico: '#ffaa44', bi: '#cc88ff', voxia: '#a87ffb'
+    };
+    const TRILHA_LABELS = {
+      imprensa:'Imprensa', redes:'Redes Sociais', diagnostico:'Diagnóstico Especial', bi:'Business Intelligence', voxia:'Vox.ia'
+    };
+
+    /* ── Função para Copiar Link ── */
+    /* ── MODAL SELETOR DE PRODUTO ── */
+    const PRODUTOS = [
+      {
+        id: 'voxia_imagem',
+        label: 'Vox.IA — Imagem & Autoridade',
+        desc: 'Análise de reputação institucional: Share of Voice, atributos da marca, concorrentes e presença no ecossistema de IA.',
+        color: '#a87ffb',
+        icon: '🏛️',
+        param: 'produto=voxia_imagem'
+      },
+      {
+        id: 'voxia_tema',
+        label: 'Vox.IA — Análise Temática',
+        desc: 'Como um tema ou narrativa específica está sendo entregue pelas IAs. Sem branded/non-branded.',
+        color: '#ff9d47',
+        icon: '🎯',
+        param: 'produto=voxia_tema'
+      },
+      {
+        id: 'mapa_narrativas',
+        label: 'Mapa de Narrativas',
+        desc: 'Mapeamento de narrativas e discurso público sobre a marca ou tema no ecossistema de mídia.',
+        color: '#66dd88',
+        icon: '🗺️',
+        param: 'produto=mapa_narrativas'
+      },
+      {
+        id: 'mapa_influenciadores',
+        label: 'Mapa de Influenciadores',
+        desc: 'Identificação e análise de influenciadores relevantes para a marca e seus temas estratégicos.',
+        color: '#88aaff',
+        icon: '👥',
+        param: 'produto=mapa_influenciadores'
+      },
+      {
+        id: 'netnografia',
+        label: 'Netnografia',
+        desc: 'Análise qualitativa de comunidades digitais e comportamento de audiências sobre a marca.',
+        color: '#ff7eb3',
+        icon: '🔬',
+        param: 'produto=netnografia'
+      },
+      {
+        id: 'diagnostico',
+        label: 'Diagnóstico Personalizado',
+        desc: 'O cliente não sabe exatamente o que quer — o fluxo inteligente identifica a necessidade e sugere o produto ideal.',
+        color: '#ffaa44',
+        icon: '🧭',
+        param: ''
+      }
+    ];
+
+    function getBaseUrl() {
+      const currentUrl = window.location.href;
+      return currentUrl.substring(0, currentUrl.lastIndexOf('/') + 1);
+    }
+
+    function abrirSeletorProduto() {
+      const modal = document.getElementById('produtoModal');
+      const grid = document.getElementById('produtoGrid');
+      const linkCopiado = document.getElementById('linkCopiado');
+      linkCopiado.style.display = 'none';
+      grid.innerHTML = '';
+
+      PRODUTOS.forEach(p => {
+        const card = document.createElement('button');
+        card.style.cssText = `
+          display:flex; align-items:flex-start; gap:12px;
+          width:100%; padding:14px 16px;
+          background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09);
+          border-radius:10px; cursor:pointer; text-align:left;
+          font-family:inherit; transition:all 0.2s;
+        `;
+        card.onmouseenter = () => { card.style.background = 'rgba(255,255,255,0.08)'; card.style.borderColor = p.color + '55'; };
+        card.onmouseleave = () => { card.style.background = 'rgba(255,255,255,0.04)'; card.style.borderColor = 'rgba(255,255,255,0.09)'; };
+        card.innerHTML = `
+          <div style="font-size:22px;flex-shrink:0;line-height:1;">${p.icon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:600;color:${p.color};margin-bottom:3px;">${p.label}</div>
+            <div style="font-size:11px;color:#999;line-height:1.4;">${p.desc}</div>
+          </div>
+          <div style="flex-shrink:0;font-size:11px;color:#555;margin-top:2px;">Copiar link →</div>
+        `;
+        card.addEventListener('click', () => copiarLinkProduto(p));
+        grid.appendChild(card);
+      });
+
+      modal.style.display = 'flex';
+    }
+
+    function fecharSeletorProduto() {
+      document.getElementById('produtoModal').style.display = 'none';
+    }
+
+    function copiarLinkProduto(produto) {
+      const base = getBaseUrl() + 'briefing-client.html';
+      const link = produto.param ? base + '?' + produto.param : base;
+      navigator.clipboard.writeText(link).then(() => {
+        const linkCopiado = document.getElementById('linkCopiado');
+        document.getElementById('linkText').textContent = link;
+        linkCopiado.style.display = 'block';
+        showToast('✓ Link de ' + produto.label + ' copiado!');
+      }).catch(() => {
+        showToast('Erro ao copiar o link. Verifique permissões do navegador.');
+      });
+    }
+
+    // Manter compatibilidade legada
+    function copiarLinkCliente() {
+      abrirSeletorProduto();
+    }
+
+    function copiarLinkErrata() {
+      const b = briefings.find(x => x.id === activeBriefingId);
+      if (!b) return;
+      const currentUrl = window.location.href;
+      const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/') + 1);
+      const linkParaCliente = baseUrl + `briefing-client.html?id=${b.id}&errata=true`;
+      navigator.clipboard.writeText(linkParaCliente).then(() => {
+        showToast('✓ Link de ERRATA copiado para a área de transferência!');
+      }).catch(err => {
+        showToast('Erro ao copiar o link.');
+      });
+    }
+
+    async function toggleErrataField(fieldKey) {
+      const b = briefings.find(x => x.id === activeBriefingId);
+      if (!b) return;
+
+      if (!b.errata) b.errata = {};
+      if (b.errata[fieldKey]) delete b.errata[fieldKey];
+      else b.errata[fieldKey] = true;
+
+      updateErrataUI();
+      renderDetail();
+
+      // Salva no backend — errata object only, NOT _errata_save
+      try {
+        const payload = { errata: b.errata };
+        console.log('[toggleErrataField] enviando PUT id=' + b.id, JSON.stringify(payload));
+        const res = await fetch(`/api/briefing/${b.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json().catch(() => ({}));
+        console.log('[toggleErrataField] resposta HTTP=' + res.status, JSON.stringify(result));
+        if (!res.ok || result.error) {
+          console.error('[toggleErrataField] falha ao salvar:', result);
+          showToast('⚠ Erro ao salvar ajuste. Tente novamente.');
+        } else {
+          // Verify by fetching back
+          const check = await fetch(`/api/briefing/${b.id}`);
+          const checkData = await check.json().catch(() => ({}));
+          console.log('[toggleErrataField] verificação GET errata=', JSON.stringify(checkData.errata));
+        }
+      } catch (e) {
+        console.error('[toggleErrataField] erro de rede:', e);
+        showToast('⚠ Sem conexão. Ajuste não foi salvo.');
+      }
+    }
+
+    function updateErrataUI() {
+      const b = briefings.find(x => x.id === activeBriefingId);
+      const btn = document.getElementById('errataLinkBtn');
+      const countEl = document.getElementById('errataCount');
+      if (!b || !b.errata) {
+        if (btn) btn.style.display = 'none';
+        return;
+      }
+      const count = Object.keys(b.errata).length;
+      if (count > 0) {
+        btn.style.display = 'inline-flex';
+        countEl.textContent = count;
+      } else {
+        btn.style.display = 'none';
+      }
+    }
+
+    /* ── State & Carregamento D1 ── */
+    let briefings = [];
+    let briefNextId = 1;
+    let activeBriefingId = null;
+    let activeTab = 'respostas';
+    let docGerado = {};
+    let isGenerating = false;
+
+    async function carregarBriefingsD1() {
+      const list = document.getElementById('briefingList');
+      if (list) list.innerHTML = '<div style="padding:16px;font-size:11px;color:var(--text-muted);text-align:center;">Sincronizando D1…</div>';
+      
+      try {
+        const res = await fetch('/api/briefing');
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || 'Falha HTTP ' + res.status);
+        }
+        
+        const data = await res.json();
+        if (data && data.error) throw new Error(data.error);
+        processarDados(data);
+      } catch(e) {
+        console.warn('Erro ao carregar do D1:', e);
+        renderErrorList(e.message);
+        
+        // Tenta recuperar do LocalStorage como fallback silencioso
+        const clientRaw = localStorage.getItem('hubnexus_briefings');
+        const internRaw = localStorage.getItem('hubnexus_briefings_internos');
+        if (clientRaw || internRaw) {
+          const localData = [...(clientRaw ? JSON.parse(clientRaw) : []), ...(internRaw ? JSON.parse(internRaw) : [])];
+          if (localData.length) {
+            console.log('Usando dados do LocalStorage (Fallback)');
+            processarDados(localData);
+          }
+        }
+      }
+      renderList();
+    }
+
+    function renderErrorList(msg) {
+      const list = document.getElementById('briefingList');
+      if (!list) return;
+      list.innerHTML = `
+        <div style="padding:20px; text-align:center;">
+          <div style="font-size:24px; margin-bottom:10px;">🔌</div>
+          <div style="font-size:12px; color:#ff6644; font-weight:500; margin-bottom:4px;">Erro de Conexão</div>
+          <div style="font-size:10px; color:var(--text-muted); margin-bottom:15px; line-height:1.4;">${msg}</div>
+          <button class="tbtn" style="width:100%; justify-content:center; border-color:hsla(var(--theme-h),90%,50%,0.3); color:var(--orange-2);" onclick="carregarBriefingsD1()">
+            <svg viewBox="0 0 24 24" style="width:12px;height:12px;"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+            Tentar Novamente
+          </button>
+        </div>
+      `;
+    }
+
+    /* ── NOVA FUNÇÃO DE PROCESSAMENTO COM SUPORTE A CHAVES EM TEXTO ── */
+    function processarDados(dadosBrutos) {
+      // Dicionários para mapear as chaves de texto enviadas pelo formulário do cliente
+      const PERGUNTAS_MAP = {
+        abertura: 'Qual é a sua principal necessidade hoje?',
+        
+        ctx_objetivo: '1. Objetivo e Desafio Principal',
+        ctx_concorrentes: '2. Cenário Competitivo',
+        ctx_sensibilidade: '3. Contexto Histórico e Sensibilidade',
+        ctx_portavozes: '4. Porta-vozes e Influência Digital',
+        cons_obj: 'Mapeamento do Objetivo Latente',
+        cons_canais: 'Radar de Canais (Onde o problema acontece?)',
+        cons_ritmo: 'Ritmo e Urgência',
+        cons_formato: 'Consumo da Informação',
+
+        imprensa: 'Com que frequência você precisa acompanhar a cobertura?',
+        redes: 'O que você quer medir nas redes sociais?',
+        diagnostico: 'Que tipo de diagnóstico você precisa?',
+        bi: 'Qual decisão estratégica você precisa embasar?',
+        porte: 'Como você descreveria o porte do que você precisa monitorar?',
+        dor: 'Qual dor ou desafio você quer resolver?'
+      };
+
+      const LABELS_MAP = {
+        abertura: { A:'Monitoramento de Imprensa', B:'Inteligência de Redes Sociais', C:'Diagnóstico Especial', D:'Business Intelligence', E:'Vox.ia' },
+        imprensa: { A:'Diariamente', B:'Semanalmente', C:'Sob demanda', D:'Mensalmente' },
+        redes: { A:'Meu próprio desempenho', B:'O que falam de mim', C:'Concorrentes e setor', D:'Tudo integrado' },
+        diagnostico: { A:'Análise de momento específico', B:'Diagnóstico periódico', C:'Mapeamento de narrativas', D:'Auditoria de comunicação' },
+        bi: { A:'Posição vs. concorrentes', B:'Antecipar tendências', C:'Impacto das ações', D:'Painel de indicadores' },
+        porte: { A:'Focado (uma marca)', B:'Médio (marca + concorrentes)', C:'Amplo (múltiplas marcas)', D:'Não tenho certeza' }
+      };
+
+      // Segurança: Se não for um array (ex: retornou objeto de erro), aborta para evitar crash
+      if (!Array.isArray(dadosBrutos)) {
+        console.error('Dados brutos inválidos para processamento:', dadosBrutos);
+        return;
+      }
+
+      briefings = (dadosBrutos || []).map(b => {
+        let respostasFormatadas = [];
+
+        if (b.respostas) {
+          // Detecta se tem as chaves textuais (novo form)
+          const hasStringKeys = !!b.respostas.abertura || !!b.respostas.dor || !!b.respostas.porte;
+
+          if (hasStringKeys) {
+            // LÓGICA NOVA: Mapeia as chaves de texto
+            const order = [
+              'abertura', 
+              'ctx_objetivo', 'ctx_concorrentes', 'ctx_sensibilidade', 'ctx_portavozes',
+              'cons_obj', 'cons_canais', 'cons_ritmo', 'cons_formato',
+              'imprensa', 'redes', 'diagnostico', 'bi', 'porte', 'dor',
+              'vx_contexto', 'vx_narrativa', 'vx_objetivos', 'vx_concorrentes',
+              'vx_atributos', 'vx_branded', 'vx_unbranded', 'vx_finalizacao',
+              'captura_email'
+            ];
+            
+            respostasFormatadas = Object.keys(b.respostas)
+              .filter(k => order.includes(k) && b.respostas[k])
+              .sort((a, b_val) => order.indexOf(a) - order.indexOf(b_val))
+              .map(k => {
+                const v = b.respostas[k];
+                let respostaTexto = v; // Assume a resposta original (útil para campos livres como "dor")
+                if (LABELS_MAP[k] && LABELS_MAP[k][v]) {
+                  respostaTexto = LABELS_MAP[k][v]; // Traduz as letras se houver mapeamento
+                }
+                return {
+                  id: k,
+                  pergunta: PERGUNTAS_MAP[k] || k,
+                  resposta: respostaTexto,
+                  _raw: v
+                };
+              });
+          } else {
+            // LÓGICA ANTIGA (Legado): Processa chaves numéricas
+            respostasFormatadas = Object.entries(b.respostas)
+              .filter(([k]) => !k.startsWith('_') && !isNaN(parseInt(k)))
+              .sort(([a], [b_val]) => parseInt(a) - parseInt(b_val))
+              .map(([k, v]) => ({
+                id: k,
+                pergunta: DICTIONARY.perguntas[parseInt(k)] || `Pergunta ${parseInt(k)+1}`,
+                resposta: (DICTIONARY.respostas[parseInt(k)] || {})[v] || v,
+                _raw: v
+              }));
+          }
+        }
+
+        // 🟢 CORREÇÃO CRÍTICA DE SINTAXE PARA ACESSAR A TRILHA (ÍNDICE OU TEXTO)
+        const r0 = b.respostas?.abertura || b.respostas?.abertura?.[0];
+        
+        const trilhaIdentificada = TRILHA_MAP[r0] || (b.recomendacao && b.recomendacao.toLowerCase().includes('vox') ? 'voxia' : 'diagnostico');
+
+        return {
+          id: b.id || Date.now() + Math.random(),
+          _origem: b._origem || 'cliente',
+          nome: b.nome || b.email?.split('@') || 'Cliente',
+          contato: b.email || '',
+          email: b.email || '',
+          data: b.created_at ? new Date(b.created_at).toLocaleDateString('pt-BR', {day:'2-digit',month:'short',year:'numeric'}) : (b.ts ? new Date(b.ts).toLocaleDateString() : '—'),
+          trilha: trilhaIdentificada,
+          status: b.lido ? 'gerado' : 'novo',
+          lido: b.lido || false,
+          errata: b.errata || {},
+          historico: b.historico || [],
+          transcricao: b.transcricao || '',
+          documento: b.documento || '',
+          recomendacao: b.recomendacao || '',
+          respostasRaw: b.respostas, // guarda original
+          respostasFormatadas,
+          respostas: [] 
+        };
+      });
+      briefNextId = briefings.length ? Math.max(...briefings.map(b=>b.id||0)) + 1 : 1;
+    }
+
+    /* ── Recarrega um briefing específico do D1 (pós-errata) ── */
+    async function recarregarBriefingAtivo() {
+      if (!activeBriefingId) return;
+      try {
+        const res = await fetch(`/api/briefing/${activeBriefingId}`);
+        if (!res.ok) return;
+        const fresh = await res.json();
+        if (!fresh || fresh.error) return;
+
+        const idx = briefings.findIndex(x => x.id === activeBriefingId);
+        if (idx === -1) return;
+
+        const b = fresh;
+        const trilhaIdentificada = TRILHA_MAP[b.respostas?.abertura]
+          || (b.recomendacao?.toLowerCase().includes('vox') ? 'voxia' : 'diagnostico');
+
+        // Full replace so respostasRaw, historico and errata are always fresh
+        briefings[idx] = {
+          ...briefings[idx],
+          errata:       b.errata      || {},
+          historico:    b.historico   || [],
+          lido:         b.lido        || false,
+          recomendacao: b.recomendacao || briefings[idx].recomendacao,
+          respostasRaw: b.respostas,   // ← always fresh from D1
+          transcricao:  b.transcricao  || briefings[idx].transcricao,
+          documento:    b.documento    || briefings[idx].documento,
+          trilha:       trilhaIdentificada || briefings[idx].trilha,
+          status:       b.lido ? 'gerado' : 'novo',
+        };
+
+        renderList(document.getElementById('searchInput')?.value || '');
+        renderDetail();   // always re-render with fresh data
+        updateErrataUI();
+      } catch(e) {
+        console.warn('Erro ao recarregar briefing:', e);
+      }
+    }
+
+    /* ── Renderização da Lista Esquerda ── */
+    function renderList(filter = '') {
+      const list = document.getElementById('briefingList');
+      list.innerHTML = '';
+      const filtered = briefings.filter(b =>
+        (b.nome||'').toLowerCase().includes(filter.toLowerCase()) ||
+        (b.contato||'').toLowerCase().includes(filter.toLowerCase()) ||
+        (b.recomendacao||'').toLowerCase().includes(filter.toLowerCase())
+      );
+      filtered.forEach(b => {
+        const el = document.createElement('div');
+        el.className = 'b-item' + (b.id === activeBriefingId ? ' active' : '');
+        el.innerHTML = `
+          <div class="b-item-top">
+            <div class="b-item-name">${b.nome}</div>
+            <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
+              ${b.errata && Object.keys(b.errata).length > 0 ? `<div class="b-status" style="color:var(--accent);border-color:rgba(255,68,68,0.3);background:rgba(255,68,68,0.08);">⚠ Errata</div>` : ''}
+              <div class="b-status ${b.lido ? 'lido' : 'novo'}">${b.lido ? 'Lido' : 'Novo'}</div>
+            </div>
+          </div>
+          <div class="b-item-meta">
+            <span class="b-trilha-dot" style="background:${TRILHA_COLORS[b.trilha]||'#ffaa44'}"></span>
+            ${TRILHA_LABELS[b.trilha]||'Diagnóstico'} · ${b.data}
+          </div>
+        `;
+        el.addEventListener('click', async () => {
+          activeBriefingId = b.id; activeTab = 'respostas';
+          
+          // Marca como lido se não estiver
+          if (!b.lido) {
+            b.lido = true;
+            try {
+              fetch(`/api/briefing/${b.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lido: true })
+              });
+            } catch (e) { console.error('Erro ao marcar como lido:', e); }
+          }
+          
+          renderList(document.getElementById('searchInput').value);
+          recarregarBriefingAtivo();
+        });
+        list.appendChild(el);
+      });
+    }
+    function filterList(v) { renderList(v); }
+
+    /* ── Renderização do Painel Direito ── */
+    function renderDetail() {
+      const b = briefings.find(x => x.id === activeBriefingId);
+      if (!b) return;
+      const panel = document.getElementById('rightPanel');
+      panel.innerHTML = `
+        <div class="detail-header">
+          <div class="detail-top">
+            <div class="detail-info">
+              <div class="detail-name">${b.nome}</div>
+              <div class="detail-meta">
+                <span>${b.contato||'Sem email'}</span> <span>·</span> <span>${b.data}</span> <span>·</span>
+                <span style="color:${TRILHA_COLORS[b.trilha]||'#ffaa44'}; font-weight:500;">${TRILHA_LABELS[b.trilha]||'Diagnóstico'}</span>
+              </div>
+            </div>
+            <div class="detail-actions">
+              <button class="tbtn" onclick="exportarPDF()">PDF</button>
+              <button class="tbtn" onclick="exportarDocxAtivo()">DOCX</button>
+            </div>
+          </div>
+          <div class="tabs-row">
+            <button class="tab-btn ${activeTab==='respostas'?'active':''}"  onclick="switchTab('respostas')">
+              Respostas
+              ${b.errata && Object.keys(b.errata).length > 0 ? `<span style="margin-left:5px;padding:1px 6px;border-radius:10px;background:rgba(255,68,68,0.18);border:1px solid rgba(255,68,68,0.32);color:#ff6644;font-size:9px;font-weight:700;">${Object.keys(b.errata).length}</span>` : ''}
+            </button>
+            <button class="tab-btn ${activeTab==='transcricao'?'active':''}" onclick="switchTab('transcricao')">Transcrição Meet</button>
+            <button class="tab-btn ${activeTab==='documento'?'active':""}"  onclick="switchTab('documento')">Gerador IA</button>
+            <button class="tab-btn ${activeTab==='historico'?'active':''}"  onclick="switchTab('historico')">
+              Histórico
+              ${(b.historico||[]).length > 0 ? `<span style="margin-left:5px;padding:1px 6px;border-radius:10px;background:rgba(100,187,255,0.12);border:1px solid rgba(100,187,255,0.25);color:#66bbff;font-size:9px;font-weight:700;">${b.historico.length}</span>` : ''}
+            </button>
+          </div>
+        </div>
+        <div class="tab-content" id="tabContent"></div>
+      `;
+      if (activeTab === 'respostas')   renderRespostas(b, document.getElementById('tabContent'));
+      if (activeTab === 'transcricao') renderTranscricao(b, document.getElementById('tabContent'));
+      if (activeTab === 'documento')   renderDocumento(b, document.getElementById('tabContent'));
+      if (activeTab === 'historico')   renderHistorico(b, document.getElementById('tabContent'));
+    }
+    function switchTab(tab) {
+      activeTab = tab;
+      // Only auto-reload from D1 on historico tab (needs fresh data)
+      // For respostas tab, use cached data to avoid race conditions with toggleErrataField
+      if (tab === 'historico') {
+        recarregarBriefingAtivo();
+      } else {
+        renderDetail();
+      }
+    }
+
+    /* ── ABA: Histórico ── */
+    // Formata qualquer valor de resposta de forma legível (sem JSON cru)
+    function fmtSnapVal(key, val) {
+      if (val === null || val === undefined || val === '') return '—';
+      if (typeof val === 'string') return val;
+      if (typeof val === 'number' || typeof val === 'boolean') return String(val);
+      if (Array.isArray(val)) {
+        if (!val.length) return '—';
+        // Array de strings simples (objetivos, prompts)
+        if (val.every(v => typeof v === 'string')) {
+          return '<ol style="padding-left:16px;margin:4px 0;display:flex;flex-direction:column;gap:4px;">'
+            + val.map(v => `<li style="color:var(--text-secondary);line-height:1.4;">${v}</li>`).join('')
+            + '</ol>';
+        }
+        // Array de objetos com nome (concorrentes, atributos)
+        if (typeof val[0] === 'object' && val[0] !== null) {
+          if ('nome' in val[0]) {
+            return val.filter(v => v.nome).map(v =>
+              `<div style="padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.05);">`
+              + `<span style="color:var(--text-primary);">${v.nome}</span>`
+              + (v.site ? `<span style="color:var(--text-muted);margin-left:8px;font-size:11px;">${v.site}</span>` : '')
+              + (v.explicacao ? `<div style="font-size:11px;color:var(--text-muted);margin-top:1px;">${v.explicacao}</div>` : '')
+              + '</div>'
+            ).join('');
+          }
+        }
+        return val.map(v => typeof v === 'string' ? v : JSON.stringify(v)).join(', ');
+      }
+      if (typeof val === 'object') {
+        return Object.entries(val).filter(([,v]) => v).map(([k, v]) =>
+          `<div><span style="color:var(--text-muted);font-size:10px;">${k}:</span> <span style="color:var(--text-secondary);">${typeof v === 'string' ? v : JSON.stringify(v)}</span></div>`
+        ).join('');
+      }
+      return String(val);
+    }
+
+        function renderHistorico(b, el) {
+      const errataCampos = b.errata ? Object.keys(b.errata) : [];
+      const temErrata = errataCampos.length > 0;
+      const historico = b.historico || [];
+      
+      const CAMPO_LABELS = {
+        // Fluxo geral
+        abertura: 'Necessidade principal', imprensa: 'Frequência de cobertura',
+        redes: 'Foco em redes sociais', diagnostico: 'Tipo de diagnóstico',
+        bi: 'Decisão estratégica', porte: 'Porte do monitoramento', dor: 'Dor / Desafio',
+        captura_email: 'Dados de contato',
+        // Raio-X
+        ctx_objetivo: 'Raio-X: Desafio Principal', ctx_concorrentes: 'Raio-X: Concorrentes',
+        ctx_sensibilidade: 'Raio-X: Contexto/Sensibilidade', ctx_portavozes: 'Raio-X: Porta-vozes',
+        // Consultivo
+        cons_obj: 'Consultivo: Objetivo', cons_canais: 'Consultivo: Canais',
+        cons_ritmo: 'Consultivo: Ritmo', cons_formato: 'Consultivo: Formato',
+        // Vox.IA — Imagem (telas antigas)
+        vx_contexto: 'Vox.IA — Identidade', vx_narrativa: 'Vox.IA — Pilares de Autoridade',
+        vx_objetivos: 'Vox.IA — Objetivos', vx_concorrentes: 'Vox.IA — Cenário Competitivo',
+        vx_atributos: 'Vox.IA — Atributos', vx_branded: 'Vox.IA — Perguntas Institucionais',
+        vx_unbranded: 'Vox.IA — Perguntas de Mercado/Setor', vx_finalizacao: 'Vox.IA — Revisão/Observações',
+        // Vox.IA — Imagem (telas novas)
+        vx_identificacao: 'Vox.IA — Identificação', vx_narrativa_nova: 'Vox.IA — Pilares de Autoridade',
+        // Vox.IA — Temático
+        vxt_identificacao: 'Vox.IA Temático — Tema', vxt_aprofundamento: 'Vox.IA Temático — Aprofundamento',
+        vxt_objetivos: 'Vox.IA Temático — Objetivos', vxt_prompts: 'Vox.IA Temático — Perguntas',
+        vxt_finalizacao: 'Vox.IA Temático — Revisão/Observações',
+        // Outros produtos
+        prod_mapa_narrativas: 'Mapa de Narrativas', prod_mapa_influenciadores: 'Mapa de Influenciadores',
+        prod_netnografia: 'Netnografia',
+      };
+
+      function fmtData(iso) {
+        if (!iso) return '';
+        return new Date(iso).toLocaleString('pt-BR', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+      }
+
+      function snapshotHtml(snap, idx) {
+        const campos = snap.campos_corrigidos || [];
+        const resp   = snap.respostas_anteriores || {};
+        const id     = `snap-${idx}`;
+
+        // Helper: map flat respostas keys to readable label+value pairs
+        // Works whether keys are tela-keys (vx_identificacao) or data-keys (empresa, tipo...)
+        const TELA_TO_DATA = {
+          vx_identificacao: ['empresa','tipo','site','objetivo_diagnostico'],
+          vx_objetivos:     ['objetivos'],
+          vx_concorrentes:  ['concorrentes'],
+          vx_atributos:     ['atributos_pos','atributos_neg'],
+          vx_branded:       ['prompts_b'],
+          vx_unbranded:     ['prompts_u'],
+          vx_narrativa:     ['narrativa'],
+          vx_finalizacao:   ['nuances'],
+          vxt_identificacao:['tema','objetivo_diagnostico'],
+          vxt_aprofundamento:['aprofundamento','partes_tema'],
+          vxt_objetivos:    ['objetivos'],
+          vxt_prompts:      ['prompts'],
+          vxt_finalizacao:  ['nuances'],
+        };
+
+        const DATA_LABELS = {
+          empresa:'Sujeito', tipo:'Tipo', site:'Site', objetivo_diagnostico:'O que quer diagnosticar',
+          objetivos:'Objetivos', concorrentes:'Concorrentes', narrativa:'Narrativa / Pilares',
+          atributos_pos:'Atributos Positivos', atributos_neg:'Atributos Negativos',
+          prompts_b:'Perguntas Institucionais', prompts_u:'Perguntas de Mercado',
+          nuances:'Observações', tema:'Tema', aprofundamento:'Por que é relevante',
+          partes_tema:'Subtemas', prompts:'Perguntas Temáticas',
+        };
+
+        // Collect all data keys to show from the campos_corrigidos list
+        const dataKeys = new Set();
+        campos.forEach(k => {
+          if (TELA_TO_DATA[k]) TELA_TO_DATA[k].forEach(dk => dataKeys.add(dk));
+          else if (resp[k] !== undefined) dataKeys.add(k); // direct key
+        });
+        // If nothing matched (old format or unknown keys), show everything
+        const keysToShow = dataKeys.size > 0 ? [...dataKeys] : Object.keys(resp).filter(k => !k.startsWith('_') && k !== 'produto' && k !== 'tipo_vox');
+
+        const camposHtml = keysToShow.map(k => {
+          const val = resp[k];
+          if (val === undefined || val === null || val === '') return '';
+          const label = DATA_LABELS[k] || CAMPO_LABELS[k] || k;
+          return `<div style="margin-bottom:10px;">
+            <div style="font-size:10px;font-weight:600;color:#ff8844;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">${label}</div>
+            <div style="font-size:12px;color:var(--text-secondary);background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px 12px;line-height:1.6;">${fmtSnapVal(k, val)}</div>
+          </div>`;
+        }).filter(Boolean).join('');
+
+        return `<div style="margin-left:48px;margin-top:8px;border:1px solid rgba(255,255,255,0.08);border-radius:10px;overflow:hidden;">
+          <button onclick="const el=document.getElementById('${id}');el.style.display=el.style.display==='none'?'block':'none'"
+            style="width:100%;text-align:left;padding:10px 14px;background:rgba(255,255,255,0.03);border:none;color:var(--text-muted);font-size:11px;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;">
+            <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;"><polyline points="6 9 12 15 18 9"/></svg>
+            Ver respostas anteriores (${campos.length} campo${campos.length>1?'s':''} corrigido${campos.length>1?'s':''})
+          </button>
+          <div id="${id}" style="display:none;padding:14px;border-top:1px solid rgba(255,255,255,0.06);">
+            ${camposHtml || '<div style="font-size:12px;color:var(--text-muted);">Sem dados anteriores disponíveis.</div>'}
+          </div>
+        </div>`;
+      }
+
+      // Monta linha do tempo
+      const timeline = [];
+      
+      // 1. Recebimento original
+      timeline.push({ icon: '📅', label: 'Briefing recebido', detalhe: `Enviado por ${b.contato || b.nome}`, data: b.data, cor: 'var(--orange-2)' });
+      
+      // 2. Versões anteriores (do mais antigo para o mais recente, invertendo o array)
+      [...historico].reverse().forEach((snap, i) => {
+        const n = historico.length - i;
+        const campos = (snap.campos_corrigidos || []).map(k => CAMPO_LABELS[k] || k).join(', ');
+        timeline.push({
+          icon: '📝', label: `Errata #${n} — correção recebida`,
+          detalhe: `Campos atualizados: ${campos || '—'}`,
+          data: fmtData(snap.data), cor: '#66bbff',
+          snapIdx: historico.length - 1 - i,
+          snapshot: snap,
+        });
+      });
+      
+      // 3. Visualização
+      if (b.lido) timeline.push({ icon: '👁', label: 'Visualizado pela equipe', detalhe: 'Marcado como lido no painel', data: '', cor: 'var(--text-muted)' });
+      
+      // 4. Errata atual pendente
+      if (temErrata) timeline.push({
+        icon: '⚠', label: `Errata solicitada — ${errataCampos.length} campo${errataCampos.length > 1 ? 's' : ''}`,
+        detalhe: errataCampos.map(k => CAMPO_LABELS[k] || k).join(', '),
+        data: '', cor: '#ff6644', pendente: true,
+      });
+      
+      // 5. Outros eventos
+      if (b.transcricao) timeline.push({ icon: '🎤', label: 'Transcrição adicionada', detalhe: `${b.transcricao.length} caracteres`, data: '', cor: '#a87ffb' });
+      if (b.documento) timeline.push({ icon: '🤖', label: 'Documento IA gerado', detalhe: 'Gerador IA produziu o documento estratégico', data: '', cor: '#66ddaa' });
+      
+      el.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:0;">
+          ${timeline.map((ev, i) => `
+            <div>
+              <div style="display:flex;gap:16px;align-items:flex-start;">
+                <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;">
+                  <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);display:flex;align-items:center;justify-content:center;font-size:15px;" >${ev.icon}</div>
+                  ${i < timeline.length - 1 ? `<div style="width:1px;background:rgba(255,255,255,0.08);flex:1;min-height:20px;margin:4px 0;"></div>` : ''}
+                </div>
+                <div style="padding-bottom:${i < timeline.length - 1 || ev.snapshot ? '8' : '0'}px;flex:1;min-width:0;">
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <span style="font-size:13px;font-weight:500;color:${ev.pendente ? '#ff6644' : 'var(--text-primary)'}">${ev.label}</span>
+                    ${ev.pendente ? `<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:4px;background:rgba(255,68,68,0.12);border:1px solid rgba(255,68,68,0.22);color:#ff6644;text-transform:uppercase;">Aguardando cliente</span>` : ''}
+                    ${ev.data ? `<span style="font-size:10px;color:var(--text-muted);">${ev.data}</span>` : ''}
+                  </div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:3px;line-height:1.5;">${ev.detalhe}</div>
+                </div>
+              </div>
+              ${ev.snapshot ? snapshotHtml(ev.snapshot, ev.snapIdx) : ''}
+            </div>
+          `).join('')}
+          ${!temErrata && b.lido && !historico.length ? `
+            <div style="margin-top:16px;padding:14px 16px;border-radius:10px;background:rgba(102,221,136,0.06);border:1px solid rgba(102,221,136,0.14);font-size:12px;color:#66dd99;">
+              ✓ Sem errata pendente. Briefing completo e revisado pela equipe.
+            </div>` : ''}
+        </div>
+      `;
+    }
+
+    /* ══════════════════════════════════════════════
+       ABA: RESPOSTAS COMPLETAS — mostra TUDO que o cliente preencheu
+    ══════════════════════════════════════════════ */
+    function renderRespostas(b, el) {
+      const raw = b.respostasRaw || {};
+      const produto = raw.produto || (b.recomendacao?.toLowerCase().includes('vox') ? 'voxia_imagem' : 'generico');
+
+      const isFlagged = (key) => b.errata && b.errata[key];
+      const erataBtn = (key) => `
+        <button class="errata-toggle ${isFlagged(key) ? 'active' : ''}" onclick="toggleErrataField('${key}')" style="flex-shrink:0;font-size:10px;">
+          <svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-right:3px;">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          ${isFlagged(key) ? 'Solicitado' : 'Pedir Ajuste'}
+        </button>`;
+
+      const section = (titulo, key, conteudo) => `
+        <div class="resp-item ${isFlagged(key) ? 'flagged' : ''}" style="margin-bottom:12px;">
+          <div class="resp-item-header">
+            <div class="resp-q">${titulo}</div>
+            ${erataBtn(key)}
+          </div>
+          <div class="resp-a">${conteudo || '<span style="color:var(--text-faint);font-style:italic;">Não preenchido</span>'}</div>
+        </div>`;
+
+      // Badge do produto
+      const prodLabels = {
+        'voxia_imagem': '🏛️ Vox.IA — Imagem & Autoridade',
+        'voxia_tema':   '🎯 Vox.IA — Análise Temática',
+        'mapa_narrativas': '🗺️ Mapa de Narrativas',
+        'mapa_influenciadores': '👥 Mapa de Influenciadores',
+        'netnografia': '🔬 Netnografia',
+      };
+      const prodLabel = prodLabels[produto] || b.recomendacao || 'Diagnóstico';
+
+      let html = `<div style="margin-bottom:16px;padding:12px 16px;background:hsla(var(--theme-h),90%,50%,0.08);border:1px solid hsla(var(--theme-h),90%,50%,0.20);border-radius:10px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:10px;font-weight:600;color:var(--orange-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">Produto</div>
+          <div style="font-size:13px;font-weight:500;color:var(--text-primary)">${prodLabel}</div>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);">${b.data || ''}</div>
+      </div>`;
+
+      if (produto === 'voxia_imagem') {
+        html += '<div style="font-size:10px;font-weight:700;color:var(--orange-2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.08);">📍 Identificação</div>';
+        html += section('Sujeito Analisado', 'vx_identificacao', `${raw.empresa || ''}${raw.tipo ? ` <span style="font-size:10px;color:var(--text-muted)">(${raw.tipo === 'porta-voz' ? 'Porta-voz' : 'Marca/Empresa'})</span>` : ''}`);
+        html += section('Site Oficial', 'vx_identificacao', raw.site ? `<a href="${raw.site}" target="_blank" style="color:var(--orange-2)">${raw.site}</a>` : '');
+        html += section('O que quer diagnosticar', 'vx_identificacao', raw.objetivo_diagnostico);
+
+        html += '<div style="font-size:10px;font-weight:700;color:var(--orange-2);text-transform:uppercase;letter-spacing:.8px;margin:16px 0 12px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.08);">🎯 Objetivos</div>';
+        html += section('Objetivos Estratégicos', 'vx_objetivos', (raw.objetivos||[]).map(o=>`<span class="voxia-tag positive" style="display:inline-block;margin:2px;">${o}</span>`).join(''));
+
+        html += '<div style="font-size:10px;font-weight:700;color:var(--orange-2);text-transform:uppercase;letter-spacing:.8px;margin:16px 0 12px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.08);">⚔ Cenário Competitivo</div>';
+        if (raw.concorrentes && raw.concorrentes.length) {
+          const concHtml = raw.concorrentes.map(c => `<div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);"><span style="flex:1;font-size:12px;color:var(--text-primary)">${c.nome||c}</span>${c.site?`<a href="${c.site}" target="_blank" style="font-size:11px;color:var(--orange-2);opacity:.7">${c.site}</a>`:''}</div>`).join('');
+          html += section('Concorrentes', 'vx_concorrentes', concHtml);
+        }
+
+        html += '<div style="font-size:10px;font-weight:700;color:var(--orange-2);text-transform:uppercase;letter-spacing:.8px;margin:16px 0 12px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.08);">🏷️ Atributos da Marca</div>';
+        if ((raw.atributos_pos||[]).length) {
+          const posHtml = raw.atributos_pos.filter(a=>a&&(a.nome||a)).map(a => {
+            const nome = a.nome || a; const exp = a.explicacao || '';
+            return `<div style="margin-bottom:8px;"><span style="font-size:12px;color:#66dd88;font-weight:500;">✅ ${nome}</span>${exp?`<div style="font-size:11px;color:var(--text-muted);margin-top:2px;line-height:1.4;">${exp}</div>`:''}</div>`;
+          }).join('');
+          const negHtml = (raw.atributos_neg||[]).filter(a=>a&&(a.nome||a)).map(a => {
+            const nome = a.nome || a; const exp = a.explicacao || '';
+            return `<div style="margin-bottom:8px;"><span style="font-size:12px;color:#ff5555;font-weight:500;">❌ ${nome}</span>${exp?`<div style="font-size:11px;color:var(--text-muted);margin-top:2px;line-height:1.4;">${exp}</div>`:''}</div>`;
+          }).join('');
+          html += section('Atributos Positivos', 'vx_atributos', posHtml);
+          html += section('Atributos Negativos', 'vx_atributos', negHtml);
+        }
+
+        html += '<div style="font-size:10px;font-weight:700;color:var(--orange-2);text-transform:uppercase;letter-spacing:.8px;margin:16px 0 12px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.08);">🤖 Bateria de Testes</div>';
+        if ((raw.prompts_b||[]).length) {
+          html += section('Perguntas Institucionais', 'vx_branded', `<ol style="padding-left:18px;display:flex;flex-direction:column;gap:6px;">${raw.prompts_b.map(p=>`<li style="font-size:12px;color:var(--text-primary);line-height:1.4;">${p}</li>`).join('')}</ol>`);
+        }
+        if ((raw.prompts_u||[]).length) {
+          html += section('Perguntas de Mercado', 'vx_unbranded', `<ol style="padding-left:18px;display:flex;flex-direction:column;gap:6px;">${raw.prompts_u.map(p=>`<li style="font-size:12px;color:var(--text-primary);line-height:1.4;">${p}</li>`).join('')}</ol>`);
+        }
+
+        html += '<div style="font-size:10px;font-weight:700;color:var(--orange-2);text-transform:uppercase;letter-spacing:.8px;margin:16px 0 12px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.08);">📣 Pilares de Autoridade</div>';
+        html += section('Narrativa Central', 'vx_narrativa', raw.narrativa);
+        if (raw.nuances) html += section('Observações Finais', 'vx_finalizacao', raw.nuances);
+
+      } else if (produto === 'voxia_tema') {
+        html += section('Tema Analisado', 'vxt_identificacao', `<strong>${raw.tema||''}</strong>`);
+        html += section('O que quer diagnosticar', 'vxt_identificacao', raw.objetivo_diagnostico);
+        html += section('Por que o tema é relevante agora', 'vxt_aprofundamento', raw.aprofundamento);
+        html += section('Partes do tema a analisar', 'vxt_aprofundamento', raw.partes_tema);
+        html += section('Objetivos', 'vxt_objetivos', (raw.objetivos||[]).map(o=>`<span class="voxia-tag positive" style="display:inline-block;margin:2px;">${o}</span>`).join(''));
+        if ((raw.prompts||[]).length) {
+          html += section('Perguntas Temáticas', 'vxt_prompts', `<ol style="padding-left:18px;display:flex;flex-direction:column;gap:6px;">${raw.prompts.map(p=>`<li style="font-size:12px;color:var(--text-primary);line-height:1.4;">${p}</li>`).join('')}</ol>`);
+        }
+        if (raw.nuances) html += section('Observações Finais', 'vxt_finalizacao', raw.nuances);
+
+      } else {
+        // Genérico: mostra todas as respostas como par pergunta-resposta
+        const DICT = {
+          mn_marca: 'Marca ou tema principal', mn_periodo: 'Período de análise', mn_narrativas: 'Narrativas-chave', mn_objetivo: 'Objetivo do mapeamento',
+          mn_imprensa: 'Incluir imprensa?', mn_formato: 'Formato preferido', mn_apresentacao: 'Apresentação oral?',
+          mi_marca: 'Marca ou segmento', mi_categorias: 'Categorias de influenciadores', mi_audiencia: 'Perfil de audiência', mi_objetivo: 'Objetivo',
+          mi_formato: 'Formato de entrega', mi_apresentacao: 'Apresentação oral?',
+          net_tema: 'Tema a pesquisar', net_hipoteses: 'Questões e hipóteses', net_perfil: 'Perfil da comunidade', net_objetivo: 'Objetivo da netnografia',
+          ctx_objetivo: 'Objetivos e Desafios', ctx_concorrentes: 'Cenário Competitivo', ctx_sensibilidade: 'Contexto Histórico', ctx_portavozes: 'Porta-vozes',
+          dor: 'Dor ou desafio específico', cons_obj: 'Objetivo latente', cons_canais: 'Canais', cons_ritmo: 'Ritmo', cons_formato: 'Formato de consumo',
+        };
+        // Renderiza badge de recomendação e todas as chaves relevantes
+        Object.entries(raw).forEach(([key, val]) => {
+          if (key.startsWith('_') || key === 'produto' || key === 'trilha' || !val) return;
+          const label = DICT[key] || key;
+
+          // Social links object: { Instagram: ['url1'], LinkedIn: [''] }
+          // Show only platforms with at least one filled link
+          if (typeof val === 'object' && !Array.isArray(val)) {
+            const linksHtml = Object.entries(val)
+              .map(([plat, urls]) => {
+                const filled = (Array.isArray(urls) ? urls : [urls]).filter(u => u && u.trim());
+                if (!filled.length) return '';
+                return filled.map(u =>
+                  `<div style="display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <span style="min-width:100px;font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">${plat}</span>
+                    <a href="${u}" target="_blank" style="font-size:12px;color:var(--orange-2);word-break:break-all;">${u}</a>
+                  </div>`
+                ).join('');
+              }).filter(Boolean).join('');
+            if (!linksHtml) return; // skip if all empty
+            html += section(label, key, linksHtml);
+            return;
+          }
+
+          let displayVal;
+          if (typeof val === 'string') displayVal = `<span style="white-space:pre-wrap;font-size:12px;">${val}</span>`;
+          else if (Array.isArray(val) && val.every(v => typeof v === 'string')) {
+            const filled = val.filter(v => v && v.trim());
+            if (!filled.length) return;
+            displayVal = `<ol style="padding-left:18px;display:flex;flex-direction:column;gap:4px;">${filled.map(v=>`<li style="font-size:12px;color:var(--text-primary);line-height:1.4;">${v}</li>`).join('')}</ol>`;
+          } else if (Array.isArray(val) && val[0]?.nome)
+            displayVal = val.filter(v=>v.nome).map(v=>`<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);"><span style="color:var(--text-primary);font-size:12px;">${v.nome}</span>${v.site?`<span style="color:var(--text-muted);margin-left:8px;font-size:11px;">${v.site}</span>`:''}</div>`).join('');
+          else displayVal = String(val);
+          html += section(label, key, displayVal);
+        });
+        // Fallback: respostasFormatadas antigas
+        const lista = b.respostasFormatadas || [];
+        if (!Object.keys(raw).length && lista.length) {
+          html += lista.map(r => section(r.pergunta, r.id||r.pergunta, r.resposta)).join('');
+        }
+      }
+
+      el.innerHTML = `<div class="respostas-list">${html}</div>`;
+    }
+    function formatarHackerConsole(texto) {
+      return texto.split('\n').map(linha => {
+        if (linha.match(/^(📋|🎯|📌|🔍|⚡|\[.*?\])/) || (linha.toUpperCase() === linha && linha.length > 5)) {
+          return `<div class="doc-section-title">> ${linha}</div>`;
+        }
+        if (linha.trim().startsWith('-') || linha.trim().startsWith('•')) {
+          return `<span style="color:#00ff41; opacity:0.8;">  ${linha}</span><br>`;
+        }
+        return linha ? `<span>${linha}</span><br>` : '<br>';
+      }).join('');
+    }
+
+    async function gerarDocumentoIA(id) {
+      if (isGenerating) return;
+      const b = briefings.find(x => x.id === id);
+      isGenerating = true;
+      renderDocumento(b, document.getElementById('tabContent'));
+      
+      const rTexto = (b.respostasFormatadas||[]).map(r => `Q: ${r.pergunta}\nA: ${r.resposta}`).join('\n');
+      const payload = `CONTEXTO: ${b.nome} (${TRILHA_LABELS[b.trilha]})\nDADOS:\n${rTexto}\n\nTRANSCR:\n${b.transcricao}`;
+      
+      const output = document.getElementById('docOutput');
+      output.classList.remove('empty');
+      output.innerHTML = '<span>[sys] Conectando cluster IA...</span><br><span class="doc-cursor"></span>';
+      
+      try {
+        const res = await fetch('/api/voxia', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'ai_classify',
+            system: 'Você é um assistente estratégico de vendas da Nexus. Gere um documento comercial de escopo claro, direto e profissional em português. Use seções com emojis como títulos (ex: 🎯 DIAGNÓSTICO). Sem markdown, sem bullet points excessivos. Máx 5 seções curtas.',
+            prompt: payload,
+            maxTokens: 1500,
+            model: 'gemini-2.5-flash'
+          })
+        });
+        const data = await res.json();
+        if (!data.content) throw new Error('Fallback AI');
+        animarConsole(data.content, output, b);
+      } catch (err) {
+        const fallback = `[DOCUMENTO COMERCIAL DE ESCOPO]\nCLIENTE: ${b.nome}\nPRODUTO: ${TRILHA_LABELS[b.trilha].toUpperCase()}\n\n🎯 DIAGNÓSTICO ESTRATÉGICO\nA transcrição e os dados apontam necessidade focada em antecipação de crises e mapeamento de percepção em tempo real.\n\n📌 ENTREGÁVEIS RECOMENDADOS\n• Setup de arquitetura de dados (D+5)\n• Dashboard gerencial com atualização contínua\n• Relatório analítico mensal de brand safety\n• Acesso ao módulo Vox.ia para auditoria\n\n⚡ PRÓXIMOS PASSOS (SLA)\n1. Aprovação da proposta técnica e comercial\n2. Assinatura eletrônica e envio de NFs\n3. Reunião de Kick-off com equipe de CS`;
+        animarConsole(fallback, output, b);
+      }
+    }
+
+    function animarConsole(texto, outputEl, b) {
+      outputEl.innerHTML = '';
+      let i = 0; const chars = texto.split('');
+      const cursor = document.createElement('span'); cursor.className = 'doc-cursor';
+      
+      function type() {
+        if (i < chars.length) {
+          const chunk = texto.slice(0, i + 8);
+          outputEl.innerHTML = formatarHackerConsole(chunk);
+          outputEl.appendChild(cursor);
+          outputEl.scrollTop = outputEl.scrollHeight;
+          i += 8; requestAnimationFrame(type);
+        } else {
+          outputEl.innerHTML = formatarHackerConsole(texto);
+          docGerado[b.id] = texto;
+          isGenerating = false;
+          renderList(document.getElementById('searchInput').value);
+          renderDocumento(b, document.getElementById('tabContent'));
+        }
+      }
+      type();
+    }
+
+    /* ── MÓDULOS DE EXPORTAÇÃO (XLSX, DOCX, PDF) ── */
+    
+    // 1. XLSX (Planilha Completa)
+    // Sanitização de células para export XLSX (SheetJS) — evita XML inválido
+// quando respostas de briefing têm emoji ou caracteres de controle.
+function sanitizeXLSXCell(v) {
+  if (v == null) return '';
+  if (typeof v !== 'string') return v;
+  return v
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    .replace(/[\uD800-\uDFFF]/g, '')
+    .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+    .replace(/[\u{2000}-\u{2BFF}]/gu, '')
+    .replace(/\uFFFE|\uFFFF/g, '');
+}
+function sanitizeXLSXRow(r) {
+  return Object.fromEntries(Object.entries(r).map(([k,v]) => [k, typeof v==='string'?sanitizeXLSXCell(v):v]));
+}
+function exportarBriefingsXLSX() {
+      if (!briefings.length) { showToast('Nenhum dado para exportar.'); return; }
+      const rows = briefings.map(b => {
+        let base = {
+          'Nome Cliente': b.nome,
+          'Contato': b.contato,
+          'Data': b.data,
+          'Trilha': TRILHA_LABELS[b.trilha] || b.trilha,
+          'Status': b.status,
+          'Recomendação IA': b.recomendacao
+        };
+        
+        // Regra especial para formatar colunas da trilha Vox.ia
+        const rawXls  = b.respostasRaw || {};
+        const prodXls = rawXls.produto || (b.recomendacao?.toLowerCase().includes('vox') ? 'voxia_imagem' : 'generico');
+
+        if (prodXls === 'voxia_tema') {
+          base['Tema'] = rawXls.tema || '';
+          base['O que diagnosticar'] = rawXls.objetivo_diagnostico || '';
+          base['Aprofundamento'] = rawXls.aprofundamento || '';
+          base['Partes do tema'] = rawXls.partes_tema || '';
+          base['Objetivos'] = (rawXls.objetivos || []).join(', ');
+          base['Perguntas Temáticas'] = (rawXls.prompts || []).join(' | ');
+          base['Observações'] = rawXls.nuances || '';
+        } else if (prodXls !== 'generico' && (b.trilha === 'voxia' || (b.recomendacao && b.recomendacao.toLowerCase().includes('vox')))) {
+          const vx = rawXls;
+          base['Sujeito Analisado'] = vx.empresa || '';
+          base['Tipo'] = vx.tipo || '';
+          base['Narrativa'] = vx.narrativa || '';
+          base['Objetivos'] = (vx.objetivos || []).join(', ');
+          base['Concorrentes'] = (vx.concorrentes || []).map(c => c.site ? `${c.nome || c} (${c.site})` : (c.nome || c)).join(', ');
+          base['Atributos Positivos'] = (vx.atributos_pos || []).map(a => a.explicacao ? `${a.nome || a}: ${a.explicacao}` : (a.nome || a)).join(' | ');
+          base['Atributos Negativos'] = (vx.atributos_neg || []).map(a => a.explicacao ? `${a.nome || a}: ${a.explicacao}` : (a.nome || a)).join(' | ');
+          base['Prompts (Branded)'] = (vx.prompts_b || []).join(' | ');
+          base['Prompts (Unbranded)'] = (vx.prompts_u || []).join(' | ');
+        } else {
+          // Regra normal para os briefings convencionais
+          (b.respostasFormatadas||[]).forEach((r, i) => {
+            base[`Q${i+1} - ${r.pergunta.substring(0,30)}...`] = r.resposta;
+          });
+        }
+        return base;
+      });
+      const ws = XLSX.utils.json_to_sheet(rows.map(sanitizeXLSXRow));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Diagnósticos');
+      XLSX.writeFile(wb, 'HUB_Nexus_Briefings_Full.xlsx');
+      showToast('✅ Planilha Excel exportada!');
+    }
+
+    // 2. DOCX (Proposta Comercial/Briefing Documentado)
+    function exportarDocxAtivo() {
+      const b = briefings.find(x => x.id === activeBriefingId);
+      if (!b) { showToast('Selecione um briefing primeiro.'); return; }
+      
+      const docContext = docGerado[b.id] || '';
+      let respostasHtml = '';
+      
+      // Detecta o tipo de produto pelo campo raw.produto ou pela recomendação
+      const rawData = b.respostasRaw || {};
+      const produto = rawData.produto || (b.recomendacao?.toLowerCase().includes('vox') ? 'voxia_imagem' : 'generico');
+
+      if (produto === 'voxia_tema') {
+        // ── Template Vox.IA Análise Temática ──
+        const vxt = rawData;
+        const promptsHtml = (vxt.prompts || []).length
+          ? (vxt.prompts || []).map((p, i) => `<li style="margin-bottom:6px;line-height:1.5;">${p}</li>`).join('')
+          : '<li>N/A</li>';
+        respostasHtml = `
+          <h3>🎯 Tema</h3>
+          <p><b>Tema Analisado:</b> ${vxt.tema || 'N/A'}</p>
+          <p><b>O que quer diagnosticar:</b> ${vxt.objetivo_diagnostico || 'N/A'}</p>
+
+          <h3>🔍 Aprofundamento</h3>
+          <p><b>Por que o tema é relevante agora:</b> ${vxt.aprofundamento || 'N/A'}</p>
+          <p><b>Partes do tema a analisar:</b> ${vxt.partes_tema || 'N/A'}</p>
+
+          <h3>🎯 Objetivos da Análise</h3>
+          <p>${(vxt.objetivos || []).join(', ') || 'N/A'}</p>
+
+          <h3>❓ Perguntas Temáticas (${(vxt.prompts || []).length})</h3>
+          <ol style="padding-left:20px;margin:8px 0;">${promptsHtml}</ol>
+
+          <h3>📝 Observações Finais</h3>
+          <p>${vxt.nuances || 'Nenhuma'}</p>
+        `;
+      } else if (produto !== 'generico' && (b.trilha === 'voxia' || (b.recomendacao && b.recomendacao.toLowerCase().includes('vox')))) {
+        // ── Template Vox.IA Institucional ──
+        const vx = rawData;
+        respostasHtml = `
+          <h3>📍 Identidade e Contexto</h3>
+          <p><b>Sujeito Analisado:</b> ${vx.empresa || b.nome || 'N/A'}</p>
+          <p><b>Tipo:</b> ${vx.tipo || 'N/A'}</p>
+          <p><b>Site:</b> ${vx.site || 'N/A'}</p>
+          <p><b>Narrativa Central Desejada:</b> ${vx.narrativa || 'N/A'}</p>
+          <p><b>Objetivos Estratégicos:</b> ${(vx.objetivos || []).join(', ') || 'N/A'}</p>
+
+          <h3>⚔ Ecossistema de Mercado</h3>
+          <p><b>Concorrentes / Benchmarks:</b> ${(vx.concorrentes || []).map(c => c.site ? `${c.nome || c} (${c.site})` : (c.nome || c)).join(', ') || 'N/A'}</p>
+          <p><b>Atributos Positivos (+):</b><br>${(vx.atributos_pos || []).filter(a => a.nome || a).map(a => `&nbsp;&nbsp;• <b>${a.nome || a}</b>${a.explicacao ? `: ${a.explicacao}` : ''}`).join('<br>') || 'N/A'}</p>
+          <p><b>Atributos Negativos (-):</b><br>${(vx.atributos_neg || []).filter(a => a.nome || a).map(a => `&nbsp;&nbsp;• <b>${a.nome || a}</b>${a.explicacao ? `: ${a.explicacao}` : ''}`).join('<br>') || 'N/A'}</p>
+          <p><b>Justificativa Estratégica:</b> ${vx.justificativa || 'N/A'}</p>
+
+          <h3>🤖 Bateria de Testes (Prompts para as IAs)</h3>
+          <p><b>Institucionais (Branded):</b><br>${(vx.prompts_b || []).map(p => `- ${p}`).join('<br>') || 'N/A'}</p>
+          <p><b>Mercado (Unbranded):</b><br>${(vx.prompts_u || []).map(p => `- ${p}`).join('<br>') || 'N/A'}</p>
+
+          <h3>📝 Observações Extras</h3>
+          <p>${vx.nuances || 'Nenhuma'}</p>
+        `;
+      } else {
+        // Constrói o layout HTML normal para os demais briefings
+        respostasHtml = (b.respostasFormatadas||[]).map(r => `<b>${r.pergunta}</b><br>${r.resposta}<br><br>`).join('');
+      }
+      
+      const content = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset='utf-8'><title>Briefing ${b.nome}</title></head>
+        <body style="font-family: Arial, sans-serif; color: #333;">
+          <h1 style="color: var(--accent); border-bottom: 2px solid var(--accent);">HUB.nexus - Documento de Briefing</h1>
+          <h2>Detalhes do Cliente</h2>
+          <p><b>Nome:</b> ${b.nome}<br><b>Contato:</b> ${b.contato}<br><b>Trilha:</b> ${TRILHA_LABELS[b.trilha] || 'Diagnóstico'}</p>
+          <hr>
+          <h2>Diagnóstico Original</h2>
+          ${respostasHtml}
+          ${docContext ? `<hr><h2>Síntese IA Comercial</h2><pre style="font-family: Arial; white-space: pre-wrap;">${docContext}</pre>` : ''}
+          ${b.transcricao ? `<hr><h2>Transcrição da Reunião</h2><p>${b.transcricao.replace(/\n/g, '<br>')}</p>` : ''}
+        </body></html>
+      `;
+      
+      const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Briefing_${b.nome.replace(/\s+/g, '_')}.doc`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('✅ Arquivo do Word gerado!');
+    }
+
+    // 3. PDF / Impressão CSS
+    function exportarPDF() {
+      const b = briefings.find(x => x.id === activeBriefingId);
+      if (!b) { showToast('Selecione um briefing.'); return; }
+      activeTab = 'respostas'; renderDetail();
+      
+      let header = document.getElementById('printHeader');
+      if (!header) {
+        header = document.createElement('div'); header.id = 'printHeader';
+        document.body.insertBefore(header, document.body.firstChild);
+      }
+      header.innerHTML = `
+        <div style="padding:24px 32px 16px;border-bottom:2px solid var(--accent);margin-bottom:20px;">
+          <div style="font-size:11px;color:var(--accent);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Relatório Analítico HUB.nexus</div>
+          <div style="font-size:22px;font-weight:600;color:#111;margin-bottom:4px;">${b.nome || 'Cliente'}</div>
+          <div style="font-size:12px;color:#666;">${b.contato||''} · Trilha: ${TRILHA_LABELS[b.trilha]||''}</div>
+        </div>
+      `;
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => { if (header) header.innerHTML = ''; }, 500);
+      }, 150);
+    }
+
+    /* ── Init ── */
+    carregarBriefingsD1();
+  </script>
+</body>
+</html>

@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HUB.nexus — HUB.Automações</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/global.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body { display:flex; flex-direction:column; overflow:hidden; height:100vh; background:var(--bg); }
+    .main { flex:1; display:flex; flex-direction:column; overflow:hidden; position:relative; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; padding:0 20px; height:52px; flex-shrink:0; backdrop-filter:blur(30px); background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.07); z-index:5; }
+    .topbar-left { display:flex; align-items:center; gap:10px; }
+    .topbar-badge { font-size:10px; padding:3px 9px; background:hsla(var(--theme-h),90%,50%,0.10); border:1px solid hsla(var(--theme-h),90%,50%,0.22); border-radius:var(--r-pill); color:var(--orange-2); }
+    .topbar-title { font-size:13px; font-weight:500; color:var(--text-primary); }
+    .topbar-right { display:flex; align-items:center; gap:8px; }
+    .tbtn { display:inline-flex; align-items:center; gap:5px; padding:6px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); border-radius:var(--r-sm); font-size:11px; color:var(--text-secondary); cursor:pointer; font-family:'Inter',sans-serif; transition:all .18s; }
+    .tbtn:hover { background:rgba(255,255,255,0.09); }
+    .tbtn svg { width:11px; height:11px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .tbtn-primary { background:hsla(var(--theme-h),90%,50%,0.12); border-color:hsla(var(--theme-h),90%,50%,0.28); color:var(--orange-2); }
+    .tbtn-primary:hover { background:hsla(var(--theme-h),90%,50%,0.22); }
+    .tabs-bar { display:flex; gap:2px; padding:0 20px; border-bottom:1px solid rgba(255,255,255,0.07); flex-shrink:0; background:rgba(255,255,255,0.02); overflow-x:auto; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.18) transparent; }
+    .tabs-bar::-webkit-scrollbar { height:6px; }
+    .tabs-bar::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.18); border-radius:3px; }
+    .main-tab { padding:10px 16px; font-size:12px; font-weight:400; color:var(--text-muted); cursor:pointer; border:none; background:transparent; font-family:'Inter',sans-serif; transition:all .18s; border-bottom:2px solid transparent; margin-bottom:-1px; display:flex; align-items:center; gap:6px; flex-shrink:0; white-space:nowrap; }
+    .main-tab.active { color:var(--orange-2); border-bottom-color:var(--orange); }
+    .main-tab:hover:not(.active) { color:var(--text-secondary); }
+    .tab-body { flex:1; overflow-y:auto; overflow-x:hidden; padding:20px; }
+
+    .tool-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); border-radius:var(--r-xl); padding:20px; margin-bottom:16px; }
+    .tool-title { font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:4px; display:flex; align-items:center; gap:8px; }
+    .tool-desc { font-size:11px; color:var(--text-muted); line-height:1.6; margin-bottom:16px; }
+
+    .upload-zone { border:1.5px dashed rgba(255,255,255,0.12); border-radius:var(--r-md); padding:20px; text-align:center; cursor:pointer; transition:all .18s; position:relative; margin-bottom:14px; }
+    .upload-zone:hover, .upload-zone.drag { border-color:hsla(var(--theme-h),90%,50%,.40); background:hsla(var(--theme-h),90%,50%,.04); }
+    .upload-zone.has-file { border-color:rgba(102,221,136,.40); background:rgba(102,221,136,.05); }
+    .upload-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; }
+    .upload-zone-label { font-size:11px; color:var(--text-muted); pointer-events:none; line-height:1.5; }
+    .upload-zone-label strong { color:var(--orange-2); }
+    .upload-zone-label.loaded { color:var(--green); }
+
+    .field { display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
+    .field-label { font-size:10px; font-weight:500; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; }
+    .field-input { padding:8px 12px; background:var(--surface-2); border:1px solid rgba(128,80,40,.15); border-radius:var(--r-md); font-size:12px; color:var(--text-primary); font-family:'Inter',sans-serif; outline:none; transition:border-color .18s; }
+    .field-input:focus { border-color:hsla(var(--theme-h),90%,50%,.40); }
+    .field-select { background:var(--surface-2); color:var(--text-primary); }
+    .field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+    .run-btn { padding:10px 22px; background:var(--orange); border:none; border-radius:var(--r-md); font-size:12px; font-weight:600; color:#fff; cursor:pointer; font-family:'Inter',sans-serif; transition:all .2s; display:inline-flex; align-items:center; gap:7px; }
+    .run-btn:hover:not(:disabled) { background:var(--orange-2); transform:translateY(-1px); }
+    .run-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+
+    .result-box { background:rgba(102,221,136,0.05); border:1px solid rgba(102,221,136,0.20); border-radius:var(--r-xl); padding:16px 18px; margin-top:14px; }
+    .result-title { font-size:11px; font-weight:600; color:var(--green); margin-bottom:8px; }
+    .result-sub { font-size:12px; color:var(--text-secondary); line-height:1.6; }
+
+    .progress-wrap { background:rgba(255,255,255,0.07); border-radius:4px; height:5px; overflow:hidden; margin:10px 0; }
+    .progress-bar { height:100%; background:var(--orange); border-radius:4px; transition:width .3s; }
+    .progress-label { font-size:11px; color:var(--orange-2); }
+
+    .log-box { background:var(--surface-2); border-radius:var(--r-md); padding:12px 14px; font-family:monospace; font-size:11px; color:var(--text-secondary); line-height:1.7; max-height:200px; overflow-y:auto; margin-top:10px; }
+
+    .pan-textarea { width:100%; min-height:90px; padding:10px 12px; background:var(--surface-2); border:1px solid rgba(128,80,40,.15); border-radius:var(--r-md); font-size:12px; color:var(--text-secondary); font-family:'Inter',sans-serif; outline:none; resize:vertical; line-height:1.6; box-sizing:border-box; }
+    .pan-textarea:focus { border-color:hsla(var(--theme-h),90%,50%,.40); }
+    .pan-result { background:linear-gradient(135deg,hsla(var(--theme-h),90%,50%,.06) 0%,rgba(20,10,0,0) 100%); border:1px solid hsla(var(--theme-h),90%,50%,.20); border-radius:var(--r-xl); padding:18px; margin-top:14px; font-size:13px; color:var(--text-secondary); line-height:1.9; white-space:pre-wrap; }
+    .pan-result-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .pan-result-title { font-size:11px; font-weight:600; color:var(--orange-2); text-transform:uppercase; letter-spacing:.5px; }
+
+    .spinner { display:inline-block; width:12px; height:12px; border:2px solid rgba(255,128,64,.3); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:5px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    .empty-state { text-align:center; padding:48px 20px; color:var(--text-muted); }
+
+    .toast { position:fixed; bottom:24px; right:24px; background:#1a0a02; border:1px solid hsla(var(--theme-h),90%,50%,.30); border-radius:var(--r-md); padding:10px 16px; font-size:12px; color:var(--text-primary); z-index:9999; animation:fadeIn .2s; box-shadow:0 8px 24px rgba(0,0,0,.4); }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;} }
+
+    body.light .tool-card { background:rgba(255,255,255,.65); border-color:rgba(180,100,40,.14); }
+    body.light .field-select { color-scheme:light; }
+    body.light .tabs-bar { border-bottom-color:rgba(180,100,40,.10); background:rgba(255,255,255,.30); }
+    body.light .main-tab { color:#b09070; }
+    body.light .main-tab.active { color:var(--accent-dark); }
+    body.light .topbar { background:rgba(255,255,255,.55); border-bottom-color:rgba(180,100,40,.10); }
+    body.light .topbar-title { color:#3a1200; }
+    body.light .tbtn { background:rgba(255,255,255,.70); border-color:rgba(180,100,40,.18); color:#7a4a30; }
+    body.light .log-box { background:rgba(0,0,0,.06); }
+
+    #navbar-container:not(:empty) ~ .main > .topbar .topbar-left { display:none !important; }
+    #navbar-container:not(:empty) ~ .main > .topbar { justify-content:flex-end; padding-left:8px; height:46px; }
+  </style>
+</head>
+<body>
+  <div id="navbar-container"></div>
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <img src="../assets/logo.png" alt="HUB.nexus" style="height:32px;width:auto;object-fit:contain;flex-shrink:0;"/>
+        <span class="topbar-title">HUB.Automações</span>
+        <div class="topbar-badge">⚙️ Utilidades</div>
+      </div>
+      <div class="topbar-right">
+        <button class="tbtn" onclick="toggleMode()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="tabs-bar">
+      <button class="main-tab active" onclick="setTab('semanas',this)">📅 Concatenador de Semanas</button>
+      <button class="main-tab" onclick="setTab('imagens',this)">🖼️ Agrupador de Imagens</button>
+      <button class="main-tab" onclick="setTab('knewing',this)">🔍 Knewing Monitoring</button>
+      <button class="main-tab" onclick="setTab('panorama',this)">🌐 Panorama Redes</button>
+    </div>
+
+    <div class="tab-body" id="tabBody"></div>
+  </div>
+
+<script src="../js/utils.js"></script>
+<script src="../js/theme.js"></script>
+<script>
+let tabAtual = 'semanas';
+
+function setTab(tab, el) {
+  tabAtual = tab;
+  document.querySelectorAll('.main-tab').forEach(b=>b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  render();
+}
+
+function render() {
+  if(tabAtual==='semanas')  renderSemanas();
+  if(tabAtual==='imagens')  renderImagens();
+  if(tabAtual==='knewing')  renderKnewing();
+  if(tabAtual==='panorama') renderPanoramaRedes();
+}
+
+// ═══════════════════════════════════════════════
+// ABA CONCATENADOR DE SEMANAS
+// ═══════════════════════════════════════════════
+let semanasArq = null;
+let semanasRows = [];
+
+function renderSemanas() {
+  const tb = document.getElementById('tabBody');
+  tb.innerHTML = `
+    <div style="max-width:700px;margin:0 auto;">
+      <div class="tool-card">
+        <div class="tool-title">📅 Concatenador de Semanas — Série Histórica</div>
+        <div class="tool-desc">
+          Recebe uma planilha XLSX com coluna <strong style="color:var(--orange-2);">Data</strong> e insere automaticamente as colunas
+          <strong style="color:var(--orange-2);">Índice Semana</strong> e <strong style="color:var(--orange-2);">Semana</strong>
+          no formato "DD/MM/YYYY a DD/MM/YYYY", agrupando linhas por intervalo semanal configurável.
+        </div>
+
+        <div class="upload-zone ${semanasArq?'has-file':''}" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDropSemanas(event)">
+          <input type="file" accept=".xlsx,.xls,.csv" onchange="lerArqSemanas(this.files[0])"/>
+          <div class="upload-zone-label ${semanasArq?'loaded':''}">${semanasArq?`✅ ${semanasArq.name} — ${semanasRows.length} linhas`:'<strong>Clique</strong> ou arraste a planilha (.xlsx, .xls, .csv)'}</div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <div class="field-label">Início da semana</div>
+            <select class="field-input field-select" id="semInicioSel">
+              <option value="0">Segunda-feira</option>
+              <option value="6">Domingo</option>
+              <option value="5">Sábado</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="field-label">Coluna de data</div>
+            <select class="field-input field-select" id="semColData">
+              <option value="Data">Data</option>
+              ${semanasRows.length ? Object.keys(semanasRows[0]).map(k=>`<option value="${k}">${k}</option>`).join('') : ''}
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Posição das novas colunas</div>
+          <select class="field-input field-select" id="semPosicao">
+            <option value="apos-data">Logo após a coluna Data</option>
+            <option value="inicio">No início da planilha</option>
+            <option value="fim">No final da planilha</option>
+          </select>
+        </div>
+
+        <button class="run-btn" onclick="processarSemanas()" ${semanasRows.length?'':'disabled'} id="btnSemanas">
+          ⚙️ Processar e baixar XLSX
+        </button>
+
+        ${semanasRows.length?`
+        <div class="result-box" style="margin-top:14px;">
+          <div class="result-title">✅ Pronto para processar</div>
+          <div class="result-sub">${semanasRows.length} linhas detectadas. Clique em "Processar" para gerar o arquivo com as colunas de semana inseridas.</div>
+        </div>` : ''}
+      </div>
+
+      <div class="tool-card" style="opacity:.7;">
+        <div class="tool-title" style="font-size:11px;">ℹ️ Como funciona</div>
+        <div class="tool-desc" style="margin-bottom:0;">
+          Para cada linha, o sistema identifica a semana à qual a data pertence (com base no dia de início configurado)
+          e atribui um <em>Índice Semana</em> sequencial (1, 2, 3…) e um label <em>Semana</em> no formato de intervalo.
+          Linhas da mesma semana recebem o mesmo índice, facilitando agrupamentos e séries históricas no Excel.
+        </div>
+      </div>
+    </div>`;
+}
+
+function handleDropSemanas(e) {
+  e.preventDefault();
+  document.querySelector('#tabBody .upload-zone')?.classList.remove('drag');
+  if(e.dataTransfer.files[0]) lerArqSemanas(e.dataTransfer.files[0]);
+}
+
+function lerArqSemanas(file) {
+  semanasArq = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb = XLSX.read(e.target.result, {type:'array', cellDates:true});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    semanasRows = XLSX.utils.sheet_to_json(ws, {defval:'', raw:false});
+    renderSemanas();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function processarSemanas() {
+  if(!semanasRows.length) return;
+  const colData  = document.getElementById('semColData')?.value || 'Data';
+  const inicioDia = parseInt(document.getElementById('semInicioSel')?.value || '0');
+  const posicao   = document.getElementById('semPosicao')?.value || 'apos-data';
+
+  const semanas = [];
+  let semIdx = 0;
+  let ultimaSemana = null;
+
+  const rows = semanasRows.map(row => {
+    const rawData = row[colData];
+    const dt = rawData ? new Date(rawData) : null;
+
+    let semLabel = '';
+    let semId = semIdx;
+
+    if(dt && !isNaN(dt)) {
+      // Encontra início da semana
+      const diaSemana = dt.getDay(); // 0=dom,1=seg,...,6=sab
+      const diff = (diaSemana - inicioDia + 7) % 7;
+      const inicio = new Date(dt);
+      inicio.setDate(dt.getDate() - diff);
+      const fim = new Date(inicio);
+      fim.setDate(inicio.getDate() + 6);
+
+      const fmt = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+      semLabel = `${fmt(inicio)} a ${fmt(fim)}`;
+
+      if(semLabel !== ultimaSemana) {
+        semIdx++;
+        ultimaSemana = semLabel;
+      }
+      semId = semIdx;
+    }
+
+    const newRow = {...row};
+
+    if(posicao === 'inicio') {
+      return {'Índice Semana': semId, 'Semana': semLabel, ...newRow};
+    } else if(posicao === 'fim') {
+      return {...newRow, 'Índice Semana': semId, 'Semana': semLabel};
+    } else {
+      // apos-data: insere após a coluna de data
+      const result = {};
+      let inserted = false;
+      for(const [k,v] of Object.entries(newRow)) {
+        result[k] = v;
+        if(k === colData && !inserted) {
+          result['Índice Semana'] = semId;
+          result['Semana'] = semLabel;
+          inserted = true;
+        }
+      }
+      if(!inserted) { result['Índice Semana'] = semId; result['Semana'] = semLabel; }
+      return result;
+    }
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Com Semanas');
+  const nomeBase = semanasArq?.name?.replace(/\.[^.]+$/,'') || 'planilha';
+  XLSX.writeFile(wb, `${nomeBase}_com_semanas.xlsx`);
+  showToast(`✅ ${rows.length} linhas processadas — arquivo baixado`);
+}
+
+// ═══════════════════════════════════════════════
+// ABA AGRUPADOR DE IMAGENS
+// ═══════════════════════════════════════════════
+let imagensRows = [];
+let imagensLog = [];
+let imagensRunning = false;
+
+function renderImagens() {
+  const tb = document.getElementById('tabBody');
+  tb.innerHTML = `
+    <div style="max-width:700px;margin:0 auto;">
+      <div class="tool-card">
+        <div class="tool-title">🖼️ Agrupador de Imagens → PDF</div>
+        <div class="tool-desc">
+          Recebe uma planilha XLSX com coluna <strong style="color:var(--orange-2);">URL</strong> contendo links diretos de imagens.
+          Faz o download de cada imagem e compila em um único PDF para download.
+        </div>
+
+        <div class="upload-zone ${imagensRows.length?'has-file':''}" ondragover="event.preventDefault()" ondragleave="this.classList.remove('drag')" ondrop="handleDropImagens(event)">
+          <input type="file" accept=".xlsx,.xls,.csv" onchange="lerArqImagens(this.files[0])"/>
+          <div class="upload-zone-label ${imagensRows.length?'loaded':''}">${imagensRows.length?`✅ ${imagensRows.length} URLs carregadas`:'<strong>Clique</strong> ou arraste a planilha com coluna URL'}</div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <div class="field-label">Coluna de URL</div>
+            <select class="field-input field-select" id="imgColUrl">
+              <option value="URL">URL</option>
+              ${imagensRows.length ? Object.keys(imagensRows[0]).map(k=>`<option value="${k}">${k}</option>`).join('') : ''}
+            </select>
+          </div>
+          <div class="field">
+            <div class="field-label">Nome do arquivo PDF</div>
+            <input class="field-input" id="imgNomePDF" type="text" value="imagens_compiladas" placeholder="nome_sem_extensão"/>
+          </div>
+        </div>
+
+        <button class="run-btn" onclick="processarImagens()" ${imagensRows.length&&!imagensRunning?'':'disabled'} id="btnImagens">
+          ${imagensRunning?'<span class="spinner"></span> Processando…':'🖼️ Baixar e compilar PDF'}
+        </button>
+
+        ${imagensLog.length?`
+        <div class="log-box">${imagensLog.map(l=>`<div>${l}</div>`).join('')}</div>` : ''}
+      </div>
+
+      <div class="tool-card" style="opacity:.7;">
+        <div class="tool-title" style="font-size:11px;">⚠️ Requisitos das URLs</div>
+        <div class="tool-desc" style="margin-bottom:0;">
+          As URLs devem ser links <strong>diretos</strong> para arquivos de imagem (JPG, PNG, GIF, WebP) — não URLs de páginas ou links hiperlinkados.
+          O servidor da imagem deve permitir requisições cross-origin (CORS). URLs que falharem são puladas com um aviso no log.
+        </div>
+      </div>
+    </div>`;
+}
+
+function handleDropImagens(e) { e.preventDefault(); if(e.dataTransfer.files[0]) lerArqImagens(e.dataTransfer.files[0]); }
+function lerArqImagens(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb = XLSX.read(e.target.result,{type:'array'});
+    imagensRows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+    imagensLog = [];
+    renderImagens();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function processarImagens() {
+  if(!imagensRows.length) return;
+  const colUrl  = document.getElementById('imgColUrl')?.value || 'URL';
+  const nomePDF = document.getElementById('imgNomePDF')?.value || 'imagens_compiladas';
+  const urls    = imagensRows.map(r=>String(r[colUrl]||'')).filter(u=>u.startsWith('http'));
+
+  imagensRunning = true;
+  imagensLog = [`⚙️ Processando ${urls.length} URLs…`];
+  renderImagens();
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  let paginaAtual = 0;
+  let ok = 0, falhas = 0;
+
+  for(let i=0; i<urls.length; i++) {
+    const url = urls[i];
+    try {
+      const resp = await fetch(url, {mode:'cors'});
+      if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const blob = await resp.blob();
+      const dataUrl = await new Promise(res => {
+        const reader = new FileReader();
+        reader.onload = e => res(e.target.result);
+        reader.readAsDataURL(blob);
+      });
+      if(paginaAtual > 0) pdf.addPage();
+      // Calcula dimensões para caber na página A4 (190×277mm)
+      const img = new Image();
+      await new Promise(res => { img.onload=res; img.src=dataUrl; });
+      const maxW=190, maxH=277;
+      let w=img.width, h=img.height;
+      const scale = Math.min(maxW/w, maxH/h, 1);
+      w=w*scale; h=h*scale;
+      const x=(210-w)/2, y=(297-h)/2;
+      pdf.addImage(dataUrl, 'JPEG', x, y, w, h);
+      paginaAtual++;
+      ok++;
+      imagensLog.push(`✅ [${i+1}/${urls.length}] Imagem adicionada`);
+    } catch(err) {
+      falhas++;
+      imagensLog.push(`⚠️ [${i+1}/${urls.length}] Falhou: ${url.slice(0,60)}… — ${err.message}`);
+    }
+    // Atualiza UI a cada 5
+    if((i+1)%5===0) { renderImagens(); await new Promise(r=>setTimeout(r,10)); }
+  }
+
+  if(ok > 0) {
+    pdf.save(`${nomePDF}.pdf`);
+    imagensLog.push(`✅ PDF gerado com ${ok} imagens${falhas?` (${falhas} falhas)`:''}. Download iniciado.`);
+  } else {
+    imagensLog.push('❌ Nenhuma imagem processada com sucesso. Verifique as URLs.');
+  }
+  imagensRunning = false;
+  renderImagens();
+}
+
+// ═══════════════════════════════════════════════
+// ABA KNEWING MONITORING
+// ═══════════════════════════════════════════════
+let knewinRows = [];
+let knewinResultados = [];
+let knewinRunning = false;
+let knewinLog = [];
+
+function renderKnewing() {
+  const tb = document.getElementById('tabBody');
+  tb.innerHTML = `
+    <div style="max-width:700px;margin:0 auto;">
+      <div class="tool-card">
+        <div class="tool-title">🔍 Knewing Monitoring — Conteúdo Full-text</div>
+        <div class="tool-desc">
+          Recebe a planilha exportada do Knewing e busca o conteúdo completo de cada matéria via API Knewin,
+          usando o token Bearer da sua conta. O resultado é uma planilha com a coluna <strong style="color:var(--orange-2);">conteudo</strong> preenchida.
+        </div>
+
+        <div class="upload-zone ${knewinRows.length?'has-file':''}" ondragover="event.preventDefault()" ondrop="handleDropKnewin(event)">
+          <input type="file" accept=".xlsx,.xls,.csv" onchange="lerArqKnewin(this.files[0])"/>
+          <div class="upload-zone-label ${knewinRows.length?'loaded':''}">${knewinRows.length?`✅ ${knewinRows.length} matérias carregadas`:'<strong>Clique</strong> para carregar planilha Knewing'}</div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Token Bearer da API Knewin</div>
+          <input class="field-input" id="knewinToken" type="password" placeholder="Cole o token Bearer aqui…"/>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">O token é usado apenas nesta sessão e não é salvo.</div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <div class="field-label">ID Empresa (Knewin)</div>
+            <input class="field-input" id="knewinEmpresa" type="text" value="2396" placeholder="2396"/>
+          </div>
+          <div class="field">
+            <div class="field-label">Coluna com ID da notícia</div>
+            <input class="field-input" id="knewinColId" type="text" value="Link web - Imagem" placeholder="Link web - Imagem"/>
+          </div>
+        </div>
+
+        <button class="run-btn" onclick="processarKnewin()" ${knewinRows.length&&!knewinRunning?'':'disabled'} id="btnKnewin">
+          ${knewinRunning?'<span class="spinner"></span> Buscando conteúdo…':'🔍 Buscar conteúdo e exportar'}
+        </button>
+
+        ${knewinLog.length?`
+        <div class="progress-wrap" style="margin-top:12px;">
+          <div class="progress-bar" style="width:${knewinResultados.length?Math.round(knewinResultados.length/knewinRows.length*100):0}%"></div>
+        </div>
+        <div class="progress-label">${knewinResultados.length} / ${knewinRows.length} processadas</div>
+        <div class="log-box">${knewinLog.slice(-15).map(l=>`<div>${l}</div>`).join('')}</div>` : ''}
+      </div>
+
+      <div class="tool-card" style="opacity:.7;">
+        <div class="tool-title" style="font-size:11px;">ℹ️ Colunas esperadas na planilha Knewing</div>
+        <div class="tool-desc" style="margin-bottom:0;">
+          <code>Data da publicação · Nome do veículo · Título · Link web - Texto · Tipo da mídia · Link web - Imagem · Link original</code>.<br/>
+          A coluna <code>Link web - Imagem</code> contém o ID da notícia na URL — ex: <code>https://…/123456/noticia</code> → ID = <code>123456</code>.
+        </div>
+      </div>
+    </div>`;
+}
+
+function handleDropKnewin(e) { e.preventDefault(); if(e.dataTransfer.files[0]) lerArqKnewin(e.dataTransfer.files[0]); }
+function lerArqKnewin(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb = XLSX.read(e.target.result,{type:'array'});
+    knewinRows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+    knewinResultados = []; knewinLog = [];
+    renderKnewing();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function stripHtml(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent||tmp.innerText||'';
+}
+
+async function processarKnewin() {
+  const token   = document.getElementById('knewinToken')?.value?.trim();
+  const empresa = document.getElementById('knewinEmpresa')?.value||'2396';
+  const colId   = document.getElementById('knewinColId')?.value||'Link web - Imagem';
+  if(!token) { showToast('⚠️ Insira o token Bearer'); return; }
+  if(!knewinRows.length) return;
+
+  knewinRunning = true;
+  knewinResultados = [];
+  knewinLog = [`⚙️ Iniciando busca de ${knewinRows.length} matérias…`];
+  renderKnewing();
+
+  for(let i=0; i<knewinRows.length; i++) {
+    const row = knewinRows[i];
+    const linkImagem = String(row[colId]||'');
+    const id = linkImagem.split('/').filter(Boolean).slice(-2,-1)[0];
+
+    let conteudo = '';
+    let erro = '';
+
+    if(id && /^\d+$/.test(id)) {
+      try {
+        const resp = await fetch(`https://api.monitoring.knewin.com/Noticia?idNoticia=${id}&idEmpresa=${empresa}`,{
+          headers:{'accept':'application/json','authorization':token}
+        });
+        if(resp.ok) {
+          const data = await resp.json();
+          conteudo = stripHtml(data.texto||'');
+          knewinLog.push(`✅ [${i+1}/${knewinRows.length}] ${(row['Título']||'').slice(0,50)}`);
+        } else {
+          erro = `HTTP ${resp.status}`;
+          knewinLog.push(`⚠️ [${i+1}/${knewinRows.length}] ${erro} — ${(row['Título']||'').slice(0,40)}`);
+        }
+      } catch(e) {
+        erro = e.message;
+        knewinLog.push(`❌ [${i+1}/${knewinRows.length}] Erro: ${e.message}`);
+      }
+    } else {
+      erro = 'ID não encontrado na URL';
+      knewinLog.push(`⚠️ [${i+1}/${knewinRows.length}] ID não encontrado — ${linkImagem.slice(0,50)}`);
+    }
+
+    knewinResultados.push({
+      'Título': row['Título']||'',
+      'Data da publicação': row['Data da publicação']||'',
+      'Nome do veículo': row['Nome do veículo']||'',
+      'Link original': row['Link original']||row['Link web - Texto']||'',
+      'Tipo da mídia': row['Tipo da mídia']||'',
+      'conteudo': conteudo,
+      '_erro': erro
+    });
+
+    if((i+1)%5===0) { renderKnewing(); await new Promise(r=>setTimeout(r,50)); }
+  }
+
+  // Exporta
+  // Sanitiza texto para evitar XML inválido no SheetJS (conteúdo de notícia
+  // vindo de API externa pode ter emoji/caracteres de controle — mesma causa-raiz
+  // já identificada em pipeline-irx.html).
+  const sanitizeXLSXCell = v => {
+    if (v == null) return '';
+    if (typeof v !== 'string') return v;
+    return v
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+      .replace(/[\uD800-\uDFFF]/g, '')
+      .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+      .replace(/[\u{2000}-\u{2BFF}]/gu, '')
+      .replace(/\uFFFE|\uFFFF/g, '');
+  };
+  const sanitizeXLSXRow = r => Object.fromEntries(Object.entries(r).map(([k,v]) => [k, typeof v==='string'?sanitizeXLSXCell(v):v]));
+  const wb = XLSX.utils.book_new();
+  const ok = knewinResultados.filter(r=>!r._erro);
+  const falhas = knewinResultados.filter(r=>r._erro);
+  const toSheet = rows => rows.map(({_erro,...r})=>sanitizeXLSXRow(r));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(toSheet(ok)), 'Conteúdo');
+  if(falhas.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(falhas.map(({_erro,...r})=>sanitizeXLSXRow({...r,'Erro':_erro}))), 'Falhas');
+  XLSX.writeFile(wb,'knewing_conteudo.xlsx');
+
+  knewinLog.push(`✅ Concluído. ${ok.length} com conteúdo, ${falhas.length} falhas. Download iniciado.`);
+  knewinRunning = false;
+  renderKnewing();
+}
+
+// ═══════════════════════════════════════════════
+// ABA PANORAMA REDES
+// ═══════════════════════════════════════════════
+let panRedesResultado = '';
+let panRedesRunning = false;
+
+function renderPanoramaRedes() {
+  const tb = document.getElementById('tabBody');
+  tb.innerHTML = `
+    <div style="max-width:800px;margin:0 auto;">
+      <div class="tool-card">
+        <div class="tool-title">🌐 Panorama Redes — Gerador de Relatórios</div>
+
+        <div class="tabs-bar" style="margin:-20px -20px 20px;border-top:none;padding:0 16px;">
+          <button class="main-tab ${panRedesTipo==='inicial'?'active':''}" onclick="setPanRedesTipo('inicial',this)">Criação Inicial</button>
+          <button class="main-tab ${panRedesTipo==='atualizacao'?'active':''}" onclick="setPanRedesTipo('atualizacao',this)">Atualização</button>
+          <button class="main-tab ${panRedesTipo==='alerta'?'active':''}" onclick="setPanRedesTipo('alerta',this)">Alerta</button>
+        </div>
+
+        ${renderFormPanRedes()}
+
+        <button class="run-btn" id="btnPanRedes" onclick="gerarPanRedes()" ${panRedesRunning?'disabled':''} style="margin-top:16px;">
+          ${panRedesRunning?'<span class="spinner"></span> Gerando…':'✨ Gerar com IA'}
+        </button>
+      </div>
+
+      ${panRedesResultado?`
+      <div class="pan-result">
+        <div class="pan-result-header">
+          <span class="pan-result-title">🤖 Resultado</span>
+          <div style="display:flex;gap:8px;">
+            <button class="tbtn" onclick="navigator.clipboard.writeText(document.getElementById('panRedesText').innerText).then(()=>showToast('✅ Copiado!'))">Copiar</button>
+            <button class="tbtn" onclick="panRedesResultado='';renderPanoramaRedes()">Limpar</button>
+          </div>
+        </div>
+        <div id="panRedesText">${panRedesResultado}</div>
+      </div>` : ''}
+    </div>`;
+}
+
+let panRedesTipo = 'inicial';
+let panRedesData = {};
+
+function setPanRedesTipo(tipo, el) {
+  panRedesTipo = tipo;
+  renderPanoramaRedes();
+}
+
+function renderFormPanRedes() {
+  const d = panRedesData;
+  if(panRedesTipo === 'inicial') return `
+    <div class="field-row">
+      <div class="field"><div class="field-label">Título do relatório</div><input class="field-input" id="prTitulo" type="text" placeholder="Ex: Meningite: Ampliação da vacina no SUS" value="${d.titulo||''}"/></div>
+      <div class="field"><div class="field-label">Cliente / Marca</div><input class="field-input" id="prCliente" type="text" placeholder="Nome do cliente" value="${d.cliente||''}"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><div class="field-label">Período (início)</div><input class="field-input" id="prDataInicio" type="date" value="${d.dataInicio||''}"/></div>
+      <div class="field"><div class="field-label">Período (fim)</div><input class="field-input" id="prDataFim" type="date" value="${d.dataFim||''}"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><div class="field-label">Total de menções</div><input class="field-input" id="prMencoes" type="number" value="${d.mencoes||''}"/></div>
+      <div class="field"><div class="field-label">Alcance total</div><input class="field-input" id="prAlcance" type="text" value="${d.alcance||''}" placeholder="Ex: 1.2M"/></div>
+    </div>
+    <div class="field"><div class="field-label">Principais narrativas e destaques</div><textarea class="pan-textarea" id="prNarrativas" placeholder="Descreva os principais temas, picos, engajamentos…">${d.narrativas||''}</textarea></div>
+    <div class="field"><div class="field-label">Top perfis / influenciadores mencionados</div><textarea class="pan-textarea" id="prPerfis" style="min-height:60px;" placeholder="Um por linha ou separados por vírgula">${d.perfis||''}</textarea></div>`;
+
+  if(panRedesTipo === 'atualizacao') return `
+    <div class="field"><div class="field-label">Cliente / Relatório</div><input class="field-input" id="prCliente" type="text" value="${d.cliente||''}" placeholder="Nome do cliente e relatório que está sendo atualizado"/></div>
+    <div class="field-row">
+      <div class="field"><div class="field-label">Período anterior</div><input class="field-input" id="prPeriodoAnt" type="text" value="${d.periodoAnt||''}" placeholder="01/06 a 07/06"/></div>
+      <div class="field"><div class="field-label">Período atual</div><input class="field-input" id="prPeriodoAtual" type="text" value="${d.periodoAtual||''}" placeholder="08/06 a 15/06"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><div class="field-label">Menções anteriores</div><input class="field-input" id="prMencoesAnt" type="number" value="${d.mencoesAnt||''}"/></div>
+      <div class="field"><div class="field-label">Menções atuais</div><input class="field-input" id="prMencoesAtual" type="number" value="${d.mencoesAtual||''}"/></div>
+    </div>
+    <div class="field"><div class="field-label">Novidades e mudanças neste período</div><textarea class="pan-textarea" id="prNovidades" placeholder="O que mudou em relação ao período anterior?">${d.novidades||''}</textarea></div>`;
+
+  if(panRedesTipo === 'alerta') return `
+    <div class="field-row">
+      <div class="field"><div class="field-label">Cliente / Marca</div><input class="field-input" id="prCliente" type="text" value="${d.cliente||''}"/></div>
+      <div class="field"><div class="field-label">Hora do alerta</div><input class="field-input" id="prHora" type="time" value="${d.hora||''}"/></div>
+    </div>
+    <div class="field"><div class="field-label">Situação detectada</div><textarea class="pan-textarea" id="prSituacao" placeholder="Descreva o que foi detectado — pico de menções, crise, trending topic…">${d.situacao||''}</textarea></div>
+    <div class="field-row">
+      <div class="field"><div class="field-label">Volume de menções</div><input class="field-input" id="prMencoes" type="number" value="${d.mencoes||''}"/></div>
+      <div class="field"><div class="field-label">Principal rede</div><input class="field-input" id="prRede" type="text" value="${d.rede||''}" placeholder="Twitter, Instagram…"/></div>
+    </div>
+    <div class="field"><div class="field-label">Principais posts / perfis envolvidos</div><textarea class="pan-textarea" id="prPerfis" style="min-height:60px;" placeholder="Links ou nomes dos principais posts">${d.perfis||''}</textarea></div>`;
+}
+
+async function gerarPanRedes() {
+  // Coleta campos do form
+  const get = id => document.getElementById(id)?.value||'';
+  panRedesData = {
+    titulo:get('prTitulo'), cliente:get('prCliente'), dataInicio:get('prDataInicio'),
+    dataFim:get('prDataFim'), mencoes:get('prMencoes'), alcance:get('prAlcance'),
+    narrativas:get('prNarrativas'), perfis:get('prPerfis'), periodoAnt:get('prPeriodoAnt'),
+    periodoAtual:get('prPeriodoAtual'), mencoesAnt:get('prMencoesAnt'), mencoesAtual:get('prMencoesAtual'),
+    novidades:get('prNovidades'), situacao:get('prSituacao'), hora:get('prHora'), rede:get('prRede')
+  };
+
+  panRedesRunning = true;
+  renderPanoramaRedes();
+
+  const prompts = {
+    inicial: `Crie um relatório inicial de panorama de redes sociais para ${panRedesData.cliente||'o cliente'}.
+Título: ${panRedesData.titulo}
+Período: ${panRedesData.dataInicio} a ${panRedesData.dataFim}
+Total de menções: ${panRedesData.mencoes}
+Alcance: ${panRedesData.alcance}
+Narrativas e destaques: ${panRedesData.narrativas}
+Top perfis: ${panRedesData.perfis}`,
+    atualizacao: `Crie uma atualização de panorama de redes sociais para ${panRedesData.cliente}.
+Período anterior: ${panRedesData.periodoAnt} (${panRedesData.mencoesAnt} menções)
+Período atual: ${panRedesData.periodoAtual} (${panRedesData.mencoesAtual} menções)
+Novidades deste período: ${panRedesData.novidades}`,
+    alerta: `Crie um ALERTA de monitoramento de redes sociais para ${panRedesData.cliente}.
+Hora do alerta: ${panRedesData.hora}
+Situação: ${panRedesData.situacao}
+Volume: ${panRedesData.mencoes} menções | Principal rede: ${panRedesData.rede}
+Posts/perfis: ${panRedesData.perfis}`
+  };
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6', max_tokens:1000,
+        system:'Você é analista de inteligência de redes sociais da Nexus FSB. Escreva panoramas diretos, estratégicos e profissionais em português. Sem bullet points. 3 parágrafos fluidos: contexto/volume → narrativas/destaque → pontos de atenção/recomendações. Para alertas, seja mais urgente e direto.',
+        messages:[{role:'user',content:prompts[panRedesTipo]}]
+      })
+    });
+    const data = await resp.json();
+    panRedesResultado = data.content?.[0]?.text || 'Não foi possível gerar o panorama.';
+  } catch(err) {
+    panRedesResultado = '❌ Erro: '+err.message;
+  }
+  panRedesRunning = false;
+  renderPanoramaRedes();
+}
+
+// ═══════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if(!t) { t=document.createElement('div'); t.id='toast'; t.className='toast'; document.body.appendChild(t); }
+  t.textContent=msg; t.style.display='block';
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{ t.style.display='none'; },3000);
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+document.getElementById('navbar-container').innerHTML = renderSidebar('automacoes');
+if(typeof setPageLabel==='function') setPageLabel('HUB.Automações');
+if(typeof loadTheme==='function') loadTheme();
+render();
+</script>
+</body>
+</html>

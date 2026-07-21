@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HUB.nexus — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/global.css"/>
+  <style>
+    body {
+      background: var(--bg);
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      font-family: var(--font-body);
+      transition: background 0.3s;
+    }
+
+    /* Blobs decorativos de fundo */
+    .bg-blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(70px);
+      pointer-events: none;
+      animation: blobDrift 14s ease-in-out infinite;
+    }
+    .bg-blob-1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, hsla(var(--theme-h), 85%, 65%, 0.28) 0%, transparent 65%);
+      top: -160px; right: -80px;
+      animation-duration: 16s;
+    }
+    .bg-blob-2 {
+      width: 380px; height: 380px;
+      background: radial-gradient(circle, hsla(calc(var(--theme-h) + 20), 70%, 70%, 0.18) 0%, transparent 65%);
+      bottom: -120px; left: -60px;
+      animation-duration: 22s;
+      animation-delay: -4s;
+    }
+    .bg-blob-3 {
+      width: 260px; height: 260px;
+      background: radial-gradient(circle, hsla(calc(var(--theme-h) - 20), 80%, 68%, 0.14) 0%, transparent 65%);
+      top: 30%; left: 20%;
+      animation-duration: 12s;
+      animation-delay: -8s;
+    }
+    @keyframes blobDrift {
+      0%,100% { transform: translate(0,0) scale(1); }
+      33%      { transform: translate(-20px, 15px) scale(1.04); }
+      66%      { transform: translate(14px, -18px) scale(0.97); }
+    }
+
+    /* Decorações flutuantes */
+    .deco {
+      position: fixed;
+      pointer-events: none;
+      font-size: 36px;
+      animation: floatDeco 8s ease-in-out infinite;
+      filter: drop-shadow(0 6px 14px rgba(0,0,0,0.18));
+      z-index: 0;
+    }
+    .deco-1 { top: 12%; left: 8%; animation-delay: 0s; }
+    .deco-2 { top: 18%; right: 10%; animation-delay: -2.5s; font-size: 28px; }
+    .deco-3 { bottom: 20%; left: 12%; animation-delay: -5s; font-size: 32px; }
+    .deco-4 { bottom: 15%; right: 8%; animation-delay: -1.5s; }
+    @keyframes floatDeco {
+      0%,100% { transform: translateY(0) rotate(0deg); }
+      50%      { transform: translateY(-14px) rotate(6deg); }
+    }
+
+    /* Card principal */
+    .login-card {
+      width: 420px;
+      max-width: 92vw;
+      background: var(--surface);
+      border-radius: var(--r-3xl);
+      box-shadow: var(--clay-shadow-lg);
+      border: 2px solid rgba(255,255,255,0.80);
+      padding: 36px 36px 32px;
+      z-index: 2;
+      position: relative;
+      animation: cardIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    body.dark .login-card {
+      border-color: rgba(255,255,255,0.08);
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(30px) scale(0.94); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Logo + título */
+    .login-logo {
+      width: 90px; height: 90px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .login-logo img {
+      width: 100%; height: 100%; object-fit: contain;
+      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.18));
+      animation: logoFloat 5s ease-in-out infinite;
+    }
+    @keyframes logoFloat {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    .login-title {
+      font-family: var(--font-ui);
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-primary);
+      text-align: center;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+    .login-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 6px;
+      background: var(--bg);
+      padding: 5px;
+      border-radius: var(--r-pill);
+      box-shadow: var(--clay-shadow-pressed);
+      margin-bottom: 22px;
+    }
+    .tab-pill {
+      flex: 1;
+      padding: 9px 12px;
+      border-radius: var(--r-pill);
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      transition: all var(--t-normal);
+    }
+    .tab-pill.active {
+      background: var(--surface);
+      color: var(--accent-dark);
+      box-shadow: var(--clay-shadow-sm);
+    }
+    body.dark .tab-pill.active {
+      color: var(--accent-light);
+    }
+    .tab-pill:hover:not(.active) {
+      color: var(--text-secondary);
+    }
+
+    /* Fields */
+    .field-wrap { margin-bottom: 12px; }
+    .field-label {
+      font-family: var(--font-ui);
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      display: block;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+    .field-icon-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .field-icon {
+      position: absolute;
+      left: 14px;
+      width: 28px; height: 28px;
+      border-radius: var(--r-sm);
+      background: var(--accent-soft);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      box-shadow: var(--clay-shadow-sm);
+    }
+    .field-icon svg { width: 13px; height: 13px; stroke: var(--accent-dark); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    body.dark .field-icon { background: var(--accent-mid); }
+    body.dark .field-icon svg { stroke: var(--accent-light); }
+    .field-input-inner {
+      width: 100%;
+      padding: 12px 16px 12px 52px;
+      background: var(--bg);
+      border: 1.5px solid rgba(255,255,255,0.60);
+      border-radius: var(--r-lg);
+      font-family: var(--font-body);
+      font-size: 13px;
+      color: var(--text-primary);
+      outline: none;
+      transition: all var(--t-normal);
+      box-shadow: var(--clay-shadow-pressed);
+      box-sizing: border-box;
+    }
+    body.dark .field-input-inner { background: var(--bg-2); border-color: rgba(255,255,255,0.06); }
+    .field-input-inner::placeholder { color: var(--text-faint); }
+    .field-input-inner:focus {
+      border-color: var(--accent);
+      background: var(--surface);
+      box-shadow: var(--clay-shadow-pressed), 0 0 0 3px hsla(var(--theme-h), 80%, 55%, 0.16);
+    }
+
+    /* CTA button */
+    .cta-btn {
+      width: 100%;
+      padding: 13px;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--r-pill);
+      font-family: var(--font-ui);
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+      cursor: pointer;
+      margin-top: 8px;
+      box-shadow: var(--clay-shadow-accent);
+      transition: all var(--t-slow);
+      letter-spacing: 0.2px;
+    }
+    .cta-btn:hover {
+      transform: translateY(-3px) scale(1.01);
+      background: var(--accent-light);
+    }
+    .cta-btn:active {
+      transform: translateY(1px) scale(0.99);
+      box-shadow: var(--clay-shadow-pressed);
+    }
+    .cta-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+    .cta-btn.success {
+      background: var(--green);
+      box-shadow: 0 6px 20px rgba(34,197,94,0.35), inset 0 1px 0 rgba(255,255,255,0.30);
+    }
+
+    /* Status pill */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--accent-soft);
+      border: 1.5px solid rgba(255,255,255,0.70);
+      border-radius: var(--r-pill);
+      padding: 6px 14px;
+      width: fit-content;
+      margin: 16px auto 0;
+      box-shadow: var(--clay-shadow-sm);
+    }
+    body.dark .status-pill { border-color: rgba(255,255,255,0.08); }
+    .status-text { font-family: var(--font-ui); font-size: 11px; color: var(--accent-dark); font-weight: 700; }
+    body.dark .status-text { color: var(--accent-light); }
+
+    /* Theme picker mini no login */
+    .login-topbar {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      gap: 8px;
+      z-index: 20;
+    }
+    .panel-enter { animation: panelIn 0.28s cubic-bezier(0.4,0,0.2,1); }
+    @keyframes panelIn { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:translateY(0) } }
+  </style>
+</head>
+<body>
+
+  <div class="bg-blob bg-blob-1"></div>
+  <div class="bg-blob bg-blob-2"></div>
+  <div class="bg-blob bg-blob-3"></div>
+
+  <div class="deco deco-1">✦</div>
+  <div class="deco deco-2">◈</div>
+  <div class="deco deco-3">❋</div>
+  <div class="deco deco-4">✦</div>
+
+  <!-- Topbar com palette + mode -->
+  <div class="login-topbar">
+    <div class="palette-btn" id="paletteBtn" onclick="togglePicker()" title="Personalizar cor">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="7" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="9" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="1.5" fill="currentColor" stroke="none"/><circle cx="8" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>
+    </div>
+    <div class="notif-btn mode-btn" onclick="toggleMode()" title="Alternar modo">
+      <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+    </div>
+  </div>
+
+  <!-- Theme picker panel -->
+  <div class="theme-picker-panel" id="themePanel">
+    <div class="theme-picker-title">🎨 Cor do tema</div>
+    <div class="theme-swatches" id="swatchGrid"></div>
+    <div class="theme-divider"></div>
+    <div style="font-family:var(--font-ui);font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:.6px;text-transform:uppercase;margin-bottom:7px;">Código HEX personalizado</div>
+    <div class="hex-row">
+      <div class="hex-preview" id="hexPreview"></div>
+      <input class="hex-input" id="hexInput" type="text" placeholder="#FF6500" maxlength="7" oninput="onHexInput(this.value)"/>
+      <button class="hex-apply-btn" onclick="applyHexColor()">OK</button>
+    </div>
+    <div class="theme-divider"></div>
+    <div class="theme-picker-title">Modo</div>
+    <div class="mode-row">
+      <div class="mode-option" id="mode-light" onclick="applyMode('light')">☀️ Claro</div>
+      <div class="mode-option" id="mode-dark"  onclick="applyMode('dark')">🌙 Escuro</div>
+    </div>
+  </div>
+
+  <div class="login-card">
+
+    <div class="login-logo">
+      <img src="assets/logo.png" alt="HUB.nexus"/>
+    </div>
+
+    <h1 class="login-title">Bem-vindo de volta 👋</h1>
+    <p class="login-sub">Plataforma interna · Acesso restrito à equipe</p>
+
+    <div class="tabs">
+      <button class="tab-pill active" id="tab-login" onclick="switchTab('login')">Entrar</button>
+      <button class="tab-pill" id="tab-access" onclick="switchTab('access')">Solicitar acesso</button>
+    </div>
+
+    <div id="panel-login" class="panel-enter">
+
+      <div class="field-wrap">
+        <label class="field-label">E-mail corporativo</label>
+        <div class="field-icon-wrap">
+          <div class="field-icon">
+            <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <input class="field-input-inner" type="email" id="loginEmail" placeholder="seu@empresa.com"
+                 onkeydown="if(event.key==='Enter') document.getElementById('loginSenha').focus()"/>
+        </div>
+      </div>
+
+      <div class="field-wrap">
+        <label class="field-label">Senha de acesso</label>
+        <div class="field-icon-wrap">
+          <div class="field-icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <input class="field-input-inner" type="password" id="loginSenha" placeholder="••••••••"
+                 onkeydown="if(event.key==='Enter') realizarLogin()"/>
+        </div>
+      </div>
+
+      <button class="cta-btn" id="btnEntrar" onclick="realizarLogin()">
+        Entrar na Plataforma →
+      </button>
+
+    </div>
+
+    <div id="panel-access" style="display:none;" class="panel-enter">
+      <div class="field-wrap">
+        <label class="field-label">Nome completo</label>
+        <div class="field-icon-wrap">
+          <div class="field-icon">
+            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <input class="field-input-inner" type="text" id="accNome" placeholder="Seu nome completo"/>
+        </div>
+      </div>
+      <div class="field-wrap">
+        <label class="field-label">E-mail corporativo</label>
+        <div class="field-icon-wrap">
+          <div class="field-icon">
+            <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <input class="field-input-inner" type="email" id="accEmail" placeholder="joao@empresa.com.br"/>
+        </div>
+      </div>
+      <button class="cta-btn" onclick="handleRequest()">Solicitar acesso →</button>
+    </div>
+
+    <div style="display:flex;justify-content:center;">
+      <div class="status-pill">
+        <div class="pulse-dot"></div>
+        <span class="status-text">Sistema online</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="js/utils.js"></script>
+  <script src="js/roadmap.js"></script>
+  <script src="js/theme.js"></script>
+  <script>
+    initMode();
+    initTheme();
+    updateModeButtons();
+
+    function switchTab(tab) {
+      document.getElementById('panel-login').style.display  = tab === 'login'  ? 'block' : 'none';
+      document.getElementById('panel-access').style.display = tab === 'access' ? 'block' : 'none';
+      document.getElementById('tab-login').classList.toggle('active',  tab === 'login');
+      document.getElementById('tab-access').classList.toggle('active', tab === 'access');
+      const panel = document.getElementById('panel-' + tab);
+      panel.classList.remove('panel-enter');
+      void panel.offsetWidth;
+      panel.classList.add('panel-enter');
+    }
+
+    async function realizarLogin() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const senha = document.getElementById('loginSenha').value.trim();
+      const btn   = document.getElementById('btnEntrar');
+      if (!email || !email.includes('@')) { showToast('⚠️ Digite um e-mail válido.'); return; }
+      if (!senha) { showToast('⚠️ Digite a senha.'); return; }
+      btn.disabled = true;
+      btn.textContent = 'Verificando...';
+      try {
+        const res = await fetch('/api/otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, senha }),
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          const rawName = email.split('@')[0]
+            .replace(/[._-]/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase())
+            .split(' ')[0];
+          localStorage.setItem('hubnexus-auth', JSON.stringify({ email, nome: rawName, ts: Date.now() }));
+          try {
+            const KEY_USUARIOS = 'hubnexus-usuarios';
+            const lista = JSON.parse(localStorage.getItem(KEY_USUARIOS) || '[]');
+            const cores = ['#ff6500','#dd4477','#22cc88','#3388ff','#cc88ff','#ffaa44','#66dd88','#ff8040'];
+            if (!lista.find(u => u.email === email)) {
+              lista.push({ id: Date.now().toString(), nome: rawName, email, cor: cores[lista.length % cores.length] });
+              localStorage.setItem(KEY_USUARIOS, JSON.stringify(lista));
+            }
+          } catch(e) {}
+          fetch('/api/usuarios', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome: rawName, email }),
+          }).catch(() => {});
+          btn.classList.add('success');
+          btn.textContent = '✓ Autorizado!';
+          setTimeout(() => { window.location.href = 'index.html'; }, 800);
+        } else {
+          showToast('❌ ' + (data.error || 'Senha incorreta.'));
+          btn.disabled = false;
+          btn.textContent = 'Entrar na Plataforma →';
+        }
+      } catch(e) {
+        showToast('❌ Erro de conexão. Tente novamente.');
+        btn.disabled = false;
+        btn.textContent = 'Entrar na Plataforma →';
+      }
+    }
+
+    function handleRequest() {
+      const nome  = document.getElementById('accNome').value.trim();
+      const email = document.getElementById('accEmail').value.trim();
+      if (!nome || !email) { showToast('⚠️ Preencha todos os campos.'); return; }
+      showToast('✓ Solicitação enviada com sucesso!');
+    }
+  </script>
+</body>
+</html>

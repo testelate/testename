@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HUB.nexus — Pontos de Atenção</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/global.css"/>
+  <style>
+    body { display:flex; overflow:hidden; height:100vh; background:var(--bg); }
+    .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+    .topbar { display:flex; align-items:center; justify-content:space-between; padding:0 20px; height:52px; flex-shrink:0; backdrop-filter:blur(30px); background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.07); z-index:5; gap:12px; }
+    .topbar-left { display:flex; align-items:center; gap:10px; }
+    .topbar-title { font-size:13px; font-weight:500; color:var(--text-primary); }
+    .topbar-right { display:flex; align-items:center; gap:8px; }
+    .tbtn { display:inline-flex; align-items:center; gap:5px; padding:6px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); border-radius:var(--r-sm); font-size:11px; color:var(--text-secondary); cursor:pointer; font-family:'Inter',sans-serif; transition:all var(--t-normal); }
+    .tbtn:hover { background:rgba(255,255,255,0.09); }
+    .tbtn svg { width:11px; height:11px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .tbtn-primary { background:hsla(var(--theme-h),90%,50%,0.12); border-color:hsla(var(--theme-h),90%,50%,0.28); color:var(--orange-2); }
+    .tbtn-primary:hover { background:hsla(var(--theme-h),90%,50%,0.22); }
+
+    /* ── Search ── */
+    .search-row { display:flex; align-items:center; gap:10px; padding:10px 20px; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,0.05); }
+    .search-wrap { display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); border-radius:var(--r-sm); padding:7px 12px; flex:1; max-width:400px; }
+    .search-wrap svg { width:12px; height:12px; fill:none; stroke:var(--text-muted); stroke-width:2; flex-shrink:0; }
+    .search-wrap input { background:none; border:none; outline:none; font-size:12px; color:var(--text-primary); font-family:'Inter',sans-serif; width:100%; }
+    .search-wrap input::placeholder { color:var(--text-muted); }
+    .info-tip { font-size:10px; color:var(--text-muted); margin-left:auto; }
+
+    /* ── Grid ── */
+    .notes-grid { flex:1; overflow-y:auto; padding:16px 20px; display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:12px; align-content:start; }
+
+    /* ── Nota card ── */
+    .note-card { border-radius:var(--r-lg); padding:16px; display:flex; flex-direction:column; gap:10px; position:relative; transition:all var(--t-normal); cursor:default; min-height:160px; }
+    .note-card:hover .note-actions { opacity:1; }
+    .note-card.pinned { border-top:3px solid var(--orange); }
+
+    .note-header { display:flex; align-items:flex-start; gap:8px; }
+    .note-client { font-size:13px; font-weight:600; color:var(--text-primary); flex:1; line-height:1.3; }
+    .pin-btn { width:24px; height:24px; border-radius:var(--r-sm); background:rgba(255,255,255,0.07); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all var(--t-fast); flex-shrink:0; }
+    .pin-btn:hover { background:hsla(var(--theme-h),90%,50%,0.15); }
+    .pin-btn svg { width:12px; height:12px; fill:none; stroke:var(--text-muted); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .pin-btn.active svg { stroke:var(--orange-2); }
+
+    .note-content { font-size:11px; color:var(--text-secondary); line-height:1.6; flex:1; white-space:pre-wrap; word-break:break-word; min-height:60px; outline:none; }
+    .note-content:empty::before { content:attr(data-placeholder); color:var(--text-muted); pointer-events:none; }
+    .note-content[contenteditable="true"]:focus { color:var(--text-primary); }
+
+    .note-footer { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .note-date { font-size:9px; color:var(--text-muted); }
+
+    .note-actions { display:flex; gap:4px; opacity:0; transition:opacity var(--t-fast); }
+    .note-action-btn { width:24px; height:24px; border-radius:var(--r-sm); background:rgba(255,255,255,0.07); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all var(--t-fast); }
+    .note-action-btn:hover { background:rgba(255,255,255,0.13); }
+    .note-action-btn svg { width:11px; height:11px; fill:none; stroke:var(--text-secondary); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .note-action-btn.del:hover { background:rgba(255,96,96,0.15); }
+    .note-action-btn.del:hover svg { stroke:var(--red); }
+
+    /* ── Editar está inline (contenteditable) ── */
+    .edit-indicator { font-size:9px; color:var(--orange-2); display:none; }
+    .note-content[contenteditable="true"]:focus ~ .note-footer .edit-indicator { display:block; }
+
+    /* ── Botão salvar (aparece ao editar) ── */
+    .save-btn { padding:4px 12px; border-radius:var(--r-pill); background:hsla(var(--theme-h),90%,50%,0.15); border:1px solid hsla(var(--theme-h),90%,50%,0.30); color:var(--orange-2); font-size:10px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:all var(--t-fast); display:none; }
+    .save-btn:hover { background:hsla(var(--theme-h),90%,50%,0.25); }
+
+    /* ── Histório expandido ── */
+    .history-list { display:none; flex-direction:column; gap:4px; border-top:1px solid rgba(255,255,255,0.06); padding-top:8px; }
+    .history-list.open { display:flex; }
+    .history-entry { font-size:10px; color:var(--text-muted); line-height:1.4; }
+    .history-entry .he-time { color:var(--text-faint); margin-right:4px; }
+
+    /* ── Nova nota card ── */
+    .new-note-card { border-radius:var(--r-lg); padding:16px; background:rgba(255,255,255,0.03); border:2px dashed rgba(255,255,255,0.10); display:flex; flex-direction:column; gap:10px; cursor:pointer; transition:all var(--t-normal); min-height:120px; }
+    .new-note-card:hover { background:rgba(255,255,255,0.06); border-color:hsla(var(--theme-h),90%,50%,0.25); }
+    .new-note-card.active { border-style:solid; border-color:hsla(var(--theme-h),90%,50%,0.30); background:rgba(255,255,255,0.05); cursor:default; }
+    .new-note-label { font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:6px; }
+    .new-note-label svg { width:14px; height:14px; fill:none; stroke:var(--text-muted); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .new-note-input { background:none; border:none; outline:none; font-size:13px; font-weight:500; color:var(--text-primary); font-family:'Inter',sans-serif; width:100%; }
+    .new-note-input::placeholder { color:var(--text-muted); }
+    .new-note-body { background:none; border:none; outline:none; font-size:11px; color:var(--text-secondary); font-family:'Inter',sans-serif; resize:none; width:100%; line-height:1.6; min-height:60px; }
+    .new-note-body::placeholder { color:var(--text-muted); }
+    .new-note-actions { display:flex; gap:8px; justify-content:flex-end; }
+    .btn-cancel { padding:6px 12px; border-radius:var(--r-sm); border:1px solid rgba(255,255,255,0.12); background:transparent; color:var(--text-muted); font-family:'Inter',sans-serif; font-size:11px; cursor:pointer; }
+    .btn-save   { padding:6px 14px; border-radius:var(--r-sm); border:none; background:var(--orange); color:#fff; font-family:'Inter',sans-serif; font-size:11px; font-weight:600; cursor:pointer; }
+
+    /* ── Seção fixados ── */
+    .section-label { font-size:10px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--text-muted); padding:0 20px 8px; flex-shrink:0; display:flex; align-items:center; gap:8px; }
+    .section-label::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.06); }
+
+    /* ── Paleta de cores ── */
+    .color-picker { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+    .color-dot { width:18px; height:18px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:all var(--t-fast); }
+    .color-dot:hover, .color-dot.sel { border-color:rgba(255,255,255,0.5); transform:scale(1.15); }
+
+    /* ── Light mode ── */
+    body.light .topbar { background:rgba(255,255,255,0.55); border-bottom-color:rgba(180,100,40,0.10); }
+    body.light .topbar-title { color:#3a1200; }
+    body.light .note-client { color:#3a1200; }
+    body.light .note-content { color:#7a4a30; }
+    body.light .note-content[contenteditable="true"]:focus { color:#3a1200; }
+    body.light .search-wrap { background:rgba(255,255,255,0.70); border-color:rgba(180,100,40,0.15); }
+    body.light .search-wrap input { color:#3a1200; }
+    body.light .note-action-btn { background:rgba(255,255,255,0.7); }
+    body.light .pin-btn { background:rgba(255,255,255,0.7); }
+
+    .bg-orbs { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+
+    /* Cores temáticas para as notas */
+    .nc-laranja  { background:hsla(var(--theme-h),90%,50%,0.10);  border:1px solid hsla(var(--theme-h),90%,50%,0.20); }
+    .nc-azul     { background:rgba(136,170,255,0.10); border:1px solid rgba(136,170,255,0.20); }
+    .nc-verde    { background:rgba(102,221,136,0.10); border:1px solid rgba(102,221,136,0.20); }
+    .nc-roxo     { background:rgba(204,136,255,0.10); border:1px solid rgba(204,136,255,0.20); }
+    .nc-amarelo  { background:rgba(255,170,68,0.10);  border:1px solid rgba(255,170,68,0.20); }
+    .nc-default  { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); }
+  </style>
+</head>
+<body>
+  <div class="bg-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+  <div id="navbar-container"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-title">📌 Pontos de Atenção</span>
+        <span style="font-size:10px;color:var(--text-muted);background:hsla(var(--theme-h),90%,50%,0.10);border:1px solid hsla(var(--theme-h),90%,50%,0.20);padding:2px 8px;border-radius:var(--r-pill);">Google Keep interno</span>
+      </div>
+      <div class="topbar-right">
+        <button class="tbtn" onclick="toggleMode()">
+          <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="search-row">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="search-pa" placeholder="Buscar cliente…" oninput="renderNotas()"/>
+      </div>
+      <span class="info-tip">Clique no texto para editar • As notas são compartilhadas com toda a equipe</span>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+      <!-- Fixados -->
+      <div id="section-fixados" style="display:none;">
+        <div class="section-label" style="padding-top:14px;">📌 Fixados</div>
+        <div class="notes-grid" id="grid-fixados" style="padding-top:0;"></div>
+      </div>
+
+      <!-- Nova nota sempre no topo -->
+      <div class="notes-grid" id="grid-novo" style="padding-bottom:0;"></div>
+
+      <!-- Outros -->
+      <div id="section-outros">
+        <div class="section-label" style="padding-top:8px;">Todos os clientes</div>
+        <div class="notes-grid" id="grid-notas" style="padding-top:0;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/utils.js"></script>
+  <script src="../js/roadmap.js"></script>
+  <script>
+    const userAuth = checkAuth();
+    document.getElementById('navbar-container').innerHTML = renderNavbar('pontos-atencao');
+
+    let notas = [];
+    const CORES = [
+      { cls:'nc-default', hex:'#555',  label:'Padrão' },
+      { cls:'nc-laranja', hex:'var(--accent)', label:'Laranja' },
+      { cls:'nc-azul',    hex:'#88aaff', label:'Azul' },
+      { cls:'nc-verde',   hex:'#66dd88', label:'Verde' },
+      { cls:'nc-roxo',    hex:'#cc88ff', label:'Roxo' },
+      { cls:'nc-amarelo', hex:'#ffaa44', label:'Amarelo' },
+    ];
+
+    // ── Carregar ──────────────────────────────────────────────────
+    async function carregar() {
+      try {
+        const r = await fetch('/api/pontos-atencao');
+        if (!r.ok) throw new Error();
+        notas = await r.json();
+      } catch {
+        notas = []; // começa vazio se não tem backend
+      }
+      renderNotas();
+      renderNovaCard();
+    }
+
+    // ── Render ────────────────────────────────────────────────────
+    function renderNotas() {
+      const q = (document.getElementById('search-pa')?.value || '').toLowerCase();
+      const filtradas = notas.filter(n => !q || n.cliente?.toLowerCase().includes(q) || n.conteudo?.toLowerCase().includes(q));
+
+      const fixados = filtradas.filter(n => n.fixado);
+      const outros  = filtradas.filter(n => !n.fixado);
+
+      const sfx = document.getElementById('section-fixados');
+      sfx.style.display = fixados.length ? '' : 'none';
+      document.getElementById('grid-fixados').innerHTML = fixados.map(notaHTML).join('');
+      document.getElementById('grid-notas').innerHTML   = outros.map(notaHTML).join('');
+
+      // Attach save handlers
+      document.querySelectorAll('.note-content[contenteditable]').forEach(el => {
+        el.addEventListener('blur', () => salvarEdicao(parseInt(el.dataset.id)));
+        el.addEventListener('input', () => {
+          const sb = document.getElementById(`save-${el.dataset.id}`);
+          if (sb) sb.style.display = 'inline-block';
+        });
+      });
+    }
+
+    function corClass(hex) {
+      const c = CORES.find(x => x.hex === hex);
+      return c ? c.cls : 'nc-default';
+    }
+
+    function notaHTML(n) {
+      const dt = n.updated_at ? new Date(n.updated_at).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
+      return `
+        <div class="note-card ${corClass(n.cor)} ${n.fixado ? 'pinned' : ''}" id="nota-${n.id}">
+          <div class="note-header">
+            <span class="note-client">${escHtml(n.cliente)}</span>
+            <button class="pin-btn ${n.fixado ? 'active' : ''}" onclick="togglePin(${n.id})" title="${n.fixado ? 'Desafixar' : 'Fixar'}">
+              <svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+            </button>
+          </div>
+
+          <div class="note-content" contenteditable="true" data-id="${n.id}"
+               data-placeholder="Descreva os pontos de atenção deste cliente…">${escHtml(n.conteudo)}</div>
+
+          <div class="note-footer">
+            <span class="note-date">${dt}</span>
+            <span class="edit-indicator">✏️ editando…</span>
+            <div class="note-actions">
+              <div class="color-picker">
+                ${CORES.map(c => `<div class="color-dot ${n.cor===c.hex?'sel':''}" style="background:${c.hex};" title="${c.label}" onclick="mudarCor(${n.id},'${c.hex}',this)"></div>`).join('')}
+              </div>
+              <button class="note-action-btn del" onclick="removerNota(${n.id})" title="Arquivar">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              </button>
+            </div>
+            <button class="save-btn" id="save-${n.id}" onclick="salvarEdicao(${n.id})">Salvar</button>
+          </div>
+        </div>`;
+    }
+
+    // ── Nova nota ─────────────────────────────────────────────────
+    let novaAtiva = false;
+    let novaCor   = CORES[0].hex;
+
+    function renderNovaCard() {
+      const container = document.getElementById('grid-novo');
+      if (!novaAtiva) {
+        container.innerHTML = `
+          <div class="new-note-card" onclick="ativarNova()">
+            <div class="new-note-label">
+              <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Adicionar ponto de atenção…
+            </div>
+          </div>`;
+      } else {
+        container.innerHTML = `
+          <div class="new-note-card active">
+            <input id="nova-cliente" class="new-note-input" placeholder="Nome do cliente" autofocus/>
+            <textarea id="nova-body" class="new-note-body" placeholder="Ponto de atenção, boleana, histórico…" rows="4"></textarea>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="color-picker">
+                ${CORES.map(c => `<div class="color-dot ${novaCor===c.hex?'sel':''}" style="background:${c.hex};" onclick="novaCor='${c.hex}';renderNovaCard()"></div>`).join('')}
+              </div>
+              <div class="new-note-actions" style="margin-left:auto;">
+                <button class="btn-cancel" onclick="cancelarNova()">Cancelar</button>
+                <button class="btn-save" onclick="criarNota()">Criar nota</button>
+              </div>
+            </div>
+          </div>`;
+        document.getElementById('nova-cliente')?.focus();
+      }
+    }
+
+    function ativarNova()  { novaAtiva = true;  renderNovaCard(); }
+    function cancelarNova(){ novaAtiva = false; renderNovaCard(); }
+
+    async function criarNota() {
+      const cliente  = document.getElementById('nova-cliente')?.value.trim();
+      const conteudo = document.getElementById('nova-body')?.value.trim();
+      if (!cliente) { showToast('⚠️ Informe o nome do cliente'); return; }
+
+      const body = { cliente, conteudo, cor: novaCor, criado_por: userAuth?.email || '' };
+      try {
+        const r = await fetch('/api/pontos-atencao', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+        if (!r.ok) throw new Error();
+        const d = await r.json();
+        notas.unshift({ ...body, id: d.id, fixado: 0, ativo: 1, updated_at: new Date().toISOString() });
+      } catch {
+        // Fallback local (sem backend)
+        const id = Date.now();
+        notas.unshift({ ...body, id, fixado: 0, ativo: 1, updated_at: new Date().toISOString() });
+      }
+      novaAtiva = false;
+      novaCor   = CORES[0].hex;
+      renderNovaCard();
+      renderNotas();
+      showToast('📌 Nota criada!');
+    }
+
+    // ── Editar inline ─────────────────────────────────────────────
+    async function salvarEdicao(id) {
+      const el = document.querySelector(`.note-content[data-id="${id}"]`);
+      if (!el) return;
+      const conteudo = el.innerText.trim();
+      const nota = notas.find(n => n.id === id);
+      if (!nota || nota.conteudo === conteudo) return;
+
+      nota.conteudo  = conteudo;
+      nota.updated_at = new Date().toISOString();
+      const sb = document.getElementById(`save-${id}`);
+      if (sb) sb.style.display = 'none';
+
+      try {
+        await fetch('/api/pontos-atencao', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id, conteudo, updated_at: nota.updated_at }) });
+      } catch {}
+      showToast('✅ Salvo');
+    }
+
+    // ── Pin ───────────────────────────────────────────────────────
+    async function togglePin(id) {
+      const nota = notas.find(n => n.id === id);
+      if (!nota) return;
+      nota.fixado = nota.fixado ? 0 : 1;
+      renderNotas();
+      try {
+        await fetch('/api/pontos-atencao', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id, fixado: nota.fixado }) });
+      } catch {}
+    }
+
+    // ── Mudar cor ─────────────────────────────────────────────────
+    async function mudarCor(id, hex, dotEl) {
+      const nota = notas.find(n => n.id === id);
+      if (!nota) return;
+      nota.cor = hex;
+      const card = document.getElementById(`nota-${id}`);
+      if (card) {
+        card.className = `note-card ${corClass(hex)} ${nota.fixado ? 'pinned' : ''}`;
+        card.querySelectorAll('.color-dot').forEach(d => d.classList.remove('sel'));
+        dotEl.classList.add('sel');
+      }
+      try {
+        await fetch('/api/pontos-atencao', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id, cor: hex }) });
+      } catch {}
+    }
+
+    // ── Remover ───────────────────────────────────────────────────
+    async function removerNota(id) {
+      if (!confirm('Arquivar este ponto de atenção?')) return;
+      notas = notas.filter(n => n.id !== id);
+      renderNotas();
+      try {
+        await fetch(`/api/pontos-atencao?id=${id}`, { method:'DELETE' });
+      } catch {}
+    }
+
+    function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    carregar();
+  </script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+// functions/api/irx/classify.js — HUB.nexus · Pipeline IRX
+// Proxy seguro para a API do Claude.
+// A ANTHROPIC_API_KEY fica no servidor (env secret do Cloudflare),
+// nunca exposta no front.
+//
+// POST /api/irx/classify
+// Body: { perfis: [...], segmento: "...", batch_size?: 15 }
+// Retorna: { ok: true, results: [...classificações...] }
+
+function cors(request) {
+  const origin  = request.headers.get('Origin') || '';
+  const allowed = origin.includes('hub-nexus') || origin.includes('pages.dev') || origin.includes('localhost');
+  return {
+    'Access-Control-Allow-Origin':  allowed ? origin : 'https://hub-nexus.pages.dev',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json',
+  };
+}
+
+const json = (data, status = 200, req) =>
+  new Response(JSON.stringify(data), { status, headers: cors(req) });
+
+export async function onRequestOptions({ request }) {
+  return new Response(null, { status: 204, headers: cors(request) });
+}
+
+const SYSTEM = `Você é um analista sênior da Metodologia IRX (Influência, Reputação e Expertise).
+Classifique criadores de conteúdo digital para identificar especialistas autênticos no setor indicado.
+Responda APENAS com um array JSON válido. Nenhum texto antes ou depois do JSON.`;
+
+function buildPrompt(segmento, perfis) {
+  return `Segmento: ${segmento}
+
+Retorne um JSON array com um objeto por perfil com EXATAMENTE estas chaves:
+  "username"        : string (exatamente como fornecido)
+  "qualidade"       : integer 1–5  (1=ruído, 5=autoridade máxima)
+  "tipo_perfil"     : "Especialista" | "Criador" | "Institucional" | "Ruído"
+  "ipn_estimado"    : "Alto" | "Médio" | "Baixo"
+  "recomendacao"    : "Avançar" | "Revisar" | "Descartar"
+  "justificativa"   : string máx 100 chars
+
+Critérios:
+- Especialista: formação/experiência real no setor, conteúdo técnico
+- Criador: influenciador que tangencia o tema sem expertise profissional
+- Institucional: empresa, marca ou órgão (não criador individual)
+- Ruído: irrelevante para o segmento, genérico ou spam
+- IPN Alto: maioria das publicações é sobre o segmento
+- Descartar: qualidade ≤ 2 ou tipo Ruído
+
+Perfis:
+${JSON.stringify(perfis, null, 2)}`;
+}
+
+export async function onRequestPost({ request, env }) {
+  // Verificar chave
+  if (!env.ANTHROPIC_API_KEY) {
+    return json({ error: 'ANTHROPIC_API_KEY não configurada no Cloudflare' }, 500, request);
+  }
+
+  let body;
+  try { body = await request.json(); }
+  catch { return json({ error: 'JSON inválido' }, 400, request); }
+
+  const { perfis, segmento, batch_size = 15 } = body;
+
+  if (!Array.isArray(perfis) || !perfis.length)
+    return json({ error: '"perfis" deve ser array não-vazio' }, 400, request);
+  if (!segmento)
+    return json({ error: '"segmento" obrigatório' }, 400, request);
+
+  // Preparar payload enxuto (apenas o que a IA precisa)
+  const payload = perfis.map(p => ({
+    username:         String(p.username        || ''),
+    nome:             String(p.nome            || ''),
+    plataforma:       String(p.plataforma      || ''),
+    seguidores:       Number(p.seguidores      || 0),
+    posts_no_tema:    Number(p.n_posts_bw      || 0),
+    media_interacoes: Number(p.media_interacoes_bw || 0),
+    bio:              String(p.bio             || '').slice(0, 250),
+    titulos_amostra:  String(p.titulos_amostra_bw || '').slice(0, 400),
+  }));
+
+  // Processar em batches sequenciais
+  const allResults = [];
+  const batches = Math.ceil(payload.length / batch_size);
+
+  for (let b = 0; b < batches; b++) {
+    const slice = payload.slice(b * batch_size, (b + 1) * batch_size);
+
+    let attempt = 0;
+    let success = false;
+
+    // Até 2 tentativas por batch (retry em caso de rate limit)
+    while (attempt < 2 && !success) {
+      attempt++;
+      try {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type':      'application/json',
+            'x-api-key':         env.ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model:      'claude-sonnet-4-20250514',
+            max_tokens: 2000,
+            system:     SYSTEM,
+            messages:   [{ role: 'user', content: buildPrompt(segmento, slice) }],
+          }),
+        });
+
+        if (res.status === 429 && attempt < 2) {
+          // Rate limit: aguardar 2s antes de retry
+          await new Promise(r => setTimeout(r, 2000));
+          continue;
+        }
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          console.error(`Batch ${b + 1} erro ${res.status}:`, data);
+          // Não interrompe o pipeline — registra batch com erro e continua
+          slice.forEach(p => allResults.push({
+            username: p.username, qualidade: 0,
+            tipo_perfil: '', ipn_estimado: '', recomendacao: 'Revisar',
+            justificativa: `Erro IA batch ${b + 1}: ${res.status}`,
+          }));
+          success = true;
+          continue;
+        }
+
+        const text  = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('');
+        const clean = text.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(clean);
+        allResults.push(...parsed);
+        success = true;
+
+      } catch (err) {
+        if (attempt >= 2) {
+          slice.forEach(p => allResults.push({
+            username: p.username, qualidade: 0,
+            tipo_perfil: '', ipn_estimado: '', recomendacao: 'Revisar',
+            justificativa: `Erro processamento: ${err.message.slice(0, 80)}`,
+          }));
+        }
+      }
+    }
+
+    // Pausa entre batches para evitar rate limit
+    if (b < batches - 1) {
+      await new Promise(r => setTimeout(r, 800));
+    }
+  }
+
+  return json({ ok: true, results: allResults, total: allResults.length }, 200, request);
+}

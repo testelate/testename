@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HUB.nexus — Minhas Tarefas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/global.css"/>
+  <style>
+    body { display: flex; flex-direction: column; overflow:hidden; height:100vh; background:var(--bg); }
+    .main { flex:1; display:flex; flex-direction:column; overflow:hidden; position:relative; }
+
+    /* ── Topbar ── */
+    .topbar { display:flex; align-items:center; justify-content:space-between; padding:0 20px; height:52px; flex-shrink:0; backdrop-filter:blur(30px); background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.07); z-index:5; }
+    .topbar-left { display:flex; flex-direction:row; align-items:center; gap:10px; }
+    .topbar-title { font-size:13px; font-weight:500; color:var(--text-primary); letter-spacing:-0.2px; }
+    .topbar-sub   { font-size:11px; color:var(--text-muted); }
+    .topbar-right { display:flex; align-items:center; gap:8px; }
+    .tbtn { display:inline-flex; align-items:center; gap:5px; padding:6px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); border-radius:var(--r-sm); font-size:11px; color:var(--text-secondary); cursor:pointer; font-family:'Inter',sans-serif; transition:all var(--t-normal); }
+    .tbtn:hover { background:rgba(255,255,255,0.09); }
+    .tbtn svg { width:11px; height:11px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .tbtn-primary { background:hsla(var(--theme-h),90%,50%,0.12); border-color:hsla(var(--theme-h),90%,50%,0.28); color:var(--orange-2); }
+    .tbtn-primary:hover { background:hsla(var(--theme-h),90%,50%,0.22); }
+    body.light .topbar { background:rgba(255,255,255,0.55); border-bottom-color:rgba(180,100,40,0.10); }
+    body.light .topbar-title { color:#3a1200; }
+    body.light .topbar-sub   { color:#b09070; }
+    body.light .tbtn { background:rgba(255,255,255,0.70); border-color:rgba(180,100,40,0.18); color:#7a4a30; }
+
+    /* ── Layout ── */
+    .content { flex:1; display:flex; overflow:hidden; position:relative; z-index:1; }
+
+    /* ── PAINEL ESQUERDO ── */
+    .left-panel { width:288px; flex-shrink:0; display:flex; flex-direction:column; border-right:1px solid rgba(255,255,255,0.07); overflow-y:auto; padding:16px; gap:16px; }
+    body.light .left-panel { border-right-color:rgba(180,100,40,0.10); }
+
+    /* Calendário */
+    .cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .cal-month  { font-size:13px; font-weight:500; color:var(--text-primary); letter-spacing:-0.3px; }
+    .cal-nav    { display:flex; gap:4px; }
+    .cal-nav button { width:24px; height:24px; border-radius:var(--r-sm); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background var(--t-fast); }
+    .cal-nav button:hover { background:rgba(255,255,255,0.10); }
+    .cal-nav button svg { width:11px; height:11px; fill:none; stroke:var(--text-muted); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+    .cal-dow  { font-size:9px; font-weight:500; color:var(--text-muted); text-align:center; padding:4px 0 6px; letter-spacing:0.5px; text-transform:uppercase; }
+    .cal-day  { aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--text-secondary); border-radius:6px; cursor:pointer; transition:all var(--t-fast); position:relative; }
+    .cal-day:hover:not(.cal-empty):not(.cal-today) { background:rgba(255,255,255,0.06); }
+    .cal-day.cal-other    { color:var(--text-faint); }
+    .cal-day.cal-today    { background:hsla(var(--theme-h),90%,50%,0.18); border:1px solid hsla(var(--theme-h),90%,50%,0.32); color:var(--orange-2); font-weight:600; }
+    .cal-day.cal-selected { background:hsla(var(--theme-h),90%,50%,0.10); border:1px solid hsla(var(--theme-h),90%,50%,0.20); color:var(--orange-2); }
+    .cal-day.has-task::after { content:''; position:absolute; bottom:3px; width:4px; height:4px; border-radius:50%; background:var(--orange); }
+    body.light .cal-month { color:#3a1200; }
+    body.light .cal-nav button { background:rgba(255,255,255,0.70); border-color:rgba(180,100,40,0.18); }
+    body.light .cal-nav button svg { stroke:#7a4a30; }
+    body.light .cal-dow { color:#c09070; }
+    body.light .cal-day { color:#7a4a30; }
+    body.light .cal-day.cal-other { color:#d0b09a; }
+
+    /* Resumo */
+    .summary-row { display:flex; gap:6px; }
+    .summary-pill { flex:1; padding:8px 10px; border-radius:var(--r-md); text-align:center; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); }
+    .summary-num  { font-size:20px; font-weight:700; color:var(--text-primary); letter-spacing:-0.8px; line-height:1; }
+    .summary-lbl  { font-size:9px; color:var(--text-muted); margin-top:2px; }
+    body.light .summary-pill { background:rgba(255,255,255,0.65); border-color:rgba(180,100,40,0.14); }
+    body.light .summary-num  { color:#3a1200; }
+    body.light .summary-lbl  { color:#c09070; }
+
+    /* Agenda */
+    .section-title { font-size:10px; font-weight:500; color:var(--text-muted); letter-spacing:0.6px; text-transform:uppercase; margin-bottom:8px; }
+    .agenda-list   { display:flex; flex-direction:column; gap:5px; }
+    .agenda-item   { display:flex; align-items:flex-start; gap:9px; padding:9px 11px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:var(--r-md); cursor:pointer; transition:all var(--t-normal); }
+    .agenda-item:hover { background:rgba(255,255,255,0.07); border-color:hsla(var(--theme-h),90%,50%,0.15); }
+    .agenda-time { font-size:14px; }
+    .agenda-info { flex:1; min-width:0; }
+    .agenda-name { font-size:11px; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:3px; }
+    .agenda-tag  { font-size:9px; display:inline-flex; align-items:center; gap:3px; padding:1px 6px; border-radius:var(--r-pill); border:1px solid; }
+    body.light .agenda-item { background:rgba(255,255,255,0.65); border-color:rgba(180,100,40,0.14); }
+    body.light .agenda-name { color:#3a1200; }
+
+    /* Legenda fases */
+    .est-legenda    { display:flex; flex-direction:column; gap:3px; }
+    .est-leg-item   { display:flex; align-items:center; gap:7px; font-size:11px; color:var(--text-secondary); cursor:pointer; padding:5px 7px; border-radius:7px; transition:background 0.15s; }
+    .est-leg-item:hover  { background:rgba(255,255,255,0.04); }
+    .est-leg-item.active { background:hsla(var(--theme-h),90%,50%,0.08); }
+    .est-leg-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+    body.light .est-leg-item { color:#7a4a30; }
+
+    /* ── PAINEL DIREITO ── */
+    .right-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+    /* Filtros */
+    .filter-bar { display:flex; align-items:center; gap:7px; padding:10px 16px; border-bottom:1px solid rgba(255,255,255,0.06); flex-shrink:0; flex-wrap:wrap; }
+    .search-wrap { display:flex; align-items:center; gap:7px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); border-radius:var(--r-sm); padding:6px 11px; flex:1; min-width:120px; }
+    .search-wrap svg { width:11px; height:11px; fill:none; stroke:var(--text-muted); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+    .search-wrap input { background:transparent; border:none; outline:none; font-size:11px; color:var(--text-primary); font-family:'Inter',sans-serif; width:100%; }
+    .search-wrap input::placeholder { color:var(--text-muted); }
+    .fpill { padding:5px 10px; border-radius:var(--r-pill); font-size:11px; border:1px solid rgba(255,255,255,0.09); background:rgba(255,255,255,0.04); color:var(--text-muted); cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+    .fpill.active { background:hsla(var(--theme-h),90%,50%,0.12); border-color:hsla(var(--theme-h),90%,50%,0.28); color:var(--orange-2); }
+    .fpill:hover:not(.active) { background:rgba(255,255,255,0.07); }
+    .filter-sep { flex:1; }
+    .sort-wrap { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-muted); }
+    .sort-select { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); border-radius:var(--r-sm); padding:5px 8px; font-size:11px; color:var(--text-secondary); font-family:'Inter',sans-serif; outline:none; cursor:pointer; }
+    .sort-select option { background:#1a0a04; }
+    body.light .filter-bar  { border-bottom-color:rgba(180,100,40,0.08); }
+    body.light .search-wrap { background:rgba(255,255,255,0.70); border-color:rgba(180,100,40,0.18); }
+    body.light .search-wrap input { color:#3a1200; }
+    body.light .fpill  { background:rgba(255,255,255,0.65); border-color:rgba(180,100,40,0.15); color:#7a4a30; }
+    body.light .sort-wrap   { color:#b09070; }
+    body.light .sort-select { background:rgba(255,255,255,0.70); border-color:rgba(180,100,40,0.18); color:#7a4a30; }
+    body.light .sort-select option { background:#f5ece0; }
+
+    /* Lista */
+    .tasks-scroll { flex:1; overflow-y:auto; padding:12px 16px; display:flex; flex-direction:column; gap:7px; }
+    .empty-msg { text-align:center; padding:48px 20px; color:var(--text-muted); font-size:13px; }
+
+    /* ── Card ── */
+    .task-card { background:rgba(255,255,255,0.05); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.09); border-radius:var(--r-lg); padding:13px 15px; cursor:grab; transition:all var(--t-normal); position:relative; overflow:hidden; display:flex; gap:12px; align-items:flex-start; user-select:none; }
+    .task-card:hover { background:rgba(255,255,255,0.08); border-color:hsla(var(--theme-h),90%,50%,0.18); transform:translateY(-1px); box-shadow:0 4px 20px rgba(0,0,0,0.15); }
+    .task-card.dragging  { opacity:0.40; cursor:grabbing; transform:rotate(0.8deg) scale(0.98); }
+    .task-card.drag-over { border-color:hsla(var(--theme-h),90%,50%,0.45); background:hsla(var(--theme-h),90%,50%,0.06); transform:translateY(-2px); }
+    .task-card.done-card { opacity:0.55; }
+    .task-card.done-card .task-title { text-decoration:line-through; color:var(--text-muted); }
+    .task-bar { width:3px; border-radius:2px; flex-shrink:0; align-self:stretch; min-height:56px; }
+    .drag-handle { flex-shrink:0; display:flex; align-items:center; padding-top:3px; opacity:0.20; transition:opacity var(--t-fast); cursor:grab; }
+    .task-card:hover .drag-handle { opacity:0.50; }
+    .drag-handle svg { width:12px; height:12px; fill:var(--text-muted); }
+    .task-body { flex:1; min-width:0; }
+    .task-top  { display:flex; align-items:flex-start; gap:8px; margin-bottom:7px; }
+    .task-check { width:16px; height:16px; border-radius:50%; flex-shrink:0; margin-top:2px; border:1.5px solid rgba(255,255,255,0.20); background:transparent; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.18s; }
+    .task-check:hover { border-color:var(--green); }
+    .task-check.checked { background:var(--green); border-color:var(--green); }
+    .task-check svg { width:8px; height:8px; fill:none; stroke:#fff; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; display:none; }
+    .task-check.checked svg { display:block; }
+    .task-title { flex:1; font-size:12.5px; font-weight:400; color:var(--text-primary); line-height:1.4; letter-spacing:-0.15px; }
+    .task-prio  { width:7px; height:7px; border-radius:50%; flex-shrink:0; margin-top:5px; }
+    .task-meta  { display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-bottom:8px; }
+    .task-tag   { font-size:9.5px; padding:2px 7px; border-radius:var(--r-pill); border:1px solid; }
+    .task-date  { font-size:10px; color:var(--text-muted); display:flex; align-items:center; gap:3px; }
+    .task-date svg { width:9px; height:9px; fill:none; stroke:var(--text-muted); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .task-date.overdue { color:var(--red); } .task-date.overdue svg { stroke:var(--red); }
+    .task-date.today   { color:var(--orange-2); font-weight:500; } .task-date.today svg { stroke:var(--orange-2); }
+    .task-footer { display:flex; align-items:center; gap:8px; }
+    .season-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; color:var(--text-muted); }
+    .task-prog { flex:1; height:2px; background:rgba(255,255,255,0.08); border-radius:2px; overflow:hidden; }
+    .task-prog-fill { height:100%; border-radius:2px; }
+    .task-avatars { display:flex; margin-left:8px; }
+    .task-av { width:20px; height:20px; border-radius:50%; font-size:8px; font-weight:600; display:flex; align-items:center; justify-content:center; color:#fff; border:1.5px solid rgba(20,10,2,0.9); margin-left:-5px; }
+    .task-av:first-child { margin-left:0; }
+    body.light .task-card  { background:rgba(255,255,255,0.62); border-color:rgba(180,100,40,0.14); }
+    body.light .task-card:hover { border-color:hsla(var(--theme-h),90%,50%,0.22); }
+    body.light .task-title { color:#3a1200; }
+    body.light .task-check { border-color:rgba(0,0,0,0.15); }
+    body.light .task-date  { color:#c09070; } body.light .task-date svg { stroke:#c09070; }
+    body.light .task-prog  { background:rgba(0,0,0,0.08); }
+    body.light .season-badge { color:#b09070; }
+    body.light .task-av { border-color:rgba(245,236,224,0.9); }
+
+    /* ── Modal (Geral e Timesheet) ── */
+    .modal-overlay { position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.55); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+    .modal-overlay.open { opacity:1; pointer-events:all; }
+    .modal { background:rgba(22,12,4,0.97); border:1px solid rgba(255,255,255,0.10); border-radius:var(--r-xl); padding:24px; width:380px; box-shadow:0 24px 80px rgba(0,0,0,0.6); transform:translateY(14px); transition:transform 0.25s; }
+    .modal-overlay.open .modal { transform:translateY(0); }
+    .modal-title { font-size:14px; font-weight:500; color:var(--text-primary); margin-bottom:16px; letter-spacing:-0.3px; }
+    .modal-label { font-size:10px; font-weight:500; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px; display:block; }
+    .modal-input, .modal-select, .modal-textarea { width:100%; padding:9px 12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:var(--r-md); font-size:12px; color:var(--text-primary); font-family:'Inter',sans-serif; outline:none; transition:border-color var(--t-normal); margin-bottom:10px; }
+    .modal-input::placeholder, .modal-textarea::placeholder { color:var(--text-faint); }
+    .modal-input:focus, .modal-select:focus, .modal-textarea:focus { border-color:hsla(var(--theme-h),90%,50%,0.40); }
+    .modal-textarea { min-height:68px; resize:vertical; }
+    .modal-select option { background:#1a0a04; }
+    .modal-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .modal-btns { display:flex; gap:8px; margin-top:4px; }
+    .modal-btn  { flex:1; padding:9px; border-radius:var(--r-md); font-size:12px; font-weight:400; cursor:pointer; font-family:'Inter',sans-serif; transition:all var(--t-normal); }
+    .modal-cancel { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); color:var(--text-muted); }
+    .modal-cancel:hover { background:rgba(255,255,255,0.09); }
+    .modal-save { background:hsla(var(--theme-h),90%,50%,0.14); border:1px solid hsla(var(--theme-h),90%,50%,0.30); color:var(--orange-2); }
+    .modal-save:hover { background:hsla(var(--theme-h),90%,50%,0.24); }
+    body.light .modal { background:rgba(245,236,224,0.97); border-color:rgba(180,100,40,0.20); }
+    body.light .modal-title { color:#3a1200; }
+    body.light .modal-label { color:#c09070; }
+    body.light .modal-input, body.light .modal-select, body.light .modal-textarea { background:rgba(255,255,255,0.80); border-color:rgba(180,100,40,0.22); color:#3a1200; }
+
+    /* ── Icon btns ── */
+    .icon-btn { background:transparent; border:none; cursor:pointer; padding:3px; opacity:0.28; transition:opacity 0.15s; }
+    .icon-btn:hover { opacity:0.80; }
+    .icon-btn svg { width:12px; height:12px; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+    .bg-orbs { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+  
+    /* Hub navbar: hide only the logo/title part of old topbar */
+    #navbar-container:not(:empty) ~ .main > .topbar .topbar-left { display: none !important; }
+    #navbar-container:not(:empty) ~ .main > .topbar {
+      justify-content: flex-end;
+      padding-left: 8px;
+      height: 46px;
+    }
+    .page-navbar { width: 100%; }
+
+  </style>
+</head>
+<body>
+  <div class="bg-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+  <div id="navbar-container"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <img src="../assets/logo.png" alt="HUB.nexus" style="height:32px;width:auto;object-fit:contain;filter:drop-shadow(0 0 4px hsla(var(--theme-h),90%,50%,0.2));flex-shrink:0;"/>
+        <div style="display:flex;flex-direction:column;line-height:1.2;">
+          <span class="topbar-title">Minhas Tarefas</span>
+          <span class="topbar-sub" id="topbarSub"></span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="tbtn" onclick="toggleMode()"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></button>
+        <button class="tbtn" onclick="limparDados()" title="Limpar todos os dados"
+                style="color:rgba(255,100,60,0.45);font-size:10px;padding:5px 8px;">
+          Limpar dados
+        </button>
+        <button class="tbtn" onclick="openTimesheetModal()" style="color:var(--orange-2); border-color:hsla(var(--theme-h),90%,50%,0.28);">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>
+          Timesheet
+        </button>
+        <button class="tbtn" onclick="exportarTasksXLSX()">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar
+        </button>
+        <button class="tbtn tbtn-primary" onclick="openModal()">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nova tarefa
+        </button>
+        <button class="tbtn" onclick="handleLogout()" title="Sair" style="color:rgba(255,100,60,0.55);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="left-panel">
+        <div>
+          <div class="cal-header">
+            <span class="cal-month" id="calMonth"></span>
+            <div class="cal-nav">
+              <button onclick="moveMonth(-1)"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+              <button onclick="moveMonth(1)"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+            </div>
+          </div>
+          <div class="cal-grid" id="calGrid"></div>
+        </div>
+        <div class="summary-row" id="summaryRow"></div>
+        <div>
+          <div class="section-title" id="agendaTitle">Hoje</div>
+          <div class="agenda-list" id="agendaList"></div>
+        </div>
+        <div>
+          <div class="section-title">Filtrar por fase</div>
+          <div class="est-legenda" id="estLegenda"></div>
+        </div>
+      </div>
+
+      <div class="right-panel">
+        <div class="filter-bar">
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Buscar tarefa..." id="searchInput" oninput="render()"/>
+          </div>
+          <div class="fpill active" id="f-todas"     onclick="setFiltro('todas',this)">Todas</div>
+          <div class="fpill"        id="f-hoje"      onclick="setFiltro('hoje',this)">Hoje</div>
+          <div class="fpill"        id="f-semana"    onclick="setFiltro('semana',this)">Esta semana</div>
+          <div class="fpill"        id="f-atrasadas" onclick="setFiltro('atrasadas',this)">⚠ Atrasadas</div>
+          <div class="fpill"        id="f-concluidas" onclick="setFiltro('concluidas',this)">✨ Concluídas</div>
+          <div class="filter-sep"></div>
+          <div class="sort-wrap">Ordenar:
+            <select class="sort-select" id="sortSelect" onchange="setOrdenacao(this.value)">
+              <option value="manual" selected>Manual (drag)</option>
+              <option value="prio">Prioridade</option>
+              <option value="prazo">Prazo</option>
+              <option value="est">Fase</option>
+            </select>
+          </div>
+        </div>
+        <div class="tasks-scroll" id="tasksList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-title" id="modalHeading">Nova tarefa</div>
+      <label class="modal-label">Título</label>
+      <input class="modal-input" id="mTitulo" placeholder="Descreva a tarefa..."/>
+      
+      <label class="modal-label">Responsável</label>
+      <select class="modal-select" id="mProf">
+        <option value="" disabled selected>Atribuir a...</option>
+      </select>
+      
+      <div class="modal-grid">
+        <div>
+          <label class="modal-label">Tipo</label>
+          <input class="modal-input" id="mTipo" placeholder="Ex: Monitor, Clipping, ZOOM…" style="margin-bottom:0" list="tiposSugeridos"/>
+          <datalist id="tiposSugeridos">
+            <option value="Monitor"/>
+            <option value="Clipping"/>
+            <option value="ZOOM"/>
+            <option value="Benchmark"/>
+            <option value="CENA"/>
+            <option value="Pulso"/>
+            <option value="Briefing"/>
+          </datalist>
+        </div>
+        <div>
+          <label class="modal-label">Prioridade</label>
+          <select class="modal-select" id="mPrio">
+            <option value="alta">🔴 Alta</option>
+            <option value="media" selected>🟡 Média</option>
+            <option value="baixa">⚪ Baixa</option>
+          </select>
+        </div>
+        <div>
+          <label class="modal-label">Prazo</label>
+          <input class="modal-input" id="mPrazo" type="date" style="margin-bottom:0"/>
+        </div>
+        <div>
+          <label class="modal-label">Fase</label>
+          <select class="modal-select" id="mEst" style="margin-bottom:0">
+            <option value="aguardando">❄️ Aguardando</option>
+            <option value="previsto">🌫️ Previsto</option>
+            <option value="producao" selected>🌱 Em Produção</option>
+            <option value="revisao">☀️ Em Revisão</option>
+            <option value="teste">🌤 Teste</option>
+            <option value="apresent">🍂 Apresentação</option>
+            <option value="standby">🌾 Stand By</option>
+            <option value="concluido">✨ Concluído</option>
+          </select>
+        </div>
+      </div>
+      <label class="modal-label" style="margin-top:10px">Notas (opcional)</label>
+      <textarea class="modal-textarea" id="mNota" placeholder="Contexto, links, observações..."></textarea>
+      <div class="modal-btns">
+        <button class="modal-btn modal-cancel" onclick="closeModal()">Cancelar</button>
+        <button class="modal-btn modal-save"   onclick="saveTask()">Salvar →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="timesheetModal">
+    <div class="modal" style="width:420px">
+      <div class="modal-title">Relatório de Timesheet</div>
+      <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">
+        Demandas concluídas neste mês. Copie e cole na sua planilha ou sistema.
+      </div>
+      <textarea class="modal-textarea" id="timesheetText" style="min-height:220px; font-family:monospace; font-size:11px; white-space:pre-wrap; line-height:1.5;" readonly></textarea>
+      <div class="modal-btns">
+        <button class="modal-btn modal-cancel" onclick="document.getElementById('timesheetModal').classList.remove('open')">Fechar</button>
+        <button class="modal-btn modal-save" onclick="copyTimesheet()">📋 Copiar Relatório</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/theme.js"></script>
+  <script src="../js/roadmap.js"></script>
+  <script src="../js/push.js"></script>
+  <script>
+    checkAuth();
+    initMode();
+    document.getElementById('navbar-container').innerHTML = renderNavbar('tasks');
+    if(typeof initTheme==='function'){initTheme();updateModeButtons();}
+
+    /* ── Constantes ── */
+    const MESES   = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const MESES_A = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+    const DIAS_S  = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    const hoje    = new Date(); hoje.setHours(0,0,0,0);
+
+    const ESTACOES = [
+      { key:'aguardando', emoji:'❄️',  label:'Aguardando',   color:'#88aaff', bar:'#6688dd' },
+      { key:'previsto',   emoji:'🌫️',  label:'Previsto',     color:'#aabbcc', bar:'#8899aa' },
+      { key:'producao',   emoji:'🌱',  label:'Em Produção',  color:'#66dd88', bar:'#44bb66' },
+      { key:'revisao',    emoji:'☀️',  label:'Em Revisão',   color:'#ffaa44', bar:'#ee8822' },
+      { key:'teste',      emoji:'🌤',  label:'Teste',        color:'#ffcc66', bar:'#ddaa33' },
+      { key:'apresent',   emoji:'🍂',  label:'Apresentação', color:'var(--accent-light)', bar:'#cc5500' },
+      { key:'standby',    emoji:'🌾',  label:'Stand By',     color:'#bbaa88', bar:'#998866' },
+      { key:'concluido',  emoji:'✨',  label:'Concluído',    color:'#cc88ff', bar:'#aa55ee' },
+    ];
+    const TIPOS = {
+      clipping:{ label:'Clipping',  text:'#88aaff', border:'rgba(136,170,255,.30)', bg:'rgba(136,170,255,.12)' },
+      monitor: { label:'Monitor',   text:'#66dd88', border:'rgba(102,221,136,.30)', bg:'rgba(102,221,136,.12)' },
+      zoom:    { label:'ZOOM',      text:'#ffaa44', border:'rgba(255,170,68,.30)',  bg:'rgba(255,170,68,.12)'  },
+      benchm:  { label:'Benchmark', text:'#cc88ff', border:'rgba(204,136,255,.30)', bg:'rgba(204,136,255,.12)' },
+      cena:    { label:'CENA',      text:'#ff8080', border:'rgba(255,96,96,.28)',   bg:'rgba(255,96,96,.10)'   },
+      pulso:   { label:'Pulso',     text:'#ffcc44', border:'rgba(255,200,80,.30)',  bg:'rgba(255,200,80,.12)'  },
+      briefing:{ label:'Briefing',  text:'var(--accent-light)', border:'hsla(var(--theme-h),90%,50%,.28)',   bg:'hsla(var(--theme-h),90%,50%,.10)'   },
+    };
+    const PRIOS = { alta:'#ff6060', media:'#ffaa44', baixa:'rgba(160,160,160,.5)' };
+    const getEst  = k => ESTACOES.find(e=>e.key===k)||ESTACOES[0];
+    const getTipo = k => {
+      if (!k) return TIPOS.briefing;
+      const lower = k.toLowerCase().replace(/\s+/g,'');
+      const found = TIPOS[lower] || Object.entries(TIPOS).find(([key]) => lower.includes(key) || key.includes(lower))?.[1];
+      if (found) return found;
+      const idx = [...k].reduce((s,c)=>s+c.charCodeAt(0),0) % 10;
+      const cor = ['#88aaff', '#66dd88', '#ffaa44', '#cc88ff', '#ff8080', '#ffcc44', 'var(--accent-light)', '#44ccff', '#ff6060', '#aaffaa'][idx];
+      return { label: k, text: cor, border: cor+'44', bg: cor+'18' };
+    };
+
+    function dPrazo(offset) { const d=new Date(hoje); d.setDate(d.getDate()+offset); return d; }
+    function fmtDate(d) { return `${String(d.getDate()).padStart(2,'0')}/${MESES_A[d.getMonth()]}`; }
+    function diffDias(d) { return Math.round((d-hoje)/86400000); }
+
+    /* ── Usuário Logado e Profissionais ── */
+    let userEmail = '';
+    try { userEmail = JSON.parse(localStorage.getItem('hubnexus-auth') || '{}').email || ''; } catch(e) {}
+
+    const CORES_PROF = ['var(--accent)','#dd4477','#22cc88','#3388ff','#cc88ff','#ffaa44','#66dd88','var(--accent-light)'];
+    let PROFISSIONAIS = [];
+
+    async function carregarProfissionais() {
+      try {
+        const res = await fetch('/api/usuarios');
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length) {
+            return data.map((u, i) => ({
+              id:    String(u.id),
+              nome:  u.nome,
+              email: u.email,
+              cor:   u.cor || CORES_PROF[i % CORES_PROF.length],
+            }));
+          }
+        }
+      } catch(e) {}
+
+      try {
+        const raw = localStorage.getItem('hubnexus-usuarios');
+        if (raw) {
+          const lista = JSON.parse(raw);
+          if (lista.length) return lista;
+        }
+      } catch(e) {}
+
+      try {
+        const auth = JSON.parse(localStorage.getItem('hubnexus-auth') || '{}');
+        if (auth.email) {
+          return [{ id:'0', nome: auth.nome || auth.email.split('@')[0], email: auth.email, cor: CORES_PROF[0] }];
+        }
+      } catch(e) {}
+
+      return [
+        { id:'1', nome:'Usuário Local', email: userEmail, cor:'var(--accent)' }
+      ];
+    }
+
+    function getMeuPerfil() {
+      return PROFISSIONAIS.find(p => p.email === userEmail) || PROFISSIONAIS[0];
+    }
+
+    function getInitials(name) {
+      return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    }
+
+    /* ── Estado das Tarefas ── */
+    let editingId=null, dragSrcId=null;
+    let filtroAtual='todas', estFiltro=null;
+    let calAno=hoje.getFullYear(), calMes=hoje.getMonth(), diaSelect=hoje.getDate();
+    let srtAtual = localStorage.getItem('hubnexus_tasks_sort') || 'manual';
+
+    let tasks = JSON.parse(localStorage.getItem('hubnexus_tasks') || '[]');
+    let nextId = tasks.length ? Math.max(...tasks.map(t=>t.id)) + 1 : 1;
+    let ignoredKanbanIds = JSON.parse(localStorage.getItem('hubnexus_tasks_ignored') || '[]');
+
+    /* ── Sincronização do Kanban para Tasks (Corrigida) ── */
+    async function sincronizarKanban() {
+      if (!userEmail || PROFISSIONAIS.length === 0) return;
+      try {
+        const res = await fetch('/api/kanban');
+        if (!res.ok) return;
+        const kanbanData = await res.json();
+
+        let alterou = false;
+        const eu = getMeuPerfil(); 
+
+        kanbanData.forEach(card => {
+          let avatars = [];
+          try {
+            avatars = typeof card.avatars === 'string' ? JSON.parse(card.avatars) : (card.avatars || []);
+          } catch(e) {}
+
+          const isMinha = avatars.some(a => a.id === eu?.id || a.nome === eu?.nome || a.email === userEmail);
+          
+          if (!isMinha) {
+            // Se eu era responsável e fui removido, deleta da minha lista local
+            const remIdx = tasks.findIndex(t => t.kanbanId === card.id);
+            if (remIdx !== -1) {
+              const [rem] = tasks.splice(remIdx, 1);
+              deleteTaskRemote(rem.id);
+              alterou = true;
+            }
+            return;
+          }
+
+          // Se já foi deletada intencionalmente no Tasks, ignora
+          if (ignoredKanbanIds.includes(card.id)) return;
+
+          const existe = tasks.find(t => t.kanbanId === card.id);
+          const isConcluido = card.col === 'concluido'; 
+
+          if (!existe) {
+            const novaTask = {
+              id: nextId++,
+              kanbanId: card.id,
+              titulo: `[Kanban] ${card.title || 'Demanda'}`,
+              prazo: new Date(hoje), 
+              profId: eu?.id || '',
+              responsavel: eu?.nome || '',
+              tipo: card.tipo || 'Monitor',
+              prio: card.prio || 'media',
+              est: isConcluido ? 'concluido' : 'producao',
+              nota: card.descricao || 'Importado automaticamente do Kanban',
+              prog: isConcluido ? 100 : 0,
+              done: isConcluido,
+              avatars: eu ? [{i: getInitials(eu.nome), c: eu.cor}] : []
+            };
+            tasks.unshift(novaTask);
+            alterou = true;
+          } else {
+            if (isConcluido && !existe.done) {
+              existe.done = true;
+              existe.est = 'concluido';
+              existe.prog = 100;
+              alterou = true;
+            }
+          }
+        });
+
+        // LIMPEZA: Remove tarefas vindas do Kanban que não existem mais na API (foram deletadas no Board)
+        const kanbanIdsAtivos = kanbanData.map(c => c.id);
+        const tasksParaRemover = tasks.filter(t => t.kanbanId && !kanbanIdsAtivos.includes(t.kanbanId));
+        if (tasksParaRemover.length > 0) {
+          tasks = tasks.filter(t => !t.kanbanId || kanbanIdsAtivos.includes(t.kanbanId));
+          tasksParaRemover.forEach(t => deleteTaskRemote(t.id));
+          alterou = true;
+        }
+
+        if (alterou) {
+          saveTasks();
+          render(); 
+          renderCal(); 
+          renderAgenda();
+        }
+      } catch (e) {
+        console.warn('Falha ao sincronizar Kanban via API.', e);
+      }
+    }
+
+    async function carregarTasksD1() {
+      if (!userEmail) return;
+      try {
+        const res = await fetch(`/api/tasks?email=${encodeURIComponent(userEmail)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            tasks = data.map(t => ({ ...t, prazo: new Date(t.prazo + 'T00:00:00'), done: !!t.done }));
+            nextId = tasks.length ? Math.max(...tasks.map(t=>t.id||0)) + 1 : 1;
+            localStorage.setItem('hubnexus_tasks', JSON.stringify(tasks));
+          }
+        }
+      } catch(e) { 
+        console.warn('Tasks D1 indisponível:', e); 
+      }
+      
+      // Carrega os profissionais e depois o Kanban
+      PROFISSIONAIS = await carregarProfissionais();
+      await sincronizarKanban();
+      
+      // Preenche o select de profissionais do Modal
+      const sel = document.getElementById('mProf');
+      if (sel) {
+        while (sel.options.length > 1) sel.remove(1);
+        PROFISSIONAIS.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = p.nome + (p.email ? ' — ' + p.email : '');
+          sel.appendChild(opt);
+        });
+      }
+
+      render();
+      renderCal();
+      renderAgenda();
+
+      // Ajusta select de ordenação
+      const srtSel = document.getElementById('sortSelect');
+      if (srtSel) srtSel.value = srtAtual;
+    }
+
+    function setOrdenacao(val) {
+      srtAtual = val;
+      localStorage.setItem('hubnexus_tasks_sort', val);
+      render();
+    }
+
+    function saveTasks() {
+      localStorage.setItem('hubnexus_tasks', JSON.stringify(tasks));
+    }
+
+    function saveTaskRemote(task, isNew) {
+      if (!userEmail) return;
+      const prazoStr = task.prazo instanceof Date
+        ? task.prazo.toISOString().substring(0,10)
+        : String(task.prazo).substring(0,10);
+      const payload = {
+        email: userEmail,
+        titulo: task.titulo,
+        prazo: prazoStr,
+        tipo: task.tipo || '',
+        prio: task.prio || 'media',
+        est: task.est || 'producao',
+        nota: task.nota || '',
+        done: !!task.done,
+        prog: task.prog || 0,
+        responsavel: task.responsavel || '',
+        prof_id: task.profId || '',
+        avatars: task.avatars || [],
+        ordem: task.ordem || 0,
+      };
+      
+      const method = isNew ? 'POST' : 'PUT';
+      if (!isNew) payload.id = task.id;
+
+      fetch('/api/tasks', { 
+        method: method, 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(payload) 
+      })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (isNew && data?.id) {
+          task.id = data.id;
+          nextId = task.id + 1;
+          saveTasks();
+        }
+      }).catch(()=>{});
+    }
+
+    function deleteTaskRemote(id) {
+      fetch(`/api/tasks?id=${id}`, { method:'DELETE' }).catch(()=>{});
+    }
+
+    /* ── Filtro ── */
+    function setFiltro(f, el) {
+      filtroAtual = f;
+      estFiltro = null;
+      document.querySelectorAll('.fpill').forEach(p=>p.classList.remove('active'));
+      el.classList.add('active');
+      document.querySelectorAll('.est-leg-item').forEach(e=>e.classList.remove('active'));
+      render();
+    }
+
+    function setEstFiltro(key) {
+      estFiltro = estFiltro === key ? null : key;
+      filtroAtual = 'todas';
+      document.querySelectorAll('.fpill').forEach(p=>p.classList.remove('active'));
+      document.getElementById('f-todas').classList.add('active');
+      document.querySelectorAll('.est-leg-item').forEach(e=>e.classList.toggle('active', e.dataset.key===estFiltro));
+      render();
+    }
+
+    function getFiltered() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      const srt = srtAtual;
+      const fim = new Date(hoje);
+      fim.setDate(fim.getDate()+7);
+      
+      let list = tasks.filter(t => {
+        if (q && !t.titulo.toLowerCase().includes(q)) return false;
+        if (estFiltro && t.est !== estFiltro) return false;
+        
+        const pDate = new Date(t.prazo);
+        pDate.setHours(0,0,0,0);
+        
+        if (filtroAtual === 'hoje')       return !t.done && diffDias(pDate) === 0;
+        if (filtroAtual === 'semana')     return !t.done && pDate >= hoje && pDate <= fim;
+        if (filtroAtual === 'atrasadas')  return !t.done && pDate < hoje;
+        if (filtroAtual === 'concluidas') return t.done;
+        return true;
+      });
+
+      if (srt === 'prio')  { const o={alta:0,media:1,baixa:2}; list.sort((a,b)=>(o[a.prio]||1)-(o[b.prio]||1)); }
+      if (srt === 'prazo') { list.sort((a,b)=>new Date(a.prazo)-new Date(b.prazo)); }
+      if (srt === 'est')   { const o=Object.fromEntries(ESTACOES.map((e,i)=>[e.key,i])); list.sort((a,b)=>(o[a.est]||0)-(o[b.est]||0)); }
+      return list;
+    }
+
+    /* ── Render ── */
+    function render() {
+      // Topbar
+      const total = tasks.filter(t=>!t.done).length;
+      const hj = tasks.filter(t=>!t.done && diffDias(new Date(t.prazo))===0).length;
+      const at = tasks.filter(t=>!t.done && new Date(t.prazo)<hoje).length;
+      document.getElementById('topbarSub').textContent = `${total} ativas · ${hj} para hoje · ${at} atrasadas`;
+
+      // Summary
+      const sem = tasks.filter(t=>{const d=diffDias(new Date(t.prazo));return !t.done&&d>=0&&d<=7;}).length;
+      document.getElementById('summaryRow').innerHTML=`
+        <div class="summary-pill"><div class="summary-num" style="color:var(--orange-2)">${hj}</div><div class="summary-lbl">Hoje</div></div>
+        <div class="summary-pill"><div class="summary-num" style="color:var(--blue)">${sem}</div><div class="summary-lbl">Semana</div></div>
+        <div class="summary-pill"><div class="summary-num" style="color:var(--red)">${at}</div><div class="summary-lbl">Atrasadas</div></div>`;
+
+      // Legenda fases
+      document.getElementById('estLegenda').innerHTML = ESTACOES.map(e=>{
+        const count = tasks.filter(t=>t.est===e.key && !t.done).length;
+        if(!count) return '';
+        return `<div class="est-leg-item ${estFiltro===e.key?'active':''}" data-key="${e.key}" onclick="setEstFiltro('${e.key}')">
+          <div class="est-leg-dot" style="background:${e.bar}"></div>
+          <span>${e.emoji} ${e.label}</span>
+          <span style="margin-left:auto;font-size:10px;color:var(--text-muted)">${count}</span>
+        </div>`;
+      }).join('');
+
+      // Tasks
+      const list = getFiltered();
+      const el = document.getElementById('tasksList');
+      el.innerHTML = '';
+      if (!list.length) { 
+        el.innerHTML = `<div class="empty-msg">Nenhuma tarefa encontrada.</div>`; 
+        return; 
+      }
+
+      list.forEach(task => {
+        const pDate = new Date(task.prazo);
+        const e  = getEst(task.est);
+        const tp = getTipo(task.tipo);
+        const df = diffDias(pDate);
+        const dc = task.done ? '' : df < 0 ? 'overdue' : df === 0 ? 'today' : '';
+        const dl = task.done ? fmtDate(pDate) : df < 0 ? `⚠ Atrasada · ${fmtDate(pDate)}` : df === 0 ? `Hoje · ${fmtDate(pDate)}` : fmtDate(pDate);
+
+        const card = document.createElement('div');
+        card.className = 'task-card' + (task.done ? ' done-card' : '');
+        card.draggable = true;
+        card.dataset.id = task.id;
+        
+        let avatarsHTML = '';
+        if (task.avatars) {
+          avatarsHTML = `<div class="task-avatars">` + 
+            task.avatars.map(a => `<div class="task-av" style="background:${a.c}22;color:${a.c};border-color:${a.c}33">${a.i}</div>`).join('') + 
+            `</div>`;
+        }
+
+        card.innerHTML = `
+          <div class="drag-handle"><svg viewBox="0 0 8 14"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="7" r="1.2"/><circle cx="6" cy="7" r="1.2"/><circle cx="2" cy="12" r="1.2"/><circle cx="6" cy="12" r="1.2"/></svg></div>
+          <div class="task-bar" style="background:${e.bar}"></div>
+          <div class="task-body">
+            <div class="task-top">
+              <div class="task-check ${task.done?'checked':''}" onclick="toggleDone(${task.id})">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="task-title">${task.titulo}</div>
+              <div class="task-prio" style="background:${PRIOS[task.prio]};box-shadow:0 0 5px ${PRIOS[task.prio]}55"></div>
+            </div>
+            <div class="task-meta">
+              <div class="task-tag" style="color:${tp.text};border-color:${tp.border};background:${tp.bg}">${tp.label}</div>
+              <div class="task-date ${dc}">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                ${dl}
+              </div>
+              ${task.nota ? `<span style="font-size:9px;color:var(--text-faint)" title="${task.nota}">📝</span>` : ''}
+            </div>
+            <div class="task-footer">
+              <div class="season-badge"><span>${e.emoji}</span> ${e.label}</div>
+              <div class="task-prog"><div class="task-prog-fill" style="width:${task.prog}%;background:${e.bar}"></div></div>
+              ${avatarsHTML}
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;padding-top:2px">
+            <button class="icon-btn" onclick="avançarFase(${task.id})" title="Avançar fase">
+              <svg viewBox="0 0 24 24" stroke="var(--orange-2)"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <button class="icon-btn" onclick="editTask(${task.id})" title="Editar">
+              <svg viewBox="0 0 24 24" stroke="var(--text-secondary)"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="icon-btn" onclick="deleteTask(${task.id})" title="Remover">
+              <svg viewBox="0 0 24 24" stroke="var(--red)"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+            </button>
+          </div>
+        `;
+
+        card.addEventListener('dragstart', () => { dragSrcId=task.id; setTimeout(()=>card.classList.add('dragging'),0); });
+        card.addEventListener('dragend',   () => { card.classList.remove('dragging'); dragSrcId=null; });
+        card.addEventListener('dragover',  ev => { ev.preventDefault(); if(dragSrcId!==task.id) card.classList.add('drag-over'); });
+        card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
+        card.addEventListener('drop',      ev => { 
+          ev.preventDefault(); 
+          card.classList.remove('drag-over'); 
+          if (!dragSrcId || dragSrcId===task.id) return; 
+          const si = tasks.findIndex(t=>t.id===dragSrcId);
+          const di = tasks.findIndex(t=>t.id===task.id); 
+          const [m] = tasks.splice(si,1); 
+          tasks.splice(di,0,m); 
+          
+          // Recalcular ordens e salvar
+          tasks.forEach((t, i) => { t.ordem = i; });
+          
+          setOrdenacao('manual');
+          saveTasks();
+          
+          // Salva as tarefas afetadas de forma sequencial (evita flood)
+          reorderTasksSequentially();
+        });
+        
+        el.appendChild(card);
+      });
+    }
+
+    async function reorderTasksSequentially() {
+      showToast('Salvando nova ordem...');
+      // Filtra apenas tarefas que estão visíveis ou foram movidas (neste caso, simplificamos salvando todas mas em série)
+      for (const t of tasks) {
+        await saveTaskRemote(t, false);
+      }
+      showToast('Ordem salva com sucesso!');
+    }
+
+    /* ── Ações ── */
+    function toggleDone(id) {
+      const t = tasks.find(x=>x.id===id); 
+      if (!t) return;
+      t.done = !t.done;
+      if (t.done) { 
+        t.est = 'concluido'; 
+        t.prog = 100; 
+      }
+      saveTasks(); 
+      saveTaskRemote(t, false); 
+      render(); 
+      renderCal();
+      showToast(t.done ? `✨ Concluída!` : 'Marcada como pendente.');
+    }
+
+    function avançarFase(id) {
+      const t = tasks.find(x=>x.id===id); 
+      if (!t) return;
+      const idx = ESTACOES.findIndex(e=>e.key===t.est);
+      const next = ESTACOES[(idx+1)%ESTACOES.length];
+      t.est = next.key;
+      if (next.key === 'concluido') { 
+        t.done = true; 
+        t.prog = 100; 
+      }
+      saveTasks(); 
+      render(); 
+      showToast(`${next.emoji} ${next.label}`);
+    }
+
+    function deleteTask(id) {
+      const t = tasks.find(x=>x.id===id);
+      if (t && t.kanbanId) {
+        if (!ignoredKanbanIds.includes(t.kanbanId)) {
+          ignoredKanbanIds.push(t.kanbanId);
+          localStorage.setItem('hubnexus_tasks_ignored', JSON.stringify(ignoredKanbanIds));
+        }
+      }
+      tasks = tasks.filter(x=>x.id!==id);
+      saveTasks(); 
+      deleteTaskRemote(id); 
+      render(); 
+      renderCal(); 
+      showToast('Tarefa removida.');
+    }
+
+    function editTask(id) {
+      editingId = id;
+      const t = tasks.find(x=>x.id===id);
+      document.getElementById('modalHeading').textContent = 'Editar tarefa';
+      document.getElementById('mTitulo').value = t.titulo;
+      document.getElementById('mProf').value = t.profId || '';
+      document.getElementById('mTipo').value = t.tipo;
+      document.getElementById('mPrio').value = t.prio;
+      document.getElementById('mEst').value = t.est;
+      document.getElementById('mNota').value = t.nota || '';
+      
+      const pd = new Date(t.prazo);
+      document.getElementById('mPrazo').value = `${pd.getFullYear()}-${String(pd.getMonth()+1).padStart(2,'0')}-${String(pd.getDate()).padStart(2,'0')}`;
+      
+      document.getElementById('modalOverlay').classList.add('open');
+    }
+
+    /* ── Modal ── */
+    function openModal() {
+      editingId = null;
+      document.getElementById('modalHeading').textContent = 'Nova tarefa';
+      ['mTitulo','mNota'].forEach(id=>document.getElementById(id).value='');
+      
+      document.getElementById('mProf').value = '';
+      document.getElementById('mTipo').value = '';
+      document.getElementById('mPrio').value = 'media';
+      document.getElementById('mEst').value = 'producao';
+      
+      const a = new Date(hoje); 
+      a.setDate(a.getDate()+1);
+      document.getElementById('mPrazo').value = `${a.getFullYear()}-${String(a.getMonth()+1).padStart(2,'0')}-${String(a.getDate()).padStart(2,'0')}`;
+      
+      document.getElementById('modalOverlay').classList.add('open');
+      setTimeout(()=>document.getElementById('mTitulo').focus(),100);
+    }
+
+    function closeModal() { 
+      document.getElementById('modalOverlay').classList.remove('open'); 
+      editingId = null; 
+    }
+    
+    function saveTask() {
+      const titulo = document.getElementById('mTitulo').value.trim();
+      if (!titulo) { 
+        showToast('Digite o título da tarefa.'); 
+        return; 
+      }
+      
+      const prazoRaw = document.getElementById('mPrazo').value;
+      const prazo = prazoRaw ? new Date(prazoRaw+'T00:00:00') : new Date(hoje);
+      
+      const profId = document.getElementById('mProf').value;
+      const prof = PROFISSIONAIS.find(p => p.id === profId) || getMeuPerfil();
+      
+      if (editingId) {
+        const t = tasks.find(x=>x.id===editingId);
+        Object.assign(t, { 
+          titulo, 
+          prazo, 
+          profId: prof?.id || '',
+          responsavel: prof?.nome || '',
+          avatars: prof ? [{i: getInitials(prof.nome), c: prof.cor}] : [],
+          tipo: document.getElementById('mTipo').value, 
+          prio: document.getElementById('mPrio').value, 
+          est: document.getElementById('mEst').value, 
+          nota: document.getElementById('mNota').value 
+        });
+        
+        if (t.est === 'concluido') { 
+          t.done = true; 
+          t.prog = 100; 
+        }
+        
+        saveTaskRemote(t, false);
+        showToast('Tarefa atualizada ✓');
+      } else {
+        const novaTask = { 
+          id: nextId++, 
+          titulo, 
+          prazo, 
+          profId: prof?.id || '',
+          responsavel: prof?.nome || '',
+          avatars: prof ? [{i: getInitials(prof.nome), c: prof.cor}] : [],
+          tipo: document.getElementById('mTipo').value, 
+          prio: document.getElementById('mPrio').value, 
+          est: document.getElementById('mEst').value, 
+          nota: document.getElementById('mNota').value, 
+          prog: 0, 
+          done: false 
+        };
+        tasks.unshift(novaTask);
+        saveTaskRemote(novaTask, true);
+        showToast('Tarefa criada ✓');
+      }
+      
+      saveTasks(); 
+      closeModal(); 
+      render(); 
+      renderCal(); 
+      renderAgenda();
+    }
+    
+    document.getElementById('modalOverlay').addEventListener('click', e => { 
+      if(e.target === document.getElementById('modalOverlay')) closeModal(); 
+    });
+    
+    document.addEventListener('keydown', e => { 
+      if(e.key === 'Escape') closeModal(); 
+      if(e.key === 'n' && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) openModal(); 
+    });
+
+    /* ── Timesheet ── */
+    function openTimesheetModal() {
+      const relatorio = tasks.filter(t => {
+        const pDate = new Date(t.prazo);
+        return t.done && pDate.getMonth() === hoje.getMonth() && pDate.getFullYear() === hoje.getFullYear();
+      }).map(t => {
+        const d = new Date(t.prazo);
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} - [${t.tipo || 'Geral'}] ${t.titulo}`;
+      }).join('\n');
+
+      document.getElementById('timesheetText').value = relatorio || 'Nenhuma tarefa concluída neste mês.';
+      document.getElementById('timesheetModal').classList.add('open');
+    }
+
+    function copyTimesheet() {
+      const text = document.getElementById('timesheetText');
+      text.select();
+      document.execCommand('copy');
+      showToast('📋 Copiado para a área de transferência!');
+    }
+
+    /* ── Calendário ── */
+    function renderCal() {
+      document.getElementById('calMonth').textContent = `${MESES[calMes]} ${calAno}`;
+      const grid = document.getElementById('calGrid');
+      grid.innerHTML = '';
+      
+      DIAS_S.forEach(d => { 
+        const el = document.createElement('div'); 
+        el.className = 'cal-dow'; 
+        el.textContent = d.slice(0,1); 
+        grid.appendChild(el); 
+      });
+      
+      const first = new Date(calAno, calMes, 1).getDay();
+      const total = new Date(calAno, calMes+1, 0).getDate();
+      const prev  = new Date(calAno, calMes, 0).getDate();
+      
+      for(let i = first-1; i >= 0; i--) addCDay(grid, prev-i, 'cal-other', false, false, false, null);
+      
+      for(let day = 1; day <= total; day++) {
+        const isT = day === hoje.getDate() && calMes === hoje.getMonth() && calAno === hoje.getFullYear();
+        const isS = day === diaSelect && calMes === hoje.getMonth() && calAno === hoje.getFullYear();
+        const hasT = tasks.some(t => {
+          const pDate = new Date(t.prazo);
+          return pDate.getDate() === day && pDate.getMonth() === calMes && pDate.getFullYear() === calAno;
+        });
+        addCDay(grid, day, '', isT, isS && !isT, hasT, day);
+      }
+      
+      const rem = (first + total) % 7; 
+      if (rem) {
+        for(let i = 1; i <= 7-rem; i++) addCDay(grid, i, 'cal-other', false, false, false, null);
+      }
+    }
+
+    function addCDay(grid, num, cls, isT, isS, hasT, day) {
+      const el = document.createElement('div');
+      el.className = `cal-day ${cls} ${isT ? 'cal-today' : ''} ${isS ? 'cal-selected' : ''} ${hasT ? 'has-task' : ''}`;
+      el.textContent = num;
+      if (day) {
+        el.addEventListener('click', () => { 
+          diaSelect = day; 
+          renderCal(); 
+          renderAgenda(); 
+        });
+      }
+      grid.appendChild(el);
+    }
+
+    function moveMonth(dir) { 
+      calMes += dir; 
+      if (calMes < 0) { calMes = 11; calAno--; } 
+      if (calMes > 11) { calMes = 0; calAno++; } 
+      renderCal(); 
+    }
+
+    /* ── Agenda ── */
+    function renderAgenda() {
+      const isHj = diaSelect === hoje.getDate() && calMes === hoje.getMonth() && calAno === hoje.getFullYear();
+      
+      document.getElementById('agendaTitle').textContent = isHj 
+        ? `Hoje, ${String(hoje.getDate()).padStart(2,'0')} ${MESES_A[hoje.getMonth()]}` 
+        : `${String(diaSelect).padStart(2,'0')} ${MESES_A[calMes]}`;
+        
+      const dt = tasks.filter(t => {
+        const pDate = new Date(t.prazo);
+        return pDate.getDate() === diaSelect && pDate.getMonth() === calMes && pDate.getFullYear() === calAno;
+      });
+      
+      const list = document.getElementById('agendaList');
+      if (!dt.length) { 
+        list.innerHTML = `<div style="font-size:11px;color:var(--text-faint);padding:6px 2px">Sem tarefas neste dia</div>`; 
+        return; 
+      }
+      
+      list.innerHTML = dt.map(t => { 
+        const e = getEst(t.est); 
+        return `
+        <div class="agenda-item" onclick="document.getElementById('searchInput').value='${t.titulo.slice(0,22)}';render()">
+          <div class="agenda-time">${e.emoji}</div>
+          <div class="agenda-info">
+            <div class="agenda-name">${t.titulo}</div>
+            <div class="agenda-tag" style="color:${e.color};border-color:${e.color}30;background:${e.color}10">${e.label}</div>
+          </div>
+        </div>`; 
+      }).join('');
+    }
+
+    /* ── Limpar dados de demonstração ── */
+    function limparDados() {
+      if (confirm('Remover todas as tarefas e começar do zero?')) {
+        localStorage.removeItem('hubnexus_tasks');
+        tasks = [];
+        nextId = 1;
+        render();
+        showToast('Dados removidos. Tela zerada!');
+      }
+    }
+
+    // Sanitização leve para export XLSX (notas de tarefa às vezes têm emoji)
+    const sanitizeXLSXCell = v => {
+      if (v == null) return '';
+      if (typeof v !== 'string') return v;
+      return v
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+        .replace(/[\uD800-\uDFFF]/g, '')
+        .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+        .replace(/[\u{2000}-\u{2BFF}]/gu, '');
+    };
+    function exportarTasksXLSX() {
+      if (!tasks.length) { 
+        showToast('Nenhuma tarefa para exportar.'); 
+        return; 
+      }
+      
+      const MESES_A2 = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+      const rows = tasks.map(t => {
+        const p = new Date(t.prazo);
+        return {
+          'Título':       t.titulo || '',
+          'Responsável':  t.responsavel || '',
+          'Tipo':         t.tipo || '',
+          'Prioridade':   t.prio || '',
+          'Fase':         getEst(t.est)?.label || t.est || '',
+          'Prazo':        isNaN(p) ? '' : `${String(p.getDate()).padStart(2,'0')}/${MESES_A2[p.getMonth()]}/${p.getFullYear()}`,
+          'Concluída':    t.done ? 'Sim' : 'Não',
+          'Notas':        sanitizeXLSXCell(t.nota || ''),
+        };
+      });
+      
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Tarefas');
+      XLSX.writeFile(wb, 'hubnexus_tasks.xlsx');
+      showToast('✅ Exportado!');
+    }
+
+    /* ── Boot ── */
+    // Inicia a renderização base
+    renderCal(); 
+    renderAgenda(); 
+    render();
+    // Inicia a requisição da API (que por sua vez buscará os utilizadores e fará o sync com o Kanban)
+    carregarTasksD1();
+
+    // ── Notificações de proximidade de prazo ──────────────────────
+    function iniciarCheckPrazo() {
+      if (typeof checarNotificacoesProximidade !== 'function') return;
+      const verificar = () => {
+        const avisos = (window.allTasks || [])
+          .filter(t => !t.done && t.prazo_hora)
+          .map(t => ({ titulo: t.titulo, prazo: t.prazo_hora, url: window.location.href }));
+        checarNotificacoesProximidade(avisos);
+      };
+      verificar();
+      setInterval(verificar, 5 * 60 * 1000);
+    }
+    iniciarCheckPrazo();
+  </script>
+</body>
+</html>

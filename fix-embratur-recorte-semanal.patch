@@ -1,0 +1,17 @@
+--- /tmp/original_ekklesia-embratur.html	2026-07-02 19:40:04.379834709 +0000
++++ hub.nexus-main/pages/ekklesia-embratur.html	2026-07-02 19:39:48.189715299 +0000
+@@ -1021,7 +1021,13 @@
+     const rows = _embStateSem[pais]?.rows || [];
+     if (!rows.length) return null;
+ 
+-    const getDia = r => r._dataRel || (r.data || '').substring(0, 10);
++    // Recorte da SEMANAL é por dia de calendário (00h–23h59), diferente do
++    // DIÁRIO (que usa _dataRel com corte às 6h para não quebrar coletas no
++    // meio da madrugada). Usar _dataRel aqui inflava/deslocava dias — uma
++    // semana de 7 dias virava 8 "buckets" e o fallback de 7 dias descartava
++    // o mais antigo, fazendo a contagem de menções ficar menor que o total
++    // de posts da base. Ver conversa com Daniel/Brena em 02/07/2026.
++    const getDia = r => (r.data || '').substring(0, 10);
+ 
+     // Datas únicas ordenadas — mesma lógica do diário
+     const todasDatas = [...new Set(rows.map(getDia).filter(Boolean))].sort();

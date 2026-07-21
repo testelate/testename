@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HUB.nexus — Classificação IRX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/global.css"/>
+  <style>
+    body { display:flex; flex-direction:column; overflow:hidden; height:100vh; background:var(--bg); font-family:'Inter',sans-serif; }
+
+    /* ── Navbar container ── */
+    #navbar-container:not(:empty) ~ .topbar .topbar-left { display:none !important; }
+    #navbar-container:not(:empty) ~ .topbar { border-top: none; }
+
+    /* ── Topbar — igual ao Ekklesia ── */
+    .topbar {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:0 20px; height:52px; flex-shrink:0;
+      backdrop-filter:blur(30px); background:rgba(255,255,255,0.03);
+      border-bottom:1px solid rgba(255,255,255,0.07); z-index:10;
+    }
+    body.light .topbar { background:rgba(255,255,255,0.75); border-bottom-color:rgba(0,0,0,0.08); }
+    .topbar-left  { display:flex; align-items:center; gap:10px; }
+    .topbar-right { display:flex; align-items:center; gap:6px; }
+
+    .back-btn {
+      display:flex; align-items:center; gap:5px;
+      color:var(--text-muted); text-decoration:none;
+      font-size:12px; font-weight:500;
+      padding:5px 9px; border-radius:8px; transition:all .14s;
+    }
+    .back-btn:hover { color:var(--text-primary); background:rgba(255,255,255,0.06); }
+    .back-btn svg { width:12px; height:12px; stroke:currentColor; stroke-width:2.5; fill:none; }
+    body.light .back-btn:hover { background:rgba(0,0,0,0.05); }
+
+    .topbar-sep { width:1px; height:16px; background:rgba(255,255,255,0.12); }
+    body.light .topbar-sep { background:rgba(0,0,0,0.12); }
+    .topbar-title { font-size:13px; font-weight:500; color:var(--text-primary); letter-spacing:-.2px; }
+
+    .tbtn {
+      display:inline-flex; align-items:center; gap:5px; padding:6px 12px;
+      background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);
+      border-radius:var(--r-sm,8px); font-size:11px; color:var(--text-secondary);
+      cursor:pointer; font-family:'Inter',sans-serif; transition:all .15s; white-space:nowrap;
+    }
+    .tbtn svg { width:11px; height:11px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .tbtn:hover { background:rgba(255,255,255,0.09); color:var(--text-primary); }
+    .tbtn-primary { background:hsla(var(--theme-h),90%,50%,0.12); border-color:hsla(var(--theme-h),90%,50%,0.28); color:var(--orange-2,var(--accent-light)); }
+    .tbtn-primary:hover { background:hsla(var(--theme-h),90%,50%,0.22); }
+    .tbtn-danger { background:rgba(239,68,68,.10); border-color:rgba(239,68,68,.22); color:#f87171; }
+    .tbtn-danger:hover { background:rgba(239,68,68,.20); }
+    body.light .tbtn { background:rgba(255,255,255,0.8); border-color:rgba(0,0,0,0.10); }
+
+    .proj-wrap { display:flex; align-items:center; gap:5px; }
+    .proj-select {
+      background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);
+      border-radius:8px; padding:5px 10px; font-size:12px; color:var(--text-primary);
+      font-family:'Inter',sans-serif; outline:none; cursor:pointer; max-width:150px;
+    }
+    .proj-select option { background:#1a1206; color:#fff; }
+    body.light .proj-select { background:rgba(255,255,255,0.8); border-color:rgba(0,0,0,0.12); }
+    body.light .proj-select option { background:#fff; color:#222; }
+
+    /* ── Progress ── */
+    .progress-wrap { height:3px; background:rgba(255,255,255,0.06); flex-shrink:0; }
+    .progress-fill { height:100%; background:var(--accent,hsl(var(--theme-h),80%,55%)); transition:width .4s; }
+
+    /* ── Layout ── */
+    .layout { display:flex; flex:1; overflow:hidden; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width:260px; min-width:260px; flex-shrink:0; display:flex; flex-direction:column;
+      border-right:1px solid rgba(255,255,255,0.07);
+      overflow:hidden;
+    }
+    body.light .sidebar { border-right-color:rgba(0,0,0,0.07); }
+    .sb-search { padding:8px 8px 4px; flex-shrink:0; overflow:hidden; }
+    .sb-search input {
+      width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08);
+      border-radius:7px; padding:6px 10px; font-size:12px; color:var(--text-primary);
+      font-family:'Inter',sans-serif; outline:none; box-sizing:border-box;
+    }
+    .sb-search input::placeholder { color:var(--text-muted); }
+    body.light .sb-search input { background:rgba(255,255,255,0.9); border-color:rgba(0,0,0,0.10); }
+    .sb-chips { display:flex; gap:3px; padding:3px 8px 6px; flex-wrap:wrap; flex-shrink:0; }
+    .chip { padding:2px 8px; border-radius:20px; font-size:10px; font-weight:600; cursor:pointer; border:1px solid transparent; color:var(--text-muted); background:rgba(255,255,255,0.04); transition:all .13s; }
+    .chip:hover { color:var(--text-primary); }
+    .chip.on { background:hsla(var(--theme-h),90%,50%,.14); border-color:hsla(var(--theme-h),90%,50%,.30); color:var(--accent-light); }
+    .sb-list { flex:1; overflow-y:auto; overflow-x:hidden; padding:2px 0; min-width:0; box-sizing:border-box; }
+    .sb-list::-webkit-scrollbar { width:3px; }
+    .sb-list::-webkit-scrollbar-thumb { background:rgba(255,255,255,.10); border-radius:2px; }
+    .sitem { padding:7px 9px; border-radius:7px; cursor:pointer; transition:background .12s; margin-bottom:2px; border:1px solid transparent; box-sizing:border-box; width:calc(100% - 14px); margin-left:7px; margin-right:7px; overflow:hidden; }
+    .sitem:hover { background:rgba(255,255,255,.05); }
+    .sitem.active { background:hsla(var(--theme-h),90%,50%,.10); border-color:hsla(var(--theme-h),90%,50%,.22); }
+    .sitem-name { font-size:12px; font-weight:500; color:var(--text-primary); line-height:1.3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .sitem-meta { font-size:10px; color:var(--text-muted); margin-top:2px; display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
+    .badge { display:inline-flex; align-items:center; padding:1px 5px; border-radius:20px; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+    .b-pend     { background:rgba(245,158,11,.14); color:#f59e0b; }
+    .b-apr      { background:rgba(34,197,94,.14);  color:#4ade80; }
+    .b-rep      { background:rgba(239,68,68,.14);  color:#f87171; }
+    .b-avancar  { background:rgba(34,197,94,.14);  color:#4ade80; }
+    .b-revisar  { background:rgba(245,158,11,.14); color:#f59e0b; }
+    .b-descartar{ background:rgba(239,68,68,.14);  color:#f87171; }
+    .b-deck     { background:rgba(139,92,246,.14); color:#a78bfa; }
+    .b-nexus    { background:hsla(var(--theme-h),90%,50%,.14); color:var(--accent-light); }
+    .sb-footer { padding:8px 10px; border-top:1px solid rgba(255,255,255,.06); flex-shrink:0; }
+    .stats-row { font-size:10px; color:var(--text-muted); display:flex; gap:7px; flex-wrap:wrap; }
+    .sdot { width:6px; height:6px; border-radius:50%; display:inline-block; margin-right:2px; }
+    .empty-msg { padding:20px 10px; text-align:center; color:var(--text-muted); font-size:12px; line-height:1.7; }
+
+    /* ── Painel principal ── */
+    .panel { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+    .panel-empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--text-muted); }
+    .panel-empty svg { opacity:.15; }
+    .panel-empty p { font-size:13px; }
+    .panel-empty .hint { font-size:11px; opacity:.4; text-align:center; line-height:1.7; }
+    #panelContent { display:none; flex:1; flex-direction:column; overflow:hidden; }
+
+    /* ── Inner topbar (acima do card) ── */
+    .inner-topbar {
+      display:flex; align-items:center; gap:8px;
+      padding:7px 16px; flex-shrink:0;
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    body.light .inner-topbar { border-bottom-color:rgba(0,0,0,.06); }
+    .itb-name { font-size:14px; font-weight:600; color:var(--text-primary); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .nav-wrap { display:flex; gap:3px; }
+    .nav-btn { display:flex; align-items:center; justify-content:center; width:26px; height:26px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09); border-radius:6px; cursor:pointer; color:var(--text-muted); transition:all .13s; }
+    .nav-btn:hover:not(:disabled) { background:rgba(255,255,255,.09); color:var(--text-primary); }
+    .nav-btn:disabled { opacity:.25; cursor:default; }
+    .nav-btn svg { width:11px; height:11px; stroke:currentColor; stroke-width:2.5; fill:none; }
+    .nav-counter { font-size:11px; color:var(--text-muted); min-width:52px; text-align:center; font-variant-numeric:tabular-nums; }
+    .status-sel { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); border-radius:7px; padding:4px 9px; font-size:11px; color:var(--text-secondary); font-family:'Inter',sans-serif; outline:none; cursor:pointer; }
+    .status-sel option { background:#1a1206; }
+    body.light .status-sel { background:rgba(255,255,255,.8); border-color:rgba(0,0,0,.10); }
+    .ficha-toggle { display:inline-flex; align-items:center; gap:4px; padding:5px 9px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:7px; font-size:11px; color:var(--text-muted); cursor:pointer; font-family:'Inter',sans-serif; transition:all .14s; }
+    .ficha-toggle:hover { color:var(--text-primary); }
+    .ficha-toggle.active { color:var(--accent-light); background:hsla(var(--theme-h),90%,50%,.10); border-color:hsla(var(--theme-h),90%,50%,.25); }
+
+    /* ── Body row (card + drawer) ── */
+    .body-row { flex:1; display:flex; overflow:hidden; }
+
+    /* ── Card area ── */
+    .card-area { flex:1; overflow-y:auto; padding:14px 18px; }
+    .card-area::-webkit-scrollbar { width:4px; }
+    .card-area::-webkit-scrollbar-thumb { background:rgba(255,255,255,.10); border-radius:2px; }
+
+    /* ── Profile card ── */
+    .profile-card {
+      width:100%;
+      background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.09);
+      border-radius:14px; overflow:hidden;
+    }
+    body.light .profile-card { background:rgba(255,255,255,.85); border-color:rgba(0,0,0,.09); box-shadow:0 4px 24px rgba(0,0,0,.07); }
+
+    /* Header */
+    .pc-header {
+      display:flex; align-items:flex-start; gap:14px; padding:16px 20px 14px;
+      background:linear-gradient(135deg,hsla(var(--theme-h),70%,28%,.26),hsla(var(--theme-h),90%,50%,.07));
+      border-bottom:1px solid rgba(255,255,255,.07);
+    }
+    body.light .pc-header { background:linear-gradient(135deg,hsla(var(--theme-h),70%,88%,.55),hsla(var(--theme-h),90%,96%,.3)); border-bottom-color:rgba(0,0,0,.06); }
+
+    .pc-avatar {
+      width:60px; height:60px; border-radius:50%; flex-shrink:0;
+      background:hsla(var(--theme-h),55%,28%,.5);
+      display:flex; align-items:center; justify-content:center;
+      font-size:22px; font-weight:700; color:var(--accent-light);
+      border:2px solid hsla(var(--theme-h),90%,50%,.28); overflow:hidden;
+    }
+    .pc-avatar img { width:100%; height:100%; object-fit:cover; }
+
+    .pc-info { flex:1; min-width:0; }
+    .pc-name { font-size:20px; font-weight:700; color:var(--text-primary); line-height:1.15; }
+    .pc-handle { font-size:12px; color:var(--text-muted); font-family:monospace; margin-top:1px; }
+    .pc-tags { display:flex; gap:5px; flex-wrap:wrap; margin-top:7px; }
+    .ptag { padding:2px 9px; border-radius:20px; font-size:10px; font-weight:600; background:rgba(255,255,255,.07); color:var(--text-secondary); border:1px solid rgba(255,255,255,.10); }
+    body.light .ptag { background:rgba(0,0,0,.06); border-color:rgba(0,0,0,.08); }
+
+    .pc-score-col { display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; }
+    .score-big { font-size:26px; font-weight:800; color:var(--accent-light); line-height:1; letter-spacing:-.03em; }
+    .score-lbl { font-size:9px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; }
+
+    /* Fonte badge (DECK / Nexus) */
+    .fonte-row { display:flex; align-items:center; gap:6px; padding:8px 20px; border-bottom:1px solid rgba(255,255,255,.06); flex-wrap:wrap; }
+    body.light .fonte-row { border-bottom-color:rgba(0,0,0,.06); }
+    .fonte-lbl { font-size:10px; color:var(--text-muted); }
+
+    /* Redes */
+    .pc-redes { display:flex; gap:6px; padding:8px 20px; border-bottom:1px solid rgba(255,255,255,.06); flex-wrap:wrap; }
+    body.light .pc-redes { border-bottom-color:rgba(0,0,0,.06); }
+    .rede-pill { display:flex; align-items:center; gap:4px; padding:4px 10px; border-radius:20px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); font-size:11px; color:var(--text-secondary); }
+    body.light .rede-pill { background:rgba(0,0,0,.04); border-color:rgba(0,0,0,.08); }
+    .rede-pill .rnum { font-weight:600; color:var(--text-primary); }
+    .rede-pill a { color:inherit; text-decoration:none; font-size:10px; opacity:.55; }
+    .rede-pill a:hover { opacity:1; color:var(--accent-light); }
+
+    /* Grid de campos editáveis */
+    .pc-fields { display:grid; grid-template-columns:1fr 1fr; }
+    .pc-col { padding:12px 20px; }
+    .pc-col + .pc-col { border-left:1px solid rgba(255,255,255,.06); }
+    body.light .pc-col + .pc-col { border-left-color:rgba(0,0,0,.06); }
+    .pc-col-label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--accent-light); margin-bottom:6px; }
+    .edit-area {
+      width:100%; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07);
+      border-radius:8px; padding:8px 10px; font-size:12px; color:var(--text-primary);
+      font-family:'Inter',sans-serif; outline:none; resize:vertical; min-height:110px;
+      line-height:1.6; box-sizing:border-box; transition:border-color .13s;
+    }
+    .edit-area:focus { border-color:hsla(var(--theme-h),90%,50%,.40); }
+    body.light .edit-area { background:rgba(255,255,255,.7); border-color:rgba(0,0,0,.10); }
+
+    /* Campos de texto linha única no card */
+    .edit-input {
+      width:100%; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07);
+      border-radius:8px; padding:6px 10px; font-size:12px; color:var(--text-primary);
+      font-family:'Inter',sans-serif; outline:none; box-sizing:border-box; transition:border-color .13s;
+    }
+    .edit-input:focus { border-color:hsla(var(--theme-h),90%,50%,.40); }
+    body.light .edit-input { background:rgba(255,255,255,.7); border-color:rgba(0,0,0,.10); }
+
+    /* Grid 3 cols para campos adicionais */
+    .pc-fields-3 { display:grid; grid-template-columns:1fr 1fr 1fr; border-top:1px solid rgba(255,255,255,.06); }
+    body.light .pc-fields-3 { border-top-color:rgba(0,0,0,.06); }
+    .pc-fields-3 .pc-col + .pc-col { border-left:1px solid rgba(255,255,255,.06); }
+    body.light .pc-fields-3 .pc-col + .pc-col { border-left-color:rgba(0,0,0,.06); }
+
+    /* Amostra posts */
+    .pc-posts { padding:10px 20px 14px; border-top:1px solid rgba(255,255,255,.06); }
+    body.light .pc-posts { border-top-color:rgba(0,0,0,.06); }
+    .pc-posts-lbl { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); margin-bottom:7px; }
+    .post-item { font-size:11px; color:var(--text-muted); line-height:1.55; padding:6px 10px; border-radius:7px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.05); border-left:2px solid hsla(var(--theme-h),70%,50%,.32); margin-bottom:5px; }
+    body.light .post-item { background:rgba(0,0,0,.025); border-color:rgba(0,0,0,.06); border-left-color:hsla(var(--theme-h),70%,50%,.4); }
+
+    /* Rodapé do card: rec + scores */
+    .pc-footer { display:flex; align-items:center; justify-content:space-between; padding:9px 20px; border-top:1px solid rgba(255,255,255,.06); background:rgba(255,255,255,.015); flex-wrap:wrap; gap:8px; }
+    body.light .pc-footer { border-top-color:rgba(0,0,0,.06); background:rgba(0,0,0,.02); }
+    .pf-rec { display:flex; align-items:center; gap:7px; }
+    .pf-rec-lbl { font-size:10px; color:var(--text-muted); }
+    .pf-scores { display:flex; gap:4px; flex-wrap:wrap; }
+    .score-pill { padding:2px 8px; border-radius:20px; font-size:10px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10); color:var(--text-secondary); white-space:nowrap; }
+    body.light .score-pill { background:rgba(0,0,0,.04); border-color:rgba(0,0,0,.08); }
+
+    /* Botão Deep Research no card */
+    .dr-card-btn {
+      display:inline-flex; align-items:center; gap:5px; padding:6px 13px;
+      background:linear-gradient(135deg,hsla(220,80%,60%,.13),hsla(260,80%,65%,.09));
+      border:1px solid hsla(220,80%,60%,.22); border-radius:8px;
+      font-size:11px; color:#93c5fd; cursor:pointer; font-family:'Inter',sans-serif; transition:all .14s;
+    }
+    .dr-card-btn:hover { filter:brightness(1.14); }
+
+    /* ── Ficha drawer ── */
+    .ficha-panel { width:0; flex-shrink:0; overflow:hidden; transition:width .22s ease; }
+    .ficha-panel.open { width:290px; }
+    .ficha-inner { width:290px; height:100%; display:flex; flex-direction:column; border-left:1px solid rgba(255,255,255,.07); background:rgba(255,255,255,.02); }
+    body.light .ficha-inner { background:rgba(255,255,255,.6); border-left-color:rgba(0,0,0,.07); }
+    .ficha-head { padding:10px 13px; border-bottom:1px solid rgba(255,255,255,.06); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+    .ficha-title { font-size:12px; font-weight:600; color:var(--text-primary); }
+    .ficha-body { flex:1; overflow-y:auto; padding:11px 13px; }
+    .ficha-body::-webkit-scrollbar { width:3px; }
+    .ficha-body::-webkit-scrollbar-thumb { background:rgba(255,255,255,.10); border-radius:2px; }
+    .fg { margin-bottom:11px; }
+    .fg label { font-size:10px; color:var(--text-muted); font-weight:600; letter-spacing:.03em; display:block; margin-bottom:3px; }
+    .fg input,.fg select,.fg textarea {
+      width:100%; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);
+      border-radius:7px; padding:6px 9px; font-size:12px; color:var(--text-primary);
+      font-family:'Inter',sans-serif; outline:none; box-sizing:border-box; transition:border-color .13s;
+    }
+    .fg input:focus,.fg textarea:focus { border-color:hsla(var(--theme-h),90%,50%,.42); }
+    .fg select option { background:#1a1206; }
+    .fg textarea { resize:vertical; min-height:58px; }
+    body.light .fg input,body.light .fg select,body.light .fg textarea { background:rgba(255,255,255,.9); border-color:rgba(0,0,0,.12); }
+    .fg-row { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+    .fsec { font-size:10px; font-weight:700; color:var(--accent-light); text-transform:uppercase; letter-spacing:.07em; margin:14px 0 7px; }
+    .fg.fg-warn label { color:#f87171; }
+    .fg.fg-warn textarea { border-color:rgba(239,68,68,.18); }
+    .fg.fg-warn textarea:focus { border-color:rgba(239,68,68,.40); }
+    .ficha-foot { padding:9px 13px; border-top:1px solid rgba(255,255,255,.06); display:flex; gap:7px; flex-shrink:0; }
+    .ia-btn { display:inline-flex; align-items:center; gap:5px; padding:6px 10px; flex:1; background:linear-gradient(135deg,hsla(260,80%,65%,.13),hsla(var(--theme-h),90%,55%,.09)); border:1px solid hsla(260,80%,65%,.22); border-radius:7px; font-size:11px; color:#c4a8ff; cursor:pointer; font-family:'Inter',sans-serif; transition:all .14s; justify-content:center; }
+    .ia-btn:hover { filter:brightness(1.12); }
+    .ia-btn.loading { opacity:.5; pointer-events:none; }
+    .save-btn { display:inline-flex; align-items:center; gap:5px; padding:6px 13px; background:hsla(var(--theme-h),90%,50%,.14); border:1px solid hsla(var(--theme-h),90%,50%,.28); border-radius:7px; font-size:11px; color:var(--accent-light); cursor:pointer; font-family:'Inter',sans-serif; transition:all .14s; }
+    .save-btn:hover { background:hsla(var(--theme-h),90%,50%,.24); }
+
+    /* ── Decision bar — botões maiores ── */
+    .dec-bar {
+      display:flex; align-items:center; justify-content:center;
+      gap:12px; padding:14px 24px; flex-shrink:0;
+      border-top:1px solid rgba(255,255,255,.07);
+      background:rgba(255,255,255,.018);
+    }
+    body.light .dec-bar { border-top-color:rgba(0,0,0,.07); background:rgba(255,255,255,.5); }
+    .dec-lbl { font-size:11px; color:var(--text-muted); margin-right:4px; }
+    .dec-btn {
+      display:inline-flex; align-items:center; gap:8px;
+      padding:11px 28px; border-radius:40px;
+      font-size:14px; font-weight:700; cursor:pointer;
+      font-family:'Inter',sans-serif; transition:all .15s; border:none; letter-spacing:.01em;
+    }
+    .dec-btn svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:2.5; }
+    .dec-rep { background:rgba(239,68,68,.13); border:1.5px solid rgba(239,68,68,.28); color:#f87171; }
+    .dec-rep:hover { background:rgba(239,68,68,.26); transform:scale(1.04); }
+    .dec-skip { background:rgba(255,255,255,.05); border:1.5px solid rgba(255,255,255,.11); color:var(--text-muted); padding:11px 20px; }
+    .dec-skip:hover { background:rgba(255,255,255,.10); }
+    .dec-apr { background:rgba(34,197,94,.13); border:1.5px solid rgba(34,197,94,.30); color:#4ade80; }
+    .dec-apr:hover { background:rgba(34,197,94,.26); transform:scale(1.04); }
+
+    /* ── Modais ── */
+    .overlay { display:none; position:fixed; inset:0; z-index:50; background:rgba(0,0,0,.55); backdrop-filter:blur(4px); align-items:center; justify-content:center; }
+    .overlay.open { display:flex; }
+    .modal { background:hsl(var(--theme-h),20%,10%); border:1px solid rgba(255,255,255,.10); border-radius:16px; padding:20px; width:500px; max-width:95vw; max-height:88vh; display:flex; flex-direction:column; gap:13px; }
+    body.light .modal { background:#fff; border-color:rgba(0,0,0,.12); }
+    .modal-lg { width:580px; }
+    .modal-head { display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+    .modal-title { font-size:13px; font-weight:600; color:var(--text-primary); }
+    .mcls { background:none; border:none; cursor:pointer; color:var(--text-muted); padding:3px; border-radius:5px; }
+    .mcls:hover { color:var(--text-primary); background:rgba(255,255,255,.07); }
+    .mcls svg { width:13px; height:13px; stroke:currentColor; stroke-width:2; fill:none; }
+    .mf { display:flex; flex-direction:column; gap:4px; }
+    .mf label { font-size:10px; color:var(--text-muted); font-weight:600; letter-spacing:.03em; }
+    .mf input,.mf textarea,.mf select {
+      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.09); border-radius:8px;
+      padding:7px 10px; font-size:12px; color:var(--text-primary); font-family:'Inter',sans-serif; outline:none;
+    }
+    .mf textarea { resize:vertical; min-height:60px; }
+    body.light .mf input,body.light .mf textarea { background:rgba(0,0,0,.04); border-color:rgba(0,0,0,.12); }
+    .mrow { display:flex; gap:8px; align-items:flex-end; }
+    .mfoot { display:flex; justify-content:flex-end; gap:8px; flex-shrink:0; }
+    .mnote { font-size:10px; color:var(--text-muted); }
+    .tlist { overflow-y:auto; max-height:220px; display:flex; flex-direction:column; gap:5px; }
+    .trow { display:flex; align-items:center; gap:7px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); border-radius:7px; padding:7px 11px; font-size:11px; }
+    body.light .trow { background:rgba(0,0,0,.03); border-color:rgba(0,0,0,.08); }
+    .tname { min-width:70px; font-size:10px; color:var(--text-muted); }
+    .turl { flex:1; color:var(--accent-light); font-family:monospace; font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .t-off { opacity:.32; }
+    .t-off .turl { text-decoration:line-through; }
+
+    /* Deep Research modal */
+    .dr-scroll { overflow-y:auto; flex:1; }
+    .dr-tabs { display:flex; gap:2px; border-bottom:1px solid rgba(255,255,255,.08); margin-bottom:2px; flex-shrink:0; }
+    .dr-tab { padding:7px 14px; font-size:11px; color:var(--text-muted); cursor:pointer; border:none; background:none; font-family:'Inter',sans-serif; transition:all .13s; border-bottom:2px solid transparent; margin-bottom:-1px; }
+    .dr-tab.on { color:var(--accent-light); border-bottom-color:var(--accent-light); }
+    #drPromptBox {
+      background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09);
+      border-radius:8px; padding:12px 14px; font-size:11px; color:var(--text-secondary);
+      line-height:1.65; white-space:pre-wrap; font-family:'Inter',sans-serif;
+      user-select:all; flex-shrink:0;
+    }
+    body.light #drPromptBox { background:rgba(0,0,0,.03); border-color:rgba(0,0,0,.09); }
+    #drPasteArea {
+      width:100%; min-height:180px; background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.09); border-radius:8px;
+      padding:12px 14px; font-size:12px; color:var(--text-primary);
+      font-family:'Inter',sans-serif; outline:none; resize:vertical; line-height:1.6;
+      box-sizing:border-box;
+    }
+    #drPasteArea:focus { border-color:hsla(var(--theme-h),90%,50%,.40); }
+    body.light #drPasteArea { background:rgba(255,255,255,.9); border-color:rgba(0,0,0,.12); }
+
+    /* ── Loading overlay ── */
+    .lov { display:none; position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.45); backdrop-filter:blur(3px); align-items:center; justify-content:center; }
+    .lov.open { display:flex; }
+    .lbox { background:hsl(var(--theme-h),20%,12%); border:1px solid rgba(255,255,255,.10); border-radius:13px; padding:24px 32px; display:flex; flex-direction:column; align-items:center; gap:12px; }
+    body.light .lbox { background:#fff; border-color:rgba(0,0,0,.10); }
+    .lspin { width:30px; height:30px; border:3px solid rgba(255,255,255,.10); border-top-color:var(--accent-light); border-radius:50%; animation:spin .7s linear infinite; }
+    body.light .lspin { border-color:rgba(0,0,0,.08); border-top-color:var(--accent,hsl(var(--theme-h),80%,45%)); }
+    .lmsg { font-size:13px; font-weight:500; color:var(--text-primary); }
+    .lsub { font-size:11px; color:var(--text-muted); }
+
+    .spin { animation:spin .8s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* ── Toasts ── */
+    .toasts { position:fixed; top:16px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:5px; pointer-events:none; }
+    .toast { padding:8px 13px; border-radius:9px; font-size:11px; font-weight:500; animation:tIn .16s ease; }
+    .tok  { background:rgba(34,197,94,.15);  border:1px solid rgba(34,197,94,.28);  color:#4ade80; }
+    .terr { background:rgba(239,68,68,.15);  border:1px solid rgba(239,68,68,.28);  color:#f87171; }
+    .tinf { background:rgba(59,130,246,.15); border:1px solid rgba(59,130,246,.28); color:#60a5fa; }
+    @keyframes tIn { from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)} }
+  </style>
+</head>
+<body>
+
+<!-- ── Navbar global (padrão HUB) ── -->
+<div id="navbar-container"></div>
+
+<!-- ── Topbar de ferramentas ── -->
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="topbar-title">Classificação IRX</span>
+    <div class="topbar-badge">
+      <svg width="8" height="8" viewBox="0 0 8 8" style="fill:var(--orange-2,var(--accent-light))"><circle cx="4" cy="4" r="4"/></svg>
+      Curadoria de Influenciadores
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="proj-wrap">
+      <select id="projetoSel" class="proj-select" onchange="onProjeto()">
+        <option value="">— Projeto —</option>
+      </select>
+      <button class="tbtn tbtn-primary" onclick="abrirNovoProjeto()" title="Criar novo projeto">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Novo
+      </button>
+      <button class="tbtn" onclick="abrirEditarProjeto()" title="Editar projeto atual" id="btnEditProj" style="display:none;padding:5px 8px">
+        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </button>
+    </div>
+    <button class="tbtn" onclick="openTokens()">
+      <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      Freela Link
+    </button>
+    <button class="tbtn" onclick="document.getElementById('xlsxIn').click()">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Importar
+    </button>
+    <button class="tbtn" onclick="document.getElementById('enrIn').click()" title="Enriquecer com BW XLSX ou CSV Instagram">
+      <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      Enriquecer
+    </button>
+    <button class="tbtn" onclick="exportarXLSX()">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportar
+    </button>
+    <button class="tbtn tbtn-danger" onclick="confirmarDrop()">
+      <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+      Limpar
+    </button>
+    <input type="file" id="xlsxIn" accept=".xlsx" style="display:none" onchange="importarXLSX(this)"/>
+    <input type="file" id="enrIn" accept=".xlsx,.csv" style="display:none" onchange="enriquecerBase(this)"/>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div class="lov" id="lov">
+  <div class="lbox">
+    <div class="lspin"></div>
+    <div class="lmsg" id="lovMsg">Carregando…</div>
+    <div class="lsub" id="lovSub">Aguarde</div>
+  </div>
+</div>
+
+<!-- Progress bar -->
+<div class="progress-wrap"><div class="progress-fill" id="progBar" style="width:0%"></div></div>
+
+<!-- Layout -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sb-search">
+      <input id="busca" placeholder="Buscar nome…" oninput="filtrar()" autocomplete="off"/>
+    </div>
+    <div class="sb-chips">
+      <div class="chip on" onclick="setFiltro('todos',this)">Todos</div>
+      <div class="chip" onclick="setFiltro('pendente',this)">Pendente</div>
+      <div class="chip" onclick="setFiltro('aprovado',this)">Aprovado</div>
+      <div class="chip" onclick="setFiltro('reprovado',this)">Reprovado</div>
+    </div>
+    <div class="sb-list" id="sbList"><div class="empty-msg">Selecione um projeto</div></div>
+    <div class="sb-footer"><div class="stats-row" id="statsRow">—</div></div>
+  </div>
+
+  <!-- Painel -->
+  <div class="panel">
+
+    <!-- Vazio -->
+    <div class="panel-empty" id="panelEmpty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+        <circle cx="12" cy="8" r="5"/><path d="M3 21v-2a7 7 0 0 1 14 0v2"/>
+      </svg>
+      <p>Selecione um projeto e comece a classificar</p>
+      <span class="hint">← → navegar &nbsp;·&nbsp; A = Aprovar &nbsp;·&nbsp; R = Reprovar<br>S = Salvar &nbsp;·&nbsp; F = Ficha &nbsp;·&nbsp; D = Deep Research &nbsp;·&nbsp; Esc = fechar modal</span>
+    </div>
+
+    <!-- Conteúdo -->
+    <div id="panelContent">
+
+      <!-- Inner topbar -->
+      <div class="inner-topbar">
+        <div class="itb-name" id="itbNome">—</div>
+        <div class="nav-wrap">
+          <button class="nav-btn" id="btnPrev" onclick="nav(-1)">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <button class="nav-btn" id="btnNext" onclick="nav(1)">
+            <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
+          </button>
+        </div>
+        <span class="nav-counter" id="navCtr">— / —</span>
+        <select id="statusSel" class="status-sel" onchange="onStatusChange()">
+          <option value="pendente">Pendente</option>
+          <option value="aprovado">✅ Aprovado</option>
+          <option value="reprovado">❌ Reprovado</option>
+        </select>
+        <button class="ficha-toggle" id="fichaToggle" onclick="toggleFicha()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Ficha
+        </button>
+      </div>
+
+      <!-- Body row: card + drawer -->
+      <div class="body-row">
+
+        <!-- Card area -->
+        <div class="card-area">
+          <div class="profile-card" id="profileCard">
+
+            <!-- Header -->
+            <div class="pc-header">
+              <div class="pc-avatar" id="pcAvatar" onclick="abrirAvatarMenu()" title="Clique para alterar foto" style="cursor:pointer;position:relative">?
+                <div style="position:absolute;bottom:0;right:0;width:18px;height:18px;background:hsla(var(--theme-h),90%,50%,0.85);border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg)">
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </div>
+              </div>
+              <input type="file" id="avatarFileIn" accept="image/*" style="display:none" onchange="onAvatarFile(this)"/>
+              <div class="pc-info">
+                <div class="pc-name" id="pcNome">—</div>
+                <div class="pc-handle" id="pcHandle">@—</div>
+                <div class="pc-tags" id="pcTags"></div>
+              </div>
+              <div class="pc-score-col">
+                <div class="score-big" id="pcScore">—</div>
+                <div class="score-lbl">Seguidores</div>
+                <div id="pcRec" style="margin-top:5px"></div>
+                <button class="dr-card-btn" style="margin-top:8px" onclick="abrirDR()">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  Deep Research
+                </button>
+              </div>
+            </div>
+
+            <!-- Fonte (DECK / Nexus / etc.) -->
+            <div class="fonte-row" id="fonteRow"></div>
+
+            <!-- Redes -->
+            <div class="pc-redes" id="pcRedes"></div>
+
+            <!-- Bio + Posicionamento editáveis -->
+            <div class="pc-fields">
+              <div class="pc-col">
+                <div class="pc-col-label">Sobre o influenciador</div>
+                <textarea class="edit-area" id="fBio" placeholder="Bio / contexto de atuação…"></textarea>
+              </div>
+              <div class="pc-col">
+                <div class="pc-col-label">Posicionamento nas redes</div>
+                <textarea class="edit-area" id="fPos" placeholder="Como se posiciona online…"></textarea>
+              </div>
+            </div>
+
+            <!-- Abordagem + Temática + Bloco editáveis (linha) -->
+            <div class="pc-fields-3">
+              <div class="pc-col">
+                <div class="pc-col-label">Temática / Setor</div>
+                <input class="edit-input" id="fTematica" placeholder="Ex: Saneamento, Alimentos…"/>
+              </div>
+              <div class="pc-col">
+                <div class="pc-col-label">Bloco</div>
+                <input class="edit-input" id="fBloco" placeholder="Ex: Indústrias de base…"/>
+              </div>
+              <div class="pc-col">
+                <div class="pc-col-label">Abordagem</div>
+                <input class="edit-input" id="fAbordagem" placeholder="Ex: Relacional / Proximidade…"/>
+              </div>
+            </div>
+
+            <!-- Amostra de posts -->
+            <div class="pc-posts" id="pcPostsWrap">
+              <div class="pc-posts-lbl">Amostra de posts</div>
+              <div id="pcPosts"></div>
+            </div>
+
+            <!-- Rodapé: rec + scores DECK -->
+            <div class="pc-footer">
+              <div class="pf-rec">
+                <span class="pf-rec-lbl">IR² recomenda:</span>
+                <span id="pfRec">—</span>
+              </div>
+              <div class="pf-scores" id="pfScores"></div>
+            </div>
+
+          </div>
+        </div><!-- card-area -->
+
+        <!-- Ficha drawer -->
+        <div class="ficha-panel" id="fichaPanel">
+          <div class="ficha-inner">
+            <div class="ficha-head">
+              <span class="ficha-title">📝 Ficha</span>
+              <button class="tbtn" onclick="toggleFicha()" style="padding:2px 7px;font-size:10px">✕</button>
+            </div>
+            <div class="ficha-body">
+
+              <div class="fg fg-warn">
+                <label>⚠️ Justificativa de não inclusão</label>
+                <textarea id="f_jex" placeholder="Por que não incluir na lista final…" style="min-height:50px"></textarea>
+              </div>
+
+              <div class="fsec">Identificação</div>
+              <div class="fg-row">
+                <div class="fg"><label>Região</label>
+                  <select id="f_regiao"><option value="">—</option><option>Norte</option><option>Nordeste</option><option>Centro-Oeste</option><option>Sudeste</option><option>Sul</option></select>
+                </div>
+                <div class="fg"><label>UF</label><input id="f_uf" maxlength="2" placeholder="SP"/></div>
+              </div>
+              <div class="fg-row">
+                <div class="fg"><label>Tipo de Perfil</label>
+                  <select id="f_tipo"><option value="">—</option><option>Especialista</option><option>Institucional</option><option>Criador</option><option>Ruído</option><option>Jornalista</option><option>Militante</option><option>Celebridade</option><option>Outro</option></select>
+                </div>
+                <div class="fg"><label>Tier</label>
+                  <select id="f_tier"><option value="">—</option><option>Nano</option><option>Micro</option><option>Médio</option><option>Macro</option><option>Mega</option></select>
+                </div>
+              </div>
+
+              <div class="fsec">Análise Qualitativa</div>
+              <div class="fg"><label>Validação Ideológica</label><textarea id="f_vid" placeholder="Posicionamento político/ideológico…"></textarea></div>
+              <div class="fg"><label>Histórico Profissional</label><textarea id="f_hist" placeholder="Trajetória…"></textarea></div>
+              <div class="fg"><label>Recomendações de Relacionamento</label><textarea id="f_rec" placeholder="Estratégia de aproximação…"></textarea></div>
+              <div class="fg"><label>Assuntos Sensíveis / Polêmicas</label><textarea id="f_sens" placeholder="Polêmicas…" style="min-height:46px"></textarea></div>
+
+              <div class="fsec">Links Adicionais</div>
+              <div class="fg"><label>Outros Links / Notas</label><textarea id="f_links" style="min-height:46px" placeholder="Links extras, notas…"></textarea></div>
+            </div>
+            <div class="ficha-foot">
+              <button class="ia-btn" id="iaBtn" onclick="preencherIA()">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                Preencher com IA
+              </button>
+              <button class="save-btn" onclick="salvar()">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- body-row -->
+
+      <!-- Decision bar -->
+      <div class="dec-bar">
+        <span class="dec-lbl">Decisão:</span>
+        <button class="dec-btn dec-rep" onclick="decidir('reprovado')">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Reprovar
+        </button>
+        <button class="dec-btn dec-skip" onclick="nav(1)">⏭ Pular</button>
+        <button class="dec-btn dec-apr" onclick="decidir('aprovado')">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Aprovar
+        </button>
+      </div>
+
+    </div><!-- panelContent -->
+  </div><!-- panel -->
+</div><!-- layout -->
+
+<!-- ── Modal: Freela Tokens ── -->
+<div class="overlay" id="tokenModal">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">🔗 Links para Freelas</span>
+      <button class="mcls" onclick="closeModal('tokenModal')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="mrow">
+      <input id="freelaNome" placeholder="Nome do freela (opcional)" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);border-radius:8px;padding:7px 10px;font-size:12px;color:var(--text-primary);font-family:'Inter',sans-serif;outline:none"/>
+      <button class="tbtn tbtn-primary" onclick="criarToken()">Gerar Link</button>
+    </div>
+    <div class="tlist" id="tlist"><div class="empty-msg">Carregando…</div></div>
+    <div class="mnote">O freela acessa via link sem precisar de conta no HUB.</div>
+  </div>
+</div>
+
+<!-- ── Modal: Editar Projeto ── -->
+<div class="overlay" id="editProjetoModal">
+  <div class="modal" style="width:420px">
+    <div class="modal-head">
+      <span class="modal-title">✏️ Editar Projeto</span>
+      <button class="mcls" onclick="closeModal('editProjetoModal')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="mf"><label>Nome do Projeto *</label><input id="ep_nome" placeholder="Ex: Alimentos 2026"/></div>
+    <div class="mf"><label>Cliente</label><input id="ep_cli" placeholder="Ex: ABIA"/></div>
+    <div class="mf"><label>Descrição</label><textarea id="ep_desc" placeholder="Contexto, objetivos…"></textarea></div>
+    <div class="mfoot" style="justify-content:space-between">
+      <button class="tbtn tbtn-danger" onclick="confirmarDeleteProjeto()" style="margin-right:auto">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        Excluir
+      </button>
+      <div style="display:flex;gap:8px">
+        <button class="tbtn" onclick="closeModal('editProjetoModal')">Cancelar</button>
+        <button class="tbtn tbtn-primary" onclick="salvarEditProjeto()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Novo Projeto ── -->
+<div class="overlay" id="projetoModal">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">➕ Novo Projeto</span>
+      <button class="mcls" onclick="closeModal('projetoModal')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="mf"><label>Nome do Projeto *</label><input id="np_nome" placeholder="Ex: Alimentos 2026"/></div>
+    <div class="mf"><label>Cliente</label><input id="np_cli" placeholder="Ex: ABIA"/></div>
+    <div class="mf"><label>Descrição</label><textarea id="np_desc" placeholder="Contexto, objetivos…"></textarea></div>
+    <div class="mfoot">
+      <button class="tbtn" onclick="closeModal('projetoModal')">Cancelar</button>
+      <button class="tbtn tbtn-primary" onclick="criarProjeto()">Criar Projeto</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Deep Research ── -->
+<div class="overlay" id="drModal">
+  <div class="modal modal-lg" style="height:82vh">
+    <div class="modal-head" style="flex-shrink:0">
+      <span class="modal-title">🔍 Deep Research — <span id="drNomeLabel">—</span></span>
+      <button class="mcls" onclick="closeModal('drModal')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <!-- Tabs: Prompt | Colar resposta -->
+    <div class="dr-tabs" style="flex-shrink:0">
+      <button class="dr-tab on" id="drTab1" onclick="drSetTab(1)">📋 Prompt</button>
+      <button class="dr-tab" id="drTab2" onclick="drSetTab(2)">📥 Colar resposta</button>
+    </div>
+    <!-- Tab 1: prompt -->
+    <div id="drPane1" class="dr-scroll" style="display:flex;flex-direction:column;gap:10px;overflow-y:auto">
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <div class="mnote" style="color:var(--text-secondary);flex:1">Cole no Google AI Studio, Gemini Advanced ou ChatGPT Deep Research para análise aprofundada.</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <label style="font-size:10px;color:var(--text-muted);font-weight:600;white-space:nowrap;letter-spacing:.03em">SETOR DO CLIENTE</label>
+        <input id="drSetor" placeholder="Ex: Saneamento, Alimentos, Energia, Pharma…"
+          style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:7px;padding:5px 10px;font-size:12px;color:var(--text-primary);font-family:'Inter',sans-serif;outline:none;"
+          oninput="atualizarPromptSetor(this.value)"/>
+      </div>
+      <pre id="drPromptBox"></pre>
+      <div class="mfoot" style="flex-shrink:0">
+        <button class="tbtn" onclick="copiarDR()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copiar prompt
+        </button>
+        <a href="https://gemini.google.com/app?hl=pt-BR" target="_blank" class="tbtn tbtn-primary">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Abrir Gemini
+        </a>
+      </div>
+    </div>
+    <!-- Tab 2: colar resposta -->
+    <div id="drPane2" style="display:none;flex-direction:column;gap:10px;flex:1;overflow:hidden">
+      <div class="mnote" style="color:var(--text-secondary);flex-shrink:0">Cole aqui a resposta completa do Deep Research. A IA vai extrair e preencher os campos automaticamente.</div>
+      <textarea id="drPasteArea" placeholder="Cole aqui a resposta do Deep Research…" style="flex:1"></textarea>
+      <div class="mfoot" style="flex-shrink:0">
+        <button class="tbtn tbtn-primary" id="drProcessBtn" onclick="processarDR()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Extrair e preencher campos
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Avatar -->
+<div class="overlay" id="avatarModal">
+  <div class="modal" style="width:380px">
+    <div class="modal-head">
+      <span class="modal-title">📷 Foto do influenciador</span>
+      <button class="mcls" onclick="closeModal('avatarModal')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;justify-content:center">
+        <div id="avPreview" style="width:80px;height:80px;border-radius:50%;background:hsla(var(--theme-h),55%,28%,.5);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:var(--accent-light);overflow:hidden;border:2px solid hsla(var(--theme-h),90%,50%,.28)">?</div>
+      </div>
+      <div class="mf"><label>URL da foto</label><input id="avUrl" placeholder="https://…" oninput="prevAvUrl()"/></div>
+      <div style="text-align:center;font-size:11px;color:var(--text-muted)">— ou —</div>
+      <button class="tbtn" onclick="document.getElementById('avatarFileIn').click()" style="justify-content:center">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Fazer upload de imagem
+      </button>
+    </div>
+    <div class="mfoot">
+      <button class="tbtn" onclick="limparAvatar()">Remover foto</button>
+      <button class="tbtn tbtn-primary" onclick="salvarAvatar()">Aplicar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="../js/utils.js"></script>
+<script src="../js/theme.js"></script>
+<script>
+checkAuth(); initMode();
+if (typeof initTheme === 'function') initTheme();
+
+const PLAT = { instagram:'📸', tiktok:'🎵', youtube:'▶️', twitter:'🐦', facebook:'📘', linkedin:'💼' };
+const S = { projetoId:null, lista:[], filtrada:[], idx:-1, filtro:'todos', fichaAberta:false };
+
+// ── Init ─────────────────────────────────────────────────────
+// Injetar navbar global
+if(typeof renderNavbar==='function'){
+  document.getElementById('navbar-container').innerHTML=renderNavbar('irx-classificacao');
+  if (typeof renderSwatches === 'function') renderSwatches();
+  if (typeof updateModeButtons === 'function') updateModeButtons();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('hubnexus-projeto-id');
+  loadProjetos(saved);
+});
+
+// ── Loading ──────────────────────────────────────────────────
+function showL(msg,sub){document.getElementById('lovMsg').textContent=msg||'Carregando…';document.getElementById('lovSub').textContent=sub||'Aguarde';document.getElementById('lov').classList.add('open');}
+function hideL(){document.getElementById('lov').classList.remove('open');}
+
+// ── Modais ───────────────────────────────────────────────────
+function closeModal(id){document.getElementById(id)?.classList.remove('open');}
+['tokenModal','projetoModal','drModal','avatarModal','editProjetoModal'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('click',function(e){if(e.target===this)closeModal(id);});
+});
+
+// ── Projetos ─────────────────────────────────────────────────
+async function loadProjetos(savedId) {
+  try {
+    const r = await fetch('/api/irx/projetos');
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const lista = await r.json();
+    const sel = document.getElementById('projetoSel');
+    while(sel.options.length>1) sel.remove(1);
+    lista.forEach(p=>{
+      const o=document.createElement('option');
+      o.value=p.id; o.textContent=p.nome;
+      if(String(p.id)===String(savedId)) o.selected=true;
+      sel.appendChild(o);
+    });
+    if(savedId && lista.some(p=>String(p.id)===String(savedId))){
+      S.projetoId=String(savedId);
+      document.getElementById('btnEditProj').style.display='';
+      loadLista();
+    }
+  } catch(e){toast('Projetos: '+e.message,'err');}
+}
+
+function onProjeto(){
+  const v=document.getElementById('projetoSel').value;
+  S.projetoId=v||null;
+  document.getElementById('btnEditProj').style.display=S.projetoId?'':'none';
+  if(S.projetoId){localStorage.setItem('hubnexus-projeto-id',S.projetoId);loadLista();}
+  else{S.lista=[];S.filtrada=[];S.idx=-1;renderSB();renderStats();fecharPainel();}
+}
+
+function abrirNovoProjeto(){
+  ['np_nome','np_cli','np_desc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('projetoModal').classList.add('open');
+  setTimeout(()=>document.getElementById('np_nome')?.focus(),100);
+}
+async function criarProjeto(){
+  const nome=document.getElementById('np_nome').value.trim();
+  const cliente=document.getElementById('np_cli').value.trim();
+  const tema=document.getElementById('np_desc').value.trim();
+  if(!nome){toast('Nome obrigatório','err');return;}
+  try{
+    const r=await fetch('/api/irx/projetos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,cliente,tema})});
+    const d=await r.json();
+    if(!r.ok){toast('Erro: '+(d?.error||r.status),'err');return;}
+    toast('"'+nome+'" criado ✓');
+    closeModal('projetoModal');
+    await loadProjetos(d.id);
+    S.projetoId=String(d.id);
+    document.getElementById('projetoSel').value=d.id;
+    localStorage.setItem('hubnexus-projeto-id',d.id);
+    loadLista();
+  }catch(e){toast('Erro: '+e.message,'err');}
+}
+
+// ── Lista ────────────────────────────────────────────────────
+async function loadLista(){
+  if(!S.projetoId)return;
+  document.getElementById('sbList').innerHTML='<div class="empty-msg"><div style="display:flex;align-items:center;gap:8px;justify-content:center;opacity:.5"><div class="lspin" style="width:14px;height:14px;border-width:2px"></div> Carregando…</div></div>';
+  try{
+    const r=await fetch(`/api/irx/classificacao?projeto_id=${S.projetoId}`);
+    const d=await r.json();
+    if(!r.ok||!Array.isArray(d)){
+      const msg=d?.error||`HTTP ${r.status}`;
+      if(r.status===500&&(msg.includes('table')||msg.includes('no such'))){
+        document.getElementById('sbList').innerHTML='<div class="empty-msg" style="color:#f87171">Tabela não existe.<br>Execute o <strong>irx_schema.sql</strong>.</div>';
+      } else toast('Erro: '+msg,'err');
+      S.lista=[];return;
+    }
+    S.lista=d; aplicarFiltros();
+  }catch(e){toast('Erro: '+e.message,'err');}
+}
+
+function setFiltro(f,el){
+  S.filtro=f;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on'); aplicarFiltros();
+}
+function filtrar(){aplicarFiltros();}
+
+function aplicarFiltros(){
+  const q=document.getElementById('busca').value.toLowerCase();
+  S.filtrada=S.lista.filter(i=>{
+    const mQ=!q||(i.nome||'').toLowerCase().includes(q);
+    const mF=S.filtro==='todos'||i.status===S.filtro;
+    return mQ&&mF;
+  });
+  renderSB(); renderStats(); updNav(); updProgress();
+}
+
+function renderSB(){
+  const el=document.getElementById('sbList');
+  if(!S.lista.length){el.innerHTML='<div class="empty-msg">Nenhum influenciador.<br>Importe um XLSX.</div>';return;}
+  if(!S.filtrada.length){el.innerHTML='<div class="empty-msg">Nenhum resultado.</div>';return;}
+  const curId=S.idx>=0?S.filtrada[S.idx]?.id:null;
+  el.innerHTML=S.filtrada.map((i,idx)=>`
+    <div class="sitem${i.id===curId?' active':''}" onclick="abrirIdx(${idx})">
+      <div class="sitem-name">${esc(i.nome)}</div>
+      <div class="sitem-meta">
+        ${i.plataforma?`<span>${PLAT[i.plataforma?.toLowerCase()]||'🌐'} ${esc(i.plataforma)}</span>`:''}
+        ${bStatus(i.status)}
+        ${i.recomendacao_irx?bRec(i.recomendacao_irx):''}
+        ${i.fonte?bFonte(i.fonte):''}
+      </div>
+    </div>`).join('');
+}
+
+function bStatus(s){const m={pendente:['b-pend','Pendente'],aprovado:['b-apr','Aprovado'],reprovado:['b-rep','Reprovado']};const[c,l]=m[s]||['b-pend','Pendente'];return`<span class="badge ${c}">${l}</span>`;}
+function bRec(r){const m={'Avançar':['b-avancar','Avançar'],'Revisar':['b-revisar','Revisar'],'Descartar':['b-descartar','Descartar']};const[c,l]=m[r]||['b-pend',r];return`<span class="badge ${c}">${l}</span>`;}
+function bFonte(f){const fl=String(f).toUpperCase();if(fl.includes('DECK'))return`<span class="badge b-deck">DECK</span>`;if(fl.includes('NEXUS')||fl.includes('TAGGER'))return`<span class="badge b-nexus">Nexus</span>`;return`<span class="badge b-pend" style="font-size:8px">${esc(f)}</span>`;}
+
+function renderStats(){
+  const t=S.lista.length,a=S.lista.filter(i=>i.status==='aprovado').length,
+        rp=S.lista.filter(i=>i.status==='reprovado').length,p=t-a-rp;
+  document.getElementById('statsRow').innerHTML=`
+    <span><span class="sdot" style="background:#4ade80"></span>${a}</span>
+    <span><span class="sdot" style="background:#f87171"></span>${rp}</span>
+    <span><span class="sdot" style="background:#f59e0b"></span>${p}</span>
+    <span style="opacity:.4">${t} total</span>`;
+}
+function updProgress(){
+  const t=S.lista.length,f=S.lista.filter(i=>i.status==='aprovado'||i.status==='reprovado').length;
+  document.getElementById('progBar').style.width=t?(f/t*100)+'%':'0%';
+}
+
+// ── Navegação ────────────────────────────────────────────────
+async function abrirIdx(idx){
+  if(idx<0||idx>=S.filtrada.length)return;
+  S.idx=idx;
+  const item=S.filtrada[idx];
+  try{
+    const r=await fetch(`/api/irx/classificacao?id=${item.id}`);
+    const d=await r.json();
+    if(d){const li=S.lista.findIndex(x=>x.id===d.id);if(li>=0)S.lista[li]={...S.lista[li],...d};}
+    renderCard(d||item); preencherFicha(d||item);
+    mostrarPainel(); renderSB(); updNav();
+  }catch(e){toast('Erro ao abrir','err');}
+}
+function nav(delta){const n=S.idx+delta;if(n>=0&&n<S.filtrada.length)abrirIdx(n);}
+function updNav(){
+  const p=document.getElementById('btnPrev'),n=document.getElementById('btnNext');
+  if(p)p.disabled=S.idx<=0;if(n)n.disabled=S.idx>=S.filtrada.length-1;
+  const c=document.getElementById('navCtr');if(c)c.textContent=S.filtrada.length?`${S.idx+1} / ${S.filtrada.length}`:'— / —';
+}
+function mostrarPainel(){
+  document.getElementById('panelEmpty').style.display='none';
+  const pc=document.getElementById('panelContent');pc.style.display='flex';pc.style.flexDirection='column';
+}
+function fecharPainel(){
+  document.getElementById('panelEmpty').style.display='flex';
+  document.getElementById('panelContent').style.display='none';
+}
+
+// ── Render Card ──────────────────────────────────────────────
+function renderCard(d){
+  document.getElementById('itbNome').textContent=d.nome||'—';
+  // Avatar
+  const av=document.getElementById('pcAvatar');
+  if(d.foto_url){av.innerHTML=`<img src="${esc(d.foto_url)}" onerror="this.parentNode.innerHTML='${(d.nome||'?')[0].toUpperCase()}'"/>`;}
+  else{av.innerHTML=(d.nome||'?')[0].toUpperCase();}
+  document.getElementById('pcNome').textContent=d.nome||'—';
+  document.getElementById('pcHandle').textContent='@'+(d.username||d.nome||'?');
+
+  // Tags
+  const tags=[];
+  if(d.plataforma)tags.push(d.plataforma);
+  if(d.tipo_perfil)tags.push(d.tipo_perfil);
+  document.getElementById('pcTags').innerHTML=tags.map(t=>`<span class="ptag">${esc(t)}</span>`).join('');
+
+  // Score
+  const vol=d.seguidores||d.score_bw||0;
+  document.getElementById('pcScore').textContent=vol?fmtN(vol):'—';
+  document.getElementById('pcRec').innerHTML=d.recomendacao_irx?bRec(d.recomendacao_irx):'';
+
+  // Fonte row
+  const fr=document.getElementById('fonteRow');
+  const fonteItems=[];
+  if(d.fonte)fonteItems.push(bFonte(d.fonte));
+  if(d.tematica)fonteItems.push(`<span class="ptag">${esc(d.tematica)}</span>`);
+  if(d.bloco)fonteItems.push(`<span class="ptag">${esc(d.bloco)}</span>`);
+  if(d.localizacao)fonteItems.push(`<span style="font-size:11px;color:var(--text-muted)">📍 ${esc(d.localizacao)}</span>`);
+  if(fonteItems.length){fr.innerHTML=`<span class="fonte-lbl">Fonte:</span>`+fonteItems.join('');fr.style.display='';}
+  else fr.style.display='none';
+
+  // Redes
+  const redesEl=document.getElementById('pcRedes');
+  const plats=(d.redes||d.plataforma||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+  if(plats.length){
+    redesEl.innerHTML=plats.map(p=>{
+      const url=p==='instagram'?(d.username_instagram||d.url_perfil||''):
+                p==='linkedin' ?(d.username_linkedin||d.url_perfil||''):
+                p==='tiktok'   ?(d.username_tiktok||''):(d.url_perfil||'');
+      // Só mostrar seguidores se houver valor específico para aquela rede
+      // Evitar mostrar o total (d.seguidores) para redes sem dado individualizado
+      const segMap={
+        instagram: d.seguidores_ig||0,
+        tiktok: d.seguidores_tiktok||d.seguidores_tiktok_deck||0,
+        youtube: d.seguidores_youtube_deck||0,
+        linkedin: d.seguidores_linkedin||0,
+        twitter: 0,
+        facebook: 0,
+      };
+      // Para instagram/tiktok: usar campo específico
+      // Para outras redes: só mostrar se plats.length===1 (única rede) E houver volume
+      let seg=segMap[p]||0;
+      if(!seg && plats.length===1) seg=d.seguidores||0;
+      const segFmt=seg?fmtN(seg):'';
+      return`<span class="rede-pill">${PLAT[p]||'🌐'} <span>${p}</span>${segFmt?` <span class="rnum">${segFmt}</span>`:''}${url?` <a href="${esc(url.startsWith('http')?url:'https://'+url)}" target="_blank">ver ↗</a>`:''}</span>`;
+    }).join('');
+  } else if(vol){
+    redesEl.innerHTML=`<span class="rede-pill"><span class="rnum">${fmtN(vol)} seguidores</span></span>`;
+  } else redesEl.innerHTML='';
+
+  // Campos editáveis do card
+  document.getElementById('fBio').value=d.bio||d.perfil||'';
+  document.getElementById('fPos').value=d.posicionamento_redes||d.abordagem||'';
+  document.getElementById('fTematica').value=d.tematica||'';
+  // Pré-preencher bloco com nome do projeto se vazio
+  const nomeProjeto=document.getElementById('projetoSel')?.selectedOptions[0]?.text||'';
+  document.getElementById('fBloco').value=d.bloco||(nomeProjeto&&nomeProjeto!=='— Projeto —'?nomeProjeto:'');
+  document.getElementById('fAbordagem').value=d.abordagem||'';
+
+  // Posts
+  const pw=document.getElementById('pcPostsWrap'),pp=document.getElementById('pcPosts');
+  const amostras=(d.titulos_amostra_bw||'').split('|').map(s=>s.trim()).filter(Boolean).slice(0,4);
+  if(amostras.length){pp.innerHTML=amostras.map(a=>`<div class="post-item">${esc(a)}</div>`).join('');pw.style.display='';}
+  else pw.style.display='none';
+
+  // Footer: rec + scores
+  document.getElementById('pfRec').innerHTML=d.recomendacao_irx?bRec(d.recomendacao_irx):'—';
+  const just=d.justificativa||'';
+  const sc=document.getElementById('pfScores');
+  if(just&&just.includes('|')){
+    sc.innerHTML=just.split('|').map(s=>s.trim()).filter(Boolean).map(s=>`<span class="score-pill">${esc(s)}</span>`).join('');
+  } else sc.innerHTML='';
+
+  document.getElementById('statusSel').value=d.status||'pendente';
+}
+
+function fmtN(n){const v=parseInt(String(n).replace(/\D/g,''))||0;if(v>=1000000)return(v/1000000).toFixed(1).replace('.',',')+'M';if(v>=1000)return Math.round(v/1000)+'K';return v.toLocaleString('pt-BR');}
+
+// ── Ficha ────────────────────────────────────────────────────
+function preencherFicha(d){
+  const m={f_jex:'justificativa_exclusao',f_regiao:'regiao',f_uf:'uf',f_tipo:'tipo_perfil',f_tier:'tier',
+    f_vid:'validacao_ideologica',f_hist:'historico_profissional',
+    f_rec:'recomendacoes',f_sens:'assuntos_sensiveis',f_links:'outros_links'};
+  Object.entries(m).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.value=d[k]||'';});
+}
+function toggleFicha(){
+  S.fichaAberta=!S.fichaAberta;
+  document.getElementById('fichaPanel').classList.toggle('open',S.fichaAberta);
+  document.getElementById('fichaToggle').classList.toggle('active',S.fichaAberta);
+}
+function onStatusChange(){
+  if(S.idx<0)return;
+  const v=document.getElementById('statusSel').value;
+  const item=S.filtrada[S.idx];
+  if(item){item.status=v;const li=S.lista.findIndex(x=>x.id===item.id);if(li>=0)S.lista[li].status=v;}
+  renderSB(); renderStats(); updProgress();
+}
+
+// ── Decisão ──────────────────────────────────────────────────
+async function decidir(status){
+  if(S.idx<0)return;
+  document.getElementById('statusSel').value=status; onStatusChange();
+  await salvar(true);
+  if(S.idx<S.filtrada.length-1)nav(1); else toast('Todos classificados! 🎉');
+}
+
+// ── Salvar ───────────────────────────────────────────────────
+async function salvar(silent=false){
+  if(S.idx<0)return;
+  const item=S.filtrada[S.idx];
+  const g=id=>{const el=document.getElementById(id);return el?el.value.trim():'';};
+  // Garantir projeto_id e nome sempre presentes
+  const pid = item.projeto_id || S.projetoId;
+  const pnome = item.nome || item.username || '';
+  if(!pid || !pnome){toast('Erro: projeto ou nome inválido','err');return;}
+
+  const payload={
+    id:item.id,
+    projeto_id: String(pid),
+    nome: pnome,
+    username:item.username||'',
+    status:g('statusSel'),
+    bio:g('fBio'), posicionamento_redes:g('fPos'),
+    tematica:g('fTematica'), bloco:g('fBloco'), abordagem:g('fAbordagem'),
+    seguidores: item.seguidores||0,
+    seguidores_ig: item.seguidores_ig||0,
+    seguidores_tiktok: item.seguidores_tiktok||0,
+    redes: item.redes||'',
+    regiao:g('f_regiao'), uf:g('f_uf'), tipo_perfil:g('f_tipo'), tier:g('f_tier'),
+    validacao_ideologica:g('f_vid'), historico_profissional:g('f_hist'),
+    recomendacoes:g('f_rec'), assuntos_sensiveis:g('f_sens'),
+    outros_links:g('f_links'), justificativa_exclusao:g('f_jex'),
+  };
+  try{
+    const res=await fetch('/api/irx/classificacao',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!res.ok){
+      const err=await res.json().catch(()=>({}));
+      toast('Erro ao salvar: '+(err?.error||res.status),'err');
+      return;
+    }
+    if(!silent)toast('Salvo ✓');
+    // Sync estado local completo
+    const li=S.lista.findIndex(x=>x.id===item.id);
+    if(li>=0) S.lista[li]={...S.lista[li],...payload};
+    // Sync também no filtrada para o card não perder os dados
+    S.filtrada[S.idx]={...S.filtrada[S.idx],...payload};
+    aplicarFiltros();
+  }catch(e){toast('Erro ao salvar: '+e.message,'err');}
+}
+
+// ── Deep Research ────────────────────────────────────────────
+let _drTab=1;
+function drSetTab(n){
+  _drTab=n;
+  document.getElementById('drTab1').classList.toggle('on',n===1);
+  document.getElementById('drTab2').classList.toggle('on',n===2);
+  document.getElementById('drPane1').style.display=n===1?'flex':'none';
+  document.getElementById('drPane2').style.display=n===2?'flex':'none';
+}
+function abrirDR(){
+  if(S.idx<0)return;
+  const d=S.filtrada[S.idx];
+  const bio   = document.getElementById('fBio')?.value.trim()       || d.bio       || d.perfil || '';
+  const pos   = document.getElementById('fPos')?.value.trim()       || d.posicionamento_redes  || '';
+  const tema  = document.getElementById('fTematica')?.value.trim()  || d.tematica  || '';
+  const bloco = document.getElementById('fBloco')?.value.trim()     || d.bloco     || '';
+  const abord = document.getElementById('fAbordagem')?.value.trim() || d.abordagem || '';
+  const handle = (d.username && d.username.toLowerCase()!==d.nome?.toLowerCase())
+    ? d.username : (d.username_instagram||d.username_tiktok||d.username_linkedin||'');
+  const link = d.url_perfil||d.link||d.username_instagram||d.username_linkedin||'';
+  const redes = d.redes||d.plataforma||'';
+  const setor = tema||bloco||'saneamento/alimentos/energia';
+  const linhas = [
+    `Nome: ${d.nome}`,
+    handle ? `Handle/Username: @${handle.replace('@','')}` : '',
+    redes  ? `Plataforma(s): ${redes}` : '',
+    link   ? `Link: ${link}` : '',
+    bio    ? `Contexto: ${bio}` : '',
+    pos    ? `Posicionamento atual: ${pos}` : '',
+    tema   ? `Temática/Setor: ${tema}` : '',
+    bloco  ? `Bloco: ${bloco}` : '',
+    abord  ? `Abordagem: ${abord}` : '',
+    d.fonte            ? `Fonte: ${d.fonte}` : '',
+    d.recomendacao_irx ? `Recomendação IR²: ${d.recomendacao_irx}` : '',
+    d.justificativa    ? `Justificativa IR²: ${d.justificativa}` : '',
+  ].filter(Boolean).join('\n');
+  document.getElementById('drNomeLabel').textContent=d.nome||'—';
+  document.getElementById('drPasteArea').value='';
+  document.getElementById('drPromptBox').textContent=`Você é um analista de inteligência digital especializado em mapeamento de influenciadores brasileiros.
+
+Faça uma pesquisa aprofundada sobre o seguinte influenciador/organização:
+
+${linhas}
+
+Responda com um relatório estruturado nos seguintes tópicos:
+
+1. IDENTIDADE E TRAJETÓRIA
+Quem é? Formação, carreira, posição atual, marcos profissionais.
+
+2. POSICIONAMENTO NAS REDES
+Tom, estilo, frequência de publicações, temas recorrentes, forma de engajamento.
+
+3. VALIDAÇÃO IDEOLÓGICA
+Alinhamento político/ideológico, posicionamentos sobre temas polêmicos.
+
+4. MÉTRICAS E ALCANCE
+Pesquise e informe o número ATUAL de seguidores em cada rede social onde o influenciador está presente (Instagram, TikTok, YouTube, LinkedIn, Twitter/X, Facebook). Para cada rede: número exato ou estimativa com fonte, taxa de engajamento médio, frequência de postagem e crescimento recente. Se não encontrar dados de uma rede, informe explicitamente "não encontrado".
+
+5. ASSUNTOS SENSÍVEIS E POLÊMICAS
+Controvérsias, processos, declarações problemáticas, associações questionáveis.
+
+6. RECOMENDAÇÕES DE RELACIONAMENTO
+Como uma marca do setor de ${tema||'saneamento/alimentos/energia'} deveria se aproximar? Formatos recomendados, alertas antes de fechar parceria.
+
+Seja objetivo, factual, cite fontes quando possível.
+
+IMPORTANTE — LIMITES DE TAMANHO POR SEÇÃO:
+- Seção 1 (Identidade): máximo 600 caracteres
+- Seção 2 (Posicionamento): máximo 600 caracteres
+- Seção 3 (Validação Ideológica): máximo 600 caracteres
+- Seção 4 (Métricas): tabela simples + máximo 300 caracteres de texto
+- Seção 5 (Assuntos Sensíveis): máximo 500 caracteres
+- Seção 6 (Recomendações): máximo 800 caracteres
+
+Sempre termine cada seção numa frase completa (termine com ponto final). Nunca corte no meio de uma palavra ou frase. Priorize dados concretos: números, datas, fontes.
+
+CAMPOS OBRIGATÓRIOS — preencha mesmo que precise estimar:
+- Temática/Setor: informe o setor principal de atuação do influenciador (ex: Meio Ambiente, Alimentação, Saúde, Educação, Tecnologia, Política, etc.)
+- Região e UF: informe o estado e região de atuação principal
+- Tipo de Perfil: Especialista | Institucional | Criador | Jornalista | Militante | Celebridade
+- Taxa de engajamento: informe estimativa mesmo que aproximada`;
+  drSetTab(1);
+  document.getElementById('drModal').classList.add('open');
+  // Preencher campo setor
+  const setorEl=document.getElementById('drSetor');
+  if(setorEl) setorEl.value=setor!=='saneamento/alimentos/energia'?setor:'';
+}
+function atualizarPromptSetor(val){
+  const box=document.getElementById('drPromptBox');
+  if(!box)return;
+  const setor=val.trim()||'saneamento/alimentos/energia';
+  box.textContent=box.textContent.replace(
+    /Como uma marca do setor de .+? deveria se aproximar/,
+    'Como uma marca do setor de '+setor+' deveria se aproximar'
+  );
+}
+function copiarDR(){
+  navigator.clipboard.writeText(document.getElementById('drPromptBox').textContent)
+    .then(()=>toast('Prompt copiado ✓'))
+    .catch(()=>toast('Não foi possível copiar','err'));
+}
+
+async function processarDR(){
+  const texto=document.getElementById('drPasteArea').value.trim();
+  if(!texto||texto.length<50){toast('Cole a resposta do Deep Research primeiro','err');return;}
+  // Truncar para evitar textos excessivamente longos
+  const textoProc = texto.length > 12000 ? texto.slice(0,12000) + '\n[texto truncado]' : texto;
+  if(S.idx<0){toast('Nenhum influenciador selecionado','err');return;}
+  const btn=document.getElementById('drProcessBtn');
+  btn.textContent='Extraindo…'; btn.disabled=true;
+
+  try{
+    // ── Extração por posição dos números (funciona com texto corrido ou com quebras) ──
+    function extrairSecoes(texto){
+      const splits=[...texto.matchAll(/(?<!\d)([1-6])\.(\s*\S)/g)];
+      const map={};
+      splits.forEach((m,i)=>{
+        const n=parseInt(m[1]);
+        const start=m.index+m[0].length-1;
+        const end=i+1<splits.length?splits[i+1].index:texto.length;
+        let content=texto.slice(start,end).trim();
+        // Remove título colado no início (ex: "Identidade e trajetóriaLaila" → "Laila")
+        // Remove apenas títulos de seção colados (ex: 'Identidade e trajetória' antes do conteúdo)
+        // Só remove se for uma sequência de palavras sem pontuação E sem números
+        content=content.replace(/^(?:[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ][a-záéíóúâêîôûãõç]+(?:\s+(?:e|de|do|da|das|dos|em|nas|nos|a|o|para|com|por)\s+[a-záéíóúâêîôûãõçA-Z]+)*){1,6}(?=[A-Z][a-z])/,'').trim();
+        map[n]=content;
+      });
+      return map;
+    }
+    const secs=extrairSecoes(textoProc);
+    const s1=secs[1]||'', s2=secs[2]||'', s3=secs[3]||'',
+          s4=secs[4]||'', s5=secs[5]||'', s6=secs[6]||'';
+
+    // ── Bio: primeiras frases longas da seção 1 ───────────────
+    // Corta no limite de max chars mas sempre termina numa sentença completa
+    function cortarFrase(txt, max){
+      const t=txt.replace(/\s+/g,' ').trim();
+      if(t.length<=max) return t;
+      const sub=t.slice(0,max);
+      // 1. Tentar terminar num ponto final
+      const ponto=Math.max(sub.lastIndexOf('. '),sub.lastIndexOf('! '),sub.lastIndexOf('? '));
+      if(ponto>max*0.5) return t.slice(0,ponto+1).trim();
+      // 2. Tentar terminar numa vírgula (frase incompleta mas natural)
+      const virgula=sub.lastIndexOf(', ');
+      if(virgula>max*0.6) return t.slice(0,virgula).trim()+'…';
+      // 3. Cortar na última palavra completa
+      const espaco=sub.lastIndexOf(' ');
+      return (espaco>max*0.7 ? t.slice(0,espaco) : sub).trimEnd()+'…';
+    }
+    function resumir(txt, max){
+      // Pegar frases completas separadas por ponto, filtrar as curtas
+      const frases=txt.split(/(?<=[.!?])\s+/).filter(f=>f.trim().length>20);
+      const junto=(frases.slice(0,4).join(' ')||txt).replace(/\s+/g,' ').trim();
+      return cortarFrase(junto, max);
+    }
+    const bio=resumir(s1,600);
+    const pos=resumir(s2,600);
+
+    // ── Validação ideológica: seção 3 ────────────────────────
+    const vid=cortarFrase((s3||'').replace(/\s+/g,' ').trim(),600);
+
+    // ── Histórico: seção 1 ───────────────────────────────────
+    const hist=cortarFrase((s1||'').replace(/\s+/g,' ').trim(),600);
+
+    // ── Recomendações: seção 6 ───────────────────────────────
+    const rec=cortarFrase((s6||'').replace(/\s+/g,' ').trim(),800);
+
+    // ── Assuntos sensíveis: seção 5 ──────────────────────────
+    const sens=s5?cortarFrase((s5||'').replace(/\s+/g,' ').trim(),500):'Sem assuntos sensíveis';
+
+    // ── Seguidores: extrai números de "560.000", "560K", "560 mil" etc ──
+    function extrairSeg(rede){
+      const r1=new RegExp(rede+'[^\\d]{0,60}([\\d][\\d.,\\s]*(?:mil|k|m|milh.o|milh.es)?)\\s*seguidores','i');
+      const r2=new RegExp('seguidores[^\\d]{0,30}'+rede+'[^\\d]{0,30}([\\d][\\d.,\\s]*(?:mil|k|m)?)','i');
+      const r3=new RegExp(rede+'[\\s\\S]{0,120}?([\\d][\\d.]{2,})','i');
+      for(const r of [r1,r2,r3]){const m=s4.match(r)||textoProc.match(r);if(m)return parseSegStr(m[1]);}
+      return 0;
+    }
+    function parseSegStr(s){
+      if(!s)return 0;
+      s=s.replace(/\s/g,'').replace(',','.');
+      const n=parseFloat(s.replace(/[^\d.]/g,''));
+      if(/milhão|milhões|m$/i.test(s))return Math.round(n*1000000);
+      if(/mil|k$/i.test(s))return Math.round(n*1000);
+      if(n>1000)return Math.round(n);
+      if(n>1)return Math.round(n*1000); // ex: "1,2" → 1200
+      return 0;
+    }
+
+    const seg_ig  = extrairSeg('instagram');
+    const seg_tt  = extrairSeg('tiktok');
+    const seg_yt  = extrairSeg('youtube');
+    const seg_li  = extrairSeg('linkedin');
+    const seg_tw  = extrairSeg('twitter|x\.com|@');
+    const seg_fb  = extrairSeg('facebook');
+
+    // ── Engajamento ───────────────────────────────────────────
+    const mEng=s4.match(/engajamento[^\d]{0,40}([\d,\.]+\s*%)/i)||texto.match(/([\d,\.]+\s*%)\s*(?:de\s+)?engajamento/i);
+    const engajamento=mEng?mEng[1].trim():'';
+
+    // ── Redes confirmadas ─────────────────────────────────────
+    const redesDetect=[];
+    if(seg_ig>0||/instagram/i.test(s4+s2))redesDetect.push('instagram');
+    if(seg_tt>0||/tiktok/i.test(s4+s2))redesDetect.push('tiktok');
+    if(seg_yt>0||/youtube/i.test(s4+s2))redesDetect.push('youtube');
+    if(seg_li>0||/linkedin/i.test(s4+s2))redesDetect.push('linkedin');
+    if(seg_tw>0||/twitter|\bx\b/i.test(s4+s2))redesDetect.push('twitter');
+    if(seg_fb>0||/facebook/i.test(s4+s2))redesDetect.push('facebook');
+
+    // ── Região/UF: busca no texto ─────────────────────────────
+    const estados={SP:'Sudeste',RJ:'Sudeste',MG:'Sudeste',ES:'Sudeste',RS:'Sul',SC:'Sul',PR:'Sul',BA:'Nordeste',CE:'Nordeste',PE:'Nordeste',MA:'Nordeste',PB:'Nordeste',RN:'Nordeste',AL:'Nordeste',SE:'Nordeste',PI:'Nordeste',PA:'Norte',AM:'Norte',AC:'Norte',RO:'Norte',RR:'Norte',AP:'Norte',TO:'Norte',GO:'Centro-Oeste',MT:'Centro-Oeste',MS:'Centro-Oeste',DF:'Centro-Oeste'};
+    const cidades={
+      'rio de janeiro':'RJ','são paulo':'SP','belo horizonte':'MG','porto alegre':'RS',
+      'salvador':'BA','fortaleza':'CE','recife':'PE','curitiba':'PR','brasília':'DF',
+      'manaus':'AM','belém':'PA','goiânia':'GO','florianópolis':'SC','vitória':'ES',
+    };
+    let uf='', regiao='';
+    for(const [cidade,u] of Object.entries(cidades)){
+      if(texto.toLowerCase().includes(cidade)){uf=u;regiao=estados[u]||'';break;}
+    }
+    if(!uf){const mUF=texto.match(/(SP|RJ|MG|RS|SC|PR|BA|CE|PE|MA|PB|RN|AL|SE|PI|PA|AM|AC|RO|RR|AP|TO|GO|MT|MS|DF|ES)/);if(mUF){uf=mUF[1];regiao=estados[uf]||'';}}
+
+    // ── Tipo de perfil: heurística ────────────────────────────
+    let tipo='';
+    if(/ativista|ativismo|militant/i.test(texto))tipo='Militante';
+    else if(/jornalista|repórter|redator/i.test(texto))tipo='Jornalista';
+    else if(/especialista|consultor|pesquisador|professor|doutor/i.test(texto))tipo='Especialista';
+    else if(/empresa|organização|associação|instituto|fundação/i.test(texto))tipo='Institucional';
+    else if(/ator|atriz|cantor|artista|influenciador|criador/i.test(texto))tipo='Criador';
+    else tipo='Especialista';
+
+    // ── Tier: pelo total de seguidores ────────────────────────
+    const maxSeg=Math.max(seg_ig,seg_tt,seg_yt,seg_li,seg_tw,seg_fb);
+    const tier=maxSeg>=1000000?'Mega':maxSeg>=500000?'Macro':maxSeg>=100000?'Médio':maxSeg>=10000?'Micro':'Nano';
+
+    // ── Montar objeto p ───────────────────────────────────────
+    const p={
+      bio, posicionamento_redes:pos, validacao_ideologica:vid,
+      historico_profissional:hist, recomendacoes:rec, assuntos_sensiveis:sens,
+      regiao, uf, tipo_perfil:tipo, tier,
+      seguidores_instagram:seg_ig, seguidores_tiktok:seg_tt,
+      seguidores_youtube:seg_yt, seguidores_linkedin:seg_li,
+      seguidores_twitter:seg_tw, seguidores_facebook:seg_fb,
+      engajamento_medio:engajamento,
+      redes_confirmadas:redesDetect.join(', '),
+    };
+
+    // ── Preencher campos do card ──────────────────────────────
+    // ── Preencher campos do card ──────────────────────────────────────────────────────────────
+    const bioel=document.getElementById('fBio');
+    const posel=document.getElementById('fPos');
+    if(bio && bioel) bioel.value=bio;
+    if(pos && posel) posel.value=pos;
+
+    // ── Preencher ficha ───────────────────────────────────────
+    const mapa={validacao_ideologica:'f_vid',historico_profissional:'f_hist',
+      recomendacoes:'f_rec',assuntos_sensiveis:'f_sens',regiao:'f_regiao',
+      uf:'f_uf',tipo_perfil:'f_tipo',tier:'f_tier'};
+    Object.entries(mapa).forEach(([k,id])=>{const el=document.getElementById(id);if(el&&p[k])el.value=p[k];});
+
+    // ── Atualizar estado local com todos os campos extraídos ────
+    const item=S.filtrada[S.idx];
+    // Bio e posicionamento
+    if(bio) item.bio=bio;
+    if(pos) item.posicionamento_redes=pos;
+    if(vid) item.validacao_ideologica=vid;
+    if(hist) item.historico_profissional=hist;
+    if(rec) item.recomendacoes=rec;
+    if(sens) item.assuntos_sensiveis=sens;
+    if(regiao) item.regiao=regiao;
+    if(uf) item.uf=uf;
+    if(tipo) item.tipo_perfil=tipo;
+    item.tier=tier;
+    let redesAtualizadas=false;
+    if(p.seguidores_instagram>0){item.seguidores_ig=p.seguidores_instagram;redesAtualizadas=true;}
+    if(p.seguidores_tiktok>0){item.seguidores_tiktok=p.seguidores_tiktok;redesAtualizadas=true;}
+    if(maxSeg>0&&(!item.seguidores||item.seguidores<maxSeg)){item.seguidores=maxSeg;redesAtualizadas=true;}
+    if(p.redes_confirmadas&&(!item.redes||item.redes.trim()===''))item.redes=p.redes_confirmadas;
+    if(p.engajamento_medio){
+      const engStr='Engaj: '+p.engajamento_medio;
+      if(item.justificativa&&!item.justificativa.includes('Engaj'))item.justificativa+=' | '+engStr;
+      else if(!item.justificativa)item.justificativa=engStr;
+    }
+    const li2=S.lista.findIndex(x=>x.id===item.id);if(li2>=0)S.lista[li2]={...S.lista[li2],...item};
+    if(redesAtualizadas)renderCard(item);
+
+    // Preencher temática se estiver vazia
+    const temaEl=document.getElementById('fTematica');
+    if(temaEl&&!temaEl.value.trim()){
+      // Tentar extrair do texto: "setor de X", "segmento de X", "área de X"
+      const mTema=textoProc.match(/setor(?:\s+de)?\s+([\w\s]+?)(?:\s*[,.])/i)
+        ||textoProc.match(/segmento(?:\s+de)?\s+([\w\s]+?)(?:\s*[,.])/i);
+      if(mTema) temaEl.value=mTema[1].trim().slice(0,50);
+    }
+    if(!S.fichaAberta)toggleFicha();
+
+    const camposPreenchidos=[bio,pos,vid,rec].filter(Boolean).length;
+    const segMsg=maxSeg>0?' Seguidores atualizados.':'';
+    toast(camposPreenchidos+' campos preenchidos ✓'+segMsg);
+    closeModal('drModal');
+    await salvar(true);
+
+  }catch(e){toast('Erro ao extrair: '+e.message,'err');}
+  finally{btn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Extrair e preencher campos';btn.disabled=false;}
+}
+
+function preencherIA(){
+  // Sem API disponível — pré-preenche com dados do XLSX + heurísticas dos campos existentes
+  if(S.idx<0)return;
+  const d=S.filtrada[S.idx];
+  let preenchidos=0;
+
+  // Tipo de perfil: já vem do XLSX (Categoria / tipo_perfil)
+  if(d.tipo_perfil){
+    const el=document.getElementById('f_tipo');
+    if(el&&!el.value){el.value=d.tipo_perfil;preenchidos++;}
+  }
+  // Tier: estima pelo volume de seguidores
+  const seg=d.seguidores||d.seguidores_ig||d.score_bw||0;
+  if(seg>0){
+    const tier=seg>=1000000?'Mega':seg>=500000?'Macro':seg>=100000?'Médio':seg>=10000?'Micro':'Nano';
+    const el=document.getElementById('f_tier');
+    if(el&&!el.value){el.value=tier;preenchidos++;}
+  }
+  // Posicionamento: usa bio/contexto do card se posicionamento estiver vazio
+  const bioVal=document.getElementById('fBio')?.value.trim();
+  const posEl=document.getElementById('fPos');
+  if(bioVal&&posEl&&!posEl.value){posEl.value=bioVal;preenchidos++;}
+  // Recomendações: usa justificativa IR² se houver
+  if(d.justificativa){
+    const el=document.getElementById('f_rec');
+    if(el&&!el.value){el.value=d.justificativa;preenchidos++;}
+  }
+  // Região/UF: usa localizacao se disponível
+  if(d.localizacao){
+    const ufEl=document.getElementById('f_uf');
+    const regEl=document.getElementById('f_regiao');
+    if(ufEl&&!ufEl.value){
+      const mUF=d.localizacao.match(/(SP|RJ|MG|RS|SC|PR|BA|CE|PE|MA|DF|GO|PA|AM)/i);
+      if(mUF){ufEl.value=mUF[1].toUpperCase();preenchidos++;}
+    }
+  }
+
+  if(preenchidos>0){
+    if(!S.fichaAberta)toggleFicha();
+    toast(preenchidos+' campo(s) pré-preenchidos com dados do XLSX ✓');
+  } else {
+    toast('Use o Deep Research para análise aprofundada','inf');
+    abrirDR();
+  }
+}
+
+// ── Import XLSX ──────────────────────────────────────────────
+async function importarXLSX(input){
+  if(!S.projetoId){toast('Selecione um projeto primeiro','err');return;}
+  const file=input.files[0];if(!file)return;
+  showL('Lendo arquivo…',file.name);
+  const buf=await file.arrayBuffer();
+  const wb=XLSX.read(buf,{type:'array'});
+  const sn=wb.SheetNames.find(s=>s.toLowerCase().includes('final')||s.toLowerCase().includes('classif'))||wb.SheetNames[0];
+  const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:''});
+  const isNovo=rows[0]&&('Influenciador / Organização' in rows[0]||'Contexto de Atuação (Briefing)' in rows[0]);
+  const map=r=>{
+    if(isNovo){
+      const cols=Object.keys(r);
+      const pCols=cols.filter(c=>c.startsWith('Perfil'));
+      const iCols=cols.filter(c=>c.startsWith('Indicadores'));
+      const u1=pCols[0]?String(r[pCols[0]]||''):'', s1=iCols[0]?Number(r[iCols[0]]||0):0;
+      const u2=pCols[1]?String(r[pCols[1]]||''):'', s2=iCols[1]?Number(r[iCols[1]]||0):0;
+      const ip=u=>{if(!u)return'';if(u.includes('instagram'))return'instagram';if(u.includes('linkedin'))return'linkedin';if(u.includes('tiktok'))return'tiktok';if(u.includes('youtube'))return'youtube';if(u.includes('twitter')||u.includes('x.com'))return'twitter';if(u.includes('facebook'))return'facebook';return'';};
+      const p1=ip(u1),p2=ip(u2),redes=[...new Set([p1,p2].filter(Boolean))].join(', ');
+      return{nome:String(r['Influenciador / Organização']||'').trim(),username:String(r['Influenciador / Organização']||'').trim(),
+        fonte:String(r['Fontes']||''),bio:String(r['Contexto de Atuação (Briefing)']||''),url_perfil:u1||u2,
+        seguidores:Number(r['Volume']||s1||0),
+        seguidores_ig:p1==='instagram'?s1:(p2==='instagram'?s2:0),
+        seguidores_linkedin:p1==='linkedin'?s1:(p2==='linkedin'?s2:0),
+        seguidores_tiktok_deck:p1==='tiktok'?s1:(p2==='tiktok'?s2:0),
+        seguidores_youtube_deck:p1==='youtube'?s1:(p2==='youtube'?s2:0),
+        plataforma:p1||p2||'',redes,tipo_perfil:String(r['Categoria']||''),score_bw:Number(r['Volume']||0),
+        qualidade:Number(r['Afinidade']||0),
+        justificativa:[r['Influência']?'Influência: '+r['Influência']:'',r['Reputação']?'Reputação: '+r['Reputação']:'',r['Conteúdo']?'Conteúdo: '+r['Conteúdo']:'',r['Engajamento']?'Engajamento: '+r['Engajamento']:''].filter(Boolean).join(' | '),
+        outros_links:u2&&u2!==u1?u2:'',te_ig:Number(r['Engajamento']||0),te_tiktok:0,n_posts_bw:0,
+        total_interacoes_bw:0,titulos_amostra_bw:'',ipn_estimado:'',localizacao:'',seguidores_tiktok:0,
+        bloco:'',tematica:'',recomendacao_irx:'',
+        username_instagram:p1==='instagram'?u1:(p2==='instagram'?u2:''),
+        username_linkedin:p1==='linkedin'?u1:(p2==='linkedin'?u2:''),username_tiktok:''};
+    }
+    return{username:r['username']||r['Username']||'',nome:r['nome']||r['Nome']||r['NOME']||'',
+      fonte:r['fonte']||'',plataforma:r['plataforma']||r['Plataforma']||'',
+      score_bw:r['score_bw']||r['Score']||r['score']||0,
+      username_instagram:r['username_instagram']||'',username_tiktok:r['username_tiktok']||'',
+      username_linkedin:r['username_linkedin']||'',bio:r['bio']||r['Bio']||'',
+      localizacao:r['localizacao']||r['Localização']||'',seguidores:r['seguidores']||0,
+      seguidores_ig:r['seguidores_ig']||0,seguidores_tiktok:r['seguidores_tiktok']||0,
+      te_ig:r['te_ig']||0,te_tiktok:r['te_tiktok']||0,n_posts_bw:r['n_posts_bw']||0,
+      total_interacoes_bw:r['total_interacoes_bw']||0,titulos_amostra_bw:r['titulos_amostra_bw']||'',
+      qualidade:r['qualidade']||0,tipo_perfil:r['tipo_perfil']||r['Tipo do Perfil']||r['Tipo Perfil']||'',
+      ipn_estimado:r['ipn_estimado']||'',recomendacao_irx:r['recomendacao']||r['recommendacao']||r['Recomendação']||'',
+      justificativa:r['justificativa']||r['Justificativa']||'',redes:r['redes']||'',
+      url_perfil:r['url_perfil']||r['URL']||r['Link']||'',bloco:r['bloco']||r['Bloco']||'',
+      tematica:r['tematica']||r['Temática']||r['Tematica']||''};
+  };
+  const validas=rows.map(map).filter(r=>(r.nome||r.username)&&!['LEGENDA','Volume','Afinidade'].includes(r.nome));
+  if(!validas.length){hideL();toast('Nenhuma linha válida','err');input.value='';return;}
+  showL('Importando…',validas.length+' influenciadores');
+  try{
+    const res=await fetch('/api/irx/classificacao',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({batch:true,projeto_id:S.projetoId,rows:validas})});
+    const d=await res.json();
+    if(!res.ok){toast('Erro: '+(d?.error||res.status),'err');return;}
+    toast(`✓ ${d.imported} importados`);loadLista();
+  }catch(e){toast('Erro: '+e.message,'err');}
+  finally{hideL();input.value='';}
+}
+
+// ── Enriquecer ───────────────────────────────────────────────
+async function enriquecerBase(input){
+  if(!S.projetoId){toast('Selecione um projeto primeiro','err');return;}
+  const file=input.files[0];if(!file)return;
+  showL('Lendo arquivo…',file.name);
+  const buf=await file.arrayBuffer();
+  const isCsv=file.name.toLowerCase().endsWith('.csv');
+  let perfis={};
+  try{
+    if(isCsv){
+      const text=new TextDecoder().decode(buf);
+      const wb2=XLSX.read(text,{type:'string'});
+      const rows=XLSX.utils.sheet_to_json(wb2.Sheets[Object.keys(wb2.Sheets)[0]],{defval:''});
+      rows.forEach(r=>{const u=(r['Username']||r['username']||'').toLowerCase().trim();if(!u)return;if(!perfis[u])perfis[u]={};if(r['Biography']||r['biography'])perfis[u].bio=r['Biography']||r['biography'];if(r['Profile picture URL'])perfis[u].foto_url=r['Profile picture URL'];});
+    }else{
+      const wb2=XLSX.read(buf,{type:'array'});
+      const rows=XLSX.utils.sheet_to_json(wb2.Sheets[wb2.SheetNames[0]],{defval:''});
+      rows.forEach(r=>{const u=(r['Autor ID']||r['Autor Nome']||'').toLowerCase().trim();if(!u)return;if(!perfis[u])perfis[u]={};const seg=Number(r['Seguidores/Inscritos']||0);if(seg>0&&(!perfis[u].seguidores||seg>perfis[u].seguidores))perfis[u].seguidores=seg;if(r['Autor Imagem']&&!perfis[u].foto_url)perfis[u].foto_url=r['Autor Imagem'];if(r['Autor Link']&&!perfis[u].url_perfil)perfis[u].url_perfil=r['Autor Link'];});
+    }
+    let n=0;
+    for(const item of S.lista){
+      const k=(item.username||item.nome||'').toLowerCase().trim();
+      const m=perfis[k]||perfis[k.replace('@','')]||null;
+      if(!m)continue;
+      const patch={id:item.id,projeto_id:item.projeto_id,nome:item.nome};
+      if(m.seguidores&&!item.seguidores)patch.seguidores=m.seguidores;
+      if(m.bio&&!item.bio)patch.bio=m.bio;
+      if(m.foto_url&&!item.foto_url)patch.foto_url=m.foto_url;
+      if(m.url_perfil&&!item.url_perfil)patch.url_perfil=m.url_perfil;
+      if(Object.keys(patch).length<=3)continue;
+      await fetch('/api/irx/classificacao',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
+      n++;
+    }
+    toast(n>0?`✓ ${n} perfis enriquecidos`:'Nenhum perfil correspondido');
+    if(n>0)loadLista();
+  }catch(e){toast('Erro: '+e.message,'err');}
+  finally{hideL();input.value='';}
+}
+
+// ── Sanitização de células para export XLSX (SheetJS) ──────────────
+// Mesma causa-raiz identificada em pipeline-irx.html: emojis e chars de
+// controle (comuns em bio/nome de Instagram) quebram o XML para o Excel,
+// embora o Google Sheets tolere e abra normalmente.
+const sanitizeXLSXCell=v=>{
+  if(v==null)return'';
+  if(typeof v!=='string')return v;
+  return v
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g,'')
+    .replace(/[\uD800-\uDFFF]/g,'')
+    .replace(/[\u{1F000}-\u{1FFFF}]/gu,'')
+    .replace(/[\u{2000}-\u{2BFF}]/gu,'')
+    .replace(/\uFFFE|\uFFFF/g,'');
+};
+const sanitizeXLSXRow=r=>Object.fromEntries(Object.entries(r).map(([k,v])=>[k,typeof v==='string'?sanitizeXLSXCell(v):v]));
+
+// ── Export ───────────────────────────────────────────────────
+async function exportarXLSX(){
+  if(!S.projetoId){toast('Selecione um projeto','err');return;}
+  try{
+    const r=await fetch(`/api/irx/classificacao?projeto_id=${S.projetoId}&action=export`);
+    const rows=await r.json();
+    if(!rows.length){toast('Nenhum dado para exportar','err');return;}
+    const clean=rows.map(({id,criado_em,...rest})=>sanitizeXLSXRow(rest));
+    const ws=XLSX.utils.json_to_sheet(clean);
+    const wb2=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb2,ws,'Classificação');
+    XLSX.writeFile(wb2,`classificacao_irx_${Date.now()}.xlsx`);
+    toast('Exportado ✓');
+  }catch(e){toast('Erro ao exportar','err');}
+}
+
+// ── Limpar ───────────────────────────────────────────────────
+async function confirmarDrop(){
+  if(!S.projetoId){toast('Selecione um projeto','err');return;}
+  const t=S.lista.length;
+  if(t===0){toast('Base já vazia','inf');return;}
+  if(!confirm(`Apagar ${t} influenciadores? Não pode ser desfeito.`))return;
+  showL('Limpando…',t+' registros');
+  try{
+    await fetch(`/api/irx/classificacao?projeto_id=${S.projetoId}`,{method:'DELETE'});
+    toast('Base limpa ✓');S.lista=[];S.filtrada=[];S.idx=-1;
+    renderSB();renderStats();updProgress();fecharPainel();
+  }catch(e){toast('Erro: '+e.message,'err');}
+  finally{hideL();}
+}
+
+// ── Editar Projeto ───────────────────────────────────────────
+async function abrirEditarProjeto(){
+  if(!S.projetoId){toast('Selecione um projeto','err');return;}
+  try{
+    const r=await fetch('/api/irx/projetos?id='+S.projetoId);
+    const d=await r.json();
+    document.getElementById('ep_nome').value=d.nome||'';
+    document.getElementById('ep_cli').value=d.cliente||'';
+    document.getElementById('ep_desc').value=d.tema||'';
+    document.getElementById('editProjetoModal').classList.add('open');
+    setTimeout(()=>document.getElementById('ep_nome')?.focus(),100);
+  }catch(e){toast('Erro ao carregar projeto','err');}
+}
+async function salvarEditProjeto(){
+  const nome=document.getElementById('ep_nome').value.trim();
+  const cliente=document.getElementById('ep_cli').value.trim();
+  const tema=document.getElementById('ep_desc').value.trim();
+  if(!nome){toast('Nome obrigatório','err');return;}
+  try{
+    const r=await fetch('/api/irx/projetos',{
+      method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:parseInt(S.projetoId),nome,cliente,tema})
+    });
+    if(!r.ok){const e=await r.json();toast('Erro: '+(e?.error||r.status),'err');return;}
+    toast('Projeto atualizado ✓');
+    closeModal('editProjetoModal');
+    // Atualizar nome no select
+    const sel=document.getElementById('projetoSel');
+    const opt=sel.querySelector(`option[value="${S.projetoId}"]`);
+    if(opt)opt.textContent=nome;
+  }catch(e){toast('Erro: '+e.message,'err');}
+}
+async function confirmarDeleteProjeto(){
+  if(!S.projetoId)return;
+  const nome=document.getElementById('ep_nome').value||'este projeto';
+  if(!confirm('Excluir "'+nome+'" e todos os seus influenciadores? Não pode ser desfeito.'))return;
+  try{
+    await fetch('/api/irx/projetos?id='+S.projetoId,{method:'DELETE'});
+    toast('Projeto excluído ✓');
+    closeModal('editProjetoModal');
+    S.projetoId=null;
+    document.getElementById('btnEditProj').style.display='none';
+    S.lista=[];S.filtrada=[];S.idx=-1;
+    renderSB();renderStats();fecharPainel();
+    await loadProjetos(null);
+  }catch(e){toast('Erro: '+e.message,'err');}
+}
+
+// ── Tokens Freela ────────────────────────────────────────────
+function openTokens(){
+  if(!S.projetoId){toast('Selecione um projeto','err');return;}
+  document.getElementById('tokenModal').classList.add('open');
+  loadTokens();
+}
+async function loadTokens(){
+  try{
+    const r=await fetch(`/api/irx/freela-token?projeto_id=${S.projetoId}`);
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const lista=await r.json();
+    const el=document.getElementById('tlist');
+    if(!Array.isArray(lista)||!lista.length){el.innerHTML='<div class="empty-msg">Nenhum link criado ainda.</div>';return;}
+    const base=window.location.origin;
+    el.innerHTML=lista.map(t=>{
+      const url=`${base}/pages/freela-classificacao.html?token=${t.token}`;
+      return`<div class="trow ${t.ativo?'':'t-off'}">
+        <span class="tname">${esc(t.nome_freela||'Freela')}</span>
+        <span class="turl" title="${esc(url)}">${url}</span>
+        <button class="tbtn" style="flex-shrink:0;font-size:10px;padding:2px 7px" onclick="cpUrl('${esc(url)}')">Copiar</button>
+        ${t.ativo?`<button class="tbtn tbtn-danger" style="flex-shrink:0;font-size:10px;padding:2px 7px" onclick="desToken(${t.id})">✕</button>`:'<span style="font-size:9px;color:var(--text-muted)">inativo</span>'}
+      </div>`;
+    }).join('');
+  }catch(e){document.getElementById('tlist').innerHTML=`<div class="empty-msg" style="color:#f87171">Erro: ${e.message}</div>`;}
+}
+async function criarToken(){
+  const nome=document.getElementById('freelaNome').value.trim();
+  if(!S.projetoId){toast('Selecione um projeto','err');return;}
+  try{
+    const r=await fetch('/api/irx/freela-token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({projeto_id:parseInt(S.projetoId),nome_freela:nome})});
+    if(!r.ok){const e=await r.json();throw new Error(e?.error||'HTTP '+r.status);}
+    const d=await r.json();
+    const url=`${window.location.origin}/pages/freela-classificacao.html?token=${d.token}`;
+    await navigator.clipboard.writeText(url).catch(()=>{});
+    toast('Link criado e copiado ✓');
+    document.getElementById('freelaNome').value='';
+    loadTokens();
+  }catch(e){toast('Erro: '+e.message,'err');}
+}
+async function desToken(id){
+  await fetch(`/api/irx/freela-token?id=${id}`,{method:'DELETE'});loadTokens();
+}
+function cpUrl(url){navigator.clipboard.writeText(url).then(()=>toast('Copiado ✓')).catch(()=>toast('Falha ao copiar','err'));}
+
+// ── Utils ────────────────────────────────────────────────────
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function toast(msg,type='ok'){const el=document.createElement('div');el.className=`toast t${type}`;el.textContent=msg;document.getElementById('toasts').appendChild(el);setTimeout(()=>el.remove(),4500);}
+
+// ── Avatar ───────────────────────────────────────────────────
+function abrirAvatarMenu(){
+  if(S.idx<0)return;
+  const d=S.filtrada[S.idx];
+  const prev=document.getElementById('avPreview');
+  const urlIn=document.getElementById('avUrl');
+  urlIn.value=d.foto_url||'';
+  if(d.foto_url){prev.innerHTML=`<img src="${esc(d.foto_url)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.innerHTML='?'">`;}
+  else prev.innerHTML=(d.nome||'?')[0].toUpperCase();
+  document.getElementById('avatarModal').classList.add('open');
+}
+function prevAvUrl(){
+  const url=document.getElementById('avUrl').value.trim();
+  const prev=document.getElementById('avPreview');
+  if(url){prev.innerHTML=`<img src="${esc(url)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.innerHTML='URL inválida'">`;}
+  else{if(S.idx>=0)prev.innerHTML=(S.filtrada[S.idx]?.nome||'?')[0].toUpperCase();else prev.innerHTML='?';}
+}
+function onAvatarFile(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const base64=e.target.result;
+    document.getElementById('avUrl').value=base64;
+    document.getElementById('avPreview').innerHTML=`<img src="${base64}" style="width:100%;height:100%;object-fit:cover">`;
+    document.getElementById('avatarModal').classList.add('open');
+  };
+  reader.readAsDataURL(file);
+}
+async function salvarAvatar(){
+  const url=document.getElementById('avUrl').value.trim();
+  if(S.idx<0)return;
+  const item=S.filtrada[S.idx];
+  item.foto_url=url;
+  const li=S.lista.findIndex(x=>x.id===item.id);if(li>=0)S.lista[li].foto_url=url;
+  // Atualizar avatar no card imediatamente
+  const av=document.getElementById('pcAvatar');
+  const inicial=(item.nome||'?')[0].toUpperCase();
+  if(url){av.querySelector('img')?.remove();const img=document.createElement('img');img.src=url;img.style.cssText='width:100%;height:100%;object-fit:cover';img.onerror=()=>{av.innerHTML=inicial+av.querySelector('div')?.outerHTML||inicial;};av.insertBefore(img,av.firstChild);}
+  else{const cam=av.querySelector('div');av.innerHTML=inicial;if(cam)av.appendChild(cam);}
+  await salvar(true);
+  closeModal('avatarModal');
+  toast('Foto salva ✓');
+}
+async function limparAvatar(){
+  document.getElementById('avUrl').value='';
+  if(S.idx>=0){const d=S.filtrada[S.idx];d.foto_url='';const li=S.lista.findIndex(x=>x.id===d.id);if(li>=0)S.lista[li].foto_url='';}
+  document.getElementById('avPreview').innerHTML=(S.filtrada[S.idx]?.nome||'?')[0].toUpperCase();
+}
+
+// Atalhos
+document.addEventListener('keydown',e=>{
+  if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')nav(1);
+  if(e.key==='ArrowLeft' ||e.key==='ArrowUp')  nav(-1);
+  if(e.key==='a')decidir('aprovado');
+  if(e.key==='r')decidir('reprovado');
+  if(e.key==='s')salvar();
+  if(e.key==='f')toggleFicha();
+  if(e.key==='d')abrirDR();
+  if(e.key==='Escape')['tokenModal','projetoModal','drModal'].forEach(id=>closeModal(id));
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Relatório Ekklesia — HUB.nexus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Tokens dark (padrão) ── */
+    :root {
+      --bg:        #0e0704;
+      --surface:   #1a0e08;
+      --surface2:  #221208;
+      --border:    rgba(255,255,255,0.08);
+      --text:      #e8ddd5;
+      --text2:     #b8a898;
+      --muted:     #8a7060;
+      --accent:    #e87c2a;
+      --accent-h:  26;
+      --r:         14px;
+      --green:     #66dd88;
+      --red:       #ff6060;
+      --blue:      #88ccff;
+      --amber:     #ffaa44;
+    }
+
+    /* ── Tokens light ── */
+    body.light {
+      --bg:       #f5ede6;
+      --surface:  #ffffff;
+      --surface2: #fdf6f1;
+      --border:   rgba(0,0,0,0.08);
+      --text:     #2a1200;
+      --text2:    #5a3820;
+      --muted:    #9a7060;
+    }
+
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; transition: background .25s, color .25s; }
+
+    /* ── Header sticky ── */
+    .hdr { padding: 13px 0; border-bottom: 1px solid var(--border); background: var(--bg); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 100; }
+    .hdr-inner { max-width: 900px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .hdr-left  { display: flex; align-items: center; gap: 10px; }
+    .badge     { font-size: 10px; padding: 3px 10px; background: hsla(var(--accent-h),80%,50%,.12); border: 1px solid hsla(var(--accent-h),80%,50%,.28); border-radius: 99px; color: var(--accent); font-weight: 600; letter-spacing: .4px; }
+    .hdr-meta  { font-size: 11px; color: var(--muted); }
+    .theme-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px; cursor: pointer; font-size: 15px; line-height: 1; transition: border-color .15s; }
+    .theme-btn:hover { border-color: var(--accent); }
+
+    /* ── Anchorbar ── */
+    .anchorbar { position: sticky; top: 53px; z-index: 90; background: var(--bg); border-bottom: 1px solid var(--border); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .anchorbar::-webkit-scrollbar { display: none; }
+    .anchorbar-inner { max-width: 900px; margin: 0 auto; padding: 0 24px; display: flex; gap: 0; }
+    .anc-btn { flex-shrink: 0; padding: 10px 16px; font-size: 12px; font-weight: 500; color: var(--muted); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap; transition: all .15s; }
+    .anc-btn:hover { color: var(--text); }
+    .anc-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ── Page ── */
+    .page { max-width: 900px; margin: 0 auto; padding: 32px 24px 80px; }
+
+    /* ── States ── */
+    .state-c { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 12px; color: var(--muted); font-size: 13px; text-align: center; }
+    .spinner  { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Section headers ── */
+    .sec { margin-bottom: 32px; scroll-margin-top: 110px; }
+    .sec-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .sec-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .divider { height: 1px; background: var(--border); margin: 32px 0; }
+
+    /* ── Report head ── */
+    .rep-cliente { font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 6px; }
+    .rep-titulo  { font-size: 26px; font-weight: 800; color: var(--text); letter-spacing: -1px; line-height: 1.1; margin-bottom: 10px; }
+    .rep-info    { font-size: 12px; color: var(--muted); display: flex; gap: 16px; flex-wrap: wrap; }
+    .rep-info span { display: flex; align-items: center; gap: 5px; }
+
+    /* ── Cards ── */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 18px 20px; }
+    .cards-row { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); margin-bottom: 16px; }
+    .kpi-card { padding: 16px 18px; }
+    .kpi-label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; }
+    .kpi-val   { font-size: 26px; font-weight: 800; letter-spacing: -1.5px; line-height: 1; }
+    .kpi-sub   { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+    /* ── Charts ── */
+    .charts-2 { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(300px,1fr)); }
+    .chart-wrap     { position: relative; height: 180px; }
+    .chart-wrap-lg  { position: relative; height: 270px; }
+    .chart-wrap-xl  { position: relative; height: 320px; }
+    .card-title { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 12px; }
+
+    /* ── Temporal ── */
+    .temporal-stack { display: flex; flex-direction: column; gap: 12px; }
+    .agrup-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .agrup-label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+    .filtro-sel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; color: var(--text); font-family: 'Inter', sans-serif; outline: none; cursor: pointer; }
+    .filtro-sel:focus { border-color: var(--accent); }
+
+    /* ── Nuvens ── */
+    .nuvens-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(320px,1fr)); }
+    .nuvem-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .nuvem-label  { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; display: flex; align-items: center; gap: 6px; }
+    .nuvem-dot    { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .nuvem-count  { font-size: 10px; color: var(--muted); }
+
+    /* ── Publicações ── */
+    .pub-filtros { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    input.filtro-sel { min-width: 200px; }
+    .pub-table-wrap { overflow-x: auto; border-radius: var(--r); border: 1px solid var(--border); }
+    .pub-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .pub-table thead th { background: var(--surface2); padding: 9px 12px; text-align: left; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; border-bottom: 1px solid var(--border); }
+    .pub-table tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; transition: background .1s; }
+    .pub-table tbody tr:hover { background: var(--surface2); }
+    .pub-table td { padding: 9px 12px; color: var(--text); vertical-align: top; }
+    .rede-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 600; }
+    .sent-badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: 10px; font-weight: 600; border: 1px solid transparent; white-space: nowrap; }
+    .pag-row { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 12px; font-size: 12px; color: var(--muted); }
+    .tbtn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font-size: 11px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; transition: all .15s; }
+    .tbtn:hover { background: var(--surface2); color: var(--text); }
+    .tbtn:disabled { opacity: .4; cursor: default; }
+
+    /* ── Top Publicadores ── */
+    .top-pub-list { display: flex; flex-direction: column; gap: 6px; }
+    .top-pub-row  { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; transition: background .12s; cursor: pointer; }
+    .top-pub-row:hover { background: var(--surface2); }
+    .top-pub-rank { font-size: 11px; font-weight: 700; color: var(--muted); min-width: 22px; text-align: center; }
+    .top-pub-avatar { width: 34px; height: 34px; border-radius: 50%; background: hsla(var(--accent-h),80%,50%,.12); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--accent); flex-shrink: 0; border: 1px solid var(--border); object-fit: cover; }
+    .top-pub-info { flex: 1; min-width: 0; }
+    .top-pub-name { font-size: 12px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .top-pub-meta { font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .top-pub-score { font-size: 13px; font-weight: 700; color: var(--accent); min-width: 48px; text-align: right; }
+    .top-pub-redes { display: flex; gap: 4px; flex-wrap: wrap; }
+    /* Card expandido do publicador */
+    .pub-detail { display: none; padding: 12px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 0 0 10px 10px; margin-top: -6px; border-top: none; }
+    .pub-detail.open { display: block; }
+    .pub-toppost { margin-top: 10px; padding: 10px 12px; background: var(--bg); border-radius: 8px; border-left: 2px solid var(--accent); }
+    .pub-posts-list { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; }
+    .pub-post-item { padding: 7px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font-size: 11px; color: var(--text2); line-height: 1.5; }
+
+    /* ── Modal pub ── */
+    #pubModal { display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; }
+    #pubModal.open { display: flex; }
+    .modal-back { position: absolute; inset: 0; background: rgba(0,0,0,.72); backdrop-filter: blur(6px); }
+    .modal-box { position: relative; z-index: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 24px 28px; max-width: 600px; width: calc(100% - 32px); max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+    .modal-close { position: absolute; top: 14px; right: 16px; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; line-height: 1; }
+    .modal-close:hover { color: var(--text); }
+    .modal-head { font-size: 11px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+    .modal-body { flex: 1; overflow-y: auto; font-size: 13px; color: var(--text2); line-height: 1.75; white-space: pre-wrap; word-break: break-word; }
+    .modal-foot { margin-top: 12px; }
+
+    /* ── IR² ── */
+    .ir2-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
+    .ir2-tab  { padding: 5px 13px; border-radius: 99px; border: 1px solid var(--border); font-size: 11px; font-weight: 500; cursor: pointer; font-family: 'Inter', sans-serif; transition: all .15s; background: var(--surface); color: var(--muted); }
+    .ir2-tab.active { background: hsla(var(--accent-h),90%,50%,.15); border-color: hsla(var(--accent-h),90%,50%,.40); color: var(--accent); }
+    .ir2-charts-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); margin-top: 14px; }
+
+    /* ── Footer ── */
+    .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 10px 24px; background: var(--bg); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .footer-brand { font-size: 11px; color: var(--muted); }
+    .footer-brand strong { color: var(--accent); }
+    .copy-btn { display: flex; align-items: center; gap: 6px; padding: 6px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font-size: 11px; color: var(--muted); cursor: pointer; font-family: 'Inter',sans-serif; transition: all .15s; }
+    .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="hdr">
+  <div class="hdr-inner">
+    <div class="hdr-left">
+      <a href="https://hub-nexus.pages.dev" target="_blank" style="display:flex;align-items:center;text-decoration:none;">
+        <img src="../assets/logo.png" alt="HUB.nexus" style="height:28px;width:auto;object-fit:contain;filter:drop-shadow(0 0 4px hsla(26,90%,50%,0.22));"/>
+      </a>
+      <span class="badge">Ekklesia for Social</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="hdr-meta" id="headerMeta"></div>
+      <button class="theme-btn" onclick="toggleTheme()" title="Alternar tema" id="themeBtn">🌙</button>
+    </div>
+  </div>
+</header>
+
+<!-- Anchorbar -->
+<nav class="anchorbar" id="anchorbar">
+  <div class="anchorbar-inner">
+    <button class="anc-btn active" onclick="scrollTo('sec-head')">Resumo</button>
+    <button class="anc-btn" onclick="scrollTo('sec-temporal')">Linha do Tempo</button>
+    <button class="anc-btn" onclick="scrollTo('sec-nuvens')">Narrativas</button>
+    <button class="anc-btn" onclick="scrollTo('sec-pubs')">Publicações</button>
+    <button class="anc-btn" id="ancTopPubs" onclick="scrollTo('sec-topPubs')" style="display:none;">Top Publicadores</button>
+    <button class="anc-btn" id="ancIR2" onclick="scrollTo('sec-ir2')" style="display:none;">Ranking IR²</button>
+  </div>
+</nav>
+
+<!-- Estado de carregamento -->
+<div id="stateEl" class="state-c">
+  <div class="spinner"></div>
+  <span>Carregando relatório…</span>
+</div>
+
+<!-- Conteúdo do relatório (one-page) -->
+<div id="reportEl" style="display:none;">
+  <div class="page">
+
+    <!-- Cabeçalho -->
+    <section id="sec-head" class="sec">
+      <div id="repHead"></div>
+      <div class="cards-row" id="kpisRow" style="margin-top:20px;"></div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Linha do Tempo -->
+    <section id="sec-temporal" class="sec">
+      <div class="sec-title">Linha do Tempo</div>
+      <div class="agrup-row">
+        <span class="agrup-label">Agrupamento</span>
+        <select class="filtro-sel" id="agrupSelect" onchange="renderTemporal()">
+          <option value="dia" selected>Por dia</option>
+          <option value="semana">Por semana</option>
+          <option value="mes">Por mês</option>
+        </select>
+      </div>
+      <div class="temporal-stack" id="temporalContent"></div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Narrativas — Nuvens de termos -->
+    <section id="sec-nuvens" class="sec">
+      <div class="sec-title">Nuvens de Termos por Rede</div>
+      <div class="nuvens-grid" id="nuvensWrap"></div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Publicações -->
+    <section id="sec-pubs" class="sec">
+      <div class="sec-title">Publicações</div>
+      <div class="pub-filtros">
+        <select class="filtro-sel" id="filtroRede" onchange="pubPage=0;renderTabela()"><option value="todas">Todas as redes</option></select>
+        <select class="filtro-sel" id="filtroSent" onchange="pubPage=0;renderTabela()"><option value="todos">Todos os sentimentos</option></select>
+        <select class="filtro-sel" id="filtroOrdem" onchange="pubPage=0;renderTabela()">
+          <option value="inter_desc">Mais interações</option>
+          <option value="data_desc">Mais recentes</option>
+          <option value="data_asc">Mais antigas</option>
+        </select>
+        <input type="text" class="filtro-sel" id="buscaPub" placeholder="Buscar…" oninput="pubPage=0;renderTabela()"/>
+      </div>
+      <div id="tabelaWrap"></div>
+      <div class="pag-row" id="pagRow"></div>
+    </section>
+
+    <!-- Top Publicadores (condicional) -->
+    <div id="sec-topPubs-wrap" style="display:none;">
+      <div class="divider"></div>
+      <section id="sec-topPubs" class="sec">
+        <div class="sec-title">Top Publicadores</div>
+        <div class="top-pub-list" id="topPubsList"></div>
+      </section>
+    </div>
+
+    <!-- Ranking IR² (condicional) -->
+    <div id="sec-ir2-wrap" style="display:none;">
+      <div class="divider"></div>
+      <section id="sec-ir2" class="sec">
+        <div class="sec-title">Ranking IR²</div>
+        <div class="ir2-tabs" id="ir2TabsEl"></div>
+        <div class="card" style="margin-bottom:14px;"><div id="ir2TableInner"></div></div>
+        <div class="ir2-charts-grid">
+          <div class="card"><div class="card-title">Top 15 — Score Global</div><div style="position:relative;height:280px;"><canvas id="ir2Chart"></canvas></div></div>
+          <div class="card"><div class="card-title">Distribuição por rede — Top 5</div><div style="position:relative;height:280px;"><canvas id="ir2RedeChart"></canvas></div></div>
+          <div class="card"><div class="card-title">Publicadores por rede</div><div class="chart-wrap"><canvas id="ir2PresChart"></canvas></div></div>
+        </div>
+      </section>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal publicação -->
+<div id="pubModal">
+  <div class="modal-back" onclick="fecharModal()"></div>
+  <div class="modal-box">
+    <button class="modal-close" onclick="fecharModal()">✕</button>
+    <div class="modal-head" id="pubModalHead"></div>
+    <div class="modal-body" id="pubModalBody"></div>
+    <div class="modal-foot" id="pubModalFoot"></div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer" id="footerEl" style="display:none;">
+  <div class="footer-brand">Gerado por <strong>HUB.nexus</strong> · Nexus Pesquisa e Inteligência de Dados</div>
+  <button class="copy-btn" onclick="copiarLink()">
+    <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    Copiar link
+  </button>
+</footer>
+
+<script>
+// ── Constantes ───────────────────────────────────────────────────────────────
+const CORES_REDES = { instagram:'#e1306c', facebook:'#fbe4f5', twitter:'#1da1f2', x:'#1da1f2', youtube:'#ff0000', tiktok:'#69c9d0', linkedin:'#0a66c2', threads:'#aaaaaa', bluesky:'#0085ff' };
+const SENT_PAL   = { positivo:'#66dd88', negativo:'#ff6060', favoravel:'#88ccff', desfavoravel:'#ffaa44', neutro:'#aab2c0', sem_regra:'#888888', fora_escopo:'#cc6699' };
+const SENT_LBL   = { positivo:'Positivo', negativo:'Negativo', favoravel:'Favorável', desfavoravel:'Desfavorável', neutro:'Neutro', sem_regra:'Sem regra', fora_escopo:'Fora de escopo' };
+const COR_ORA    = '#e87c2a';
+const oraA       = a => `rgba(232,124,42,${a})`;
+const sentCor    = s => SENT_PAL[s] || COR_ORA;
+const sentLabel  = s => SENT_LBL[s] || s;
+const sentBadge  = s => {
+  if (!s || s==='—') return '<span style="color:var(--muted)">—</span>';
+  const c=sentCor(s),l=sentLabel(s);
+  return `<span class="sent-badge" style="background:${c}22;border-color:${c}55;color:${c};">${l}</span>`;
+};
+const fmtNum = n => { n=Number(n)||0; if(n>=1e6) return (n/1e6).toFixed(1).replace('.',',')+'M'; if(n>=1e3) return (n/1e3).toFixed(1).replace('.',',')+'k'; return n.toLocaleString('pt-BR'); };
+const fmtDate = d => { if(!d) return '—'; try { return new Date(d).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}); } catch { return d; } };
+const isDark = () => !document.body.classList.contains('light');
+const tc = () => isDark() ? 'rgba(255,180,120,0.5)' : 'rgba(90,50,20,0.5)';
+const gc = () => isDark() ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+const tt = () => ({ backgroundColor: isDark()?'#150a04':'#fff', titleColor: isDark()?'#ffd0a0':'#2a1200', bodyColor: isDark()?'#e8ddd5':'#5a3820', borderColor: isDark()?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.08)', borderWidth:1, padding:10 });
+
+// ── Tema ─────────────────────────────────────────────────────────────────────
+function toggleTheme() {
+  document.body.classList.toggle('light');
+  document.getElementById('themeBtn').textContent = isDark() ? '🌙' : '☀️';
+  // Recria charts (cores mudam)
+  setTimeout(() => { renderTemporal(); if(S?.ir2?.length) renderIR2(); }, 50);
+}
+
+// ── Scroll suave + anchorbar ativo ───────────────────────────────────────────
+function scrollTo(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+const SECS = ['sec-head','sec-temporal','sec-nuvens','sec-pubs','sec-topPubs','sec-ir2'];
+window.addEventListener('scroll', () => {
+  let active = 'sec-head';
+  SECS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.getBoundingClientRect().top < 130) active = id;
+  });
+  document.querySelectorAll('.anc-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('onclick')?.includes(active));
+  });
+}, { passive: true });
+
+// ── Estado global ────────────────────────────────────────────────────────────
+let S = null;
+let chartInst = {};
+let pubPage = 0;
+const PUB_SIZE = 50;
+let ir2AbaAtiva = 'global';
+let ir2CardAberto = null;
+let _ir2RowCache = {};
+let _pubModalData = [];
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+async function init() {
+  const token = new URLSearchParams(location.search).get('token');
+  if (!token) { showErr('Link inválido — nenhum token encontrado.'); return; }
+  try {
+    const res  = await fetch(`/api/ekklesia/share?token=${encodeURIComponent(token)}`);
+    const data = await res.json();
+    if (!res.ok || !data.snapshot) { showErr(data.error || 'Relatório não encontrado.'); return; }
+    S = data.snapshot;
+    renderAll(data.created_at);
+  } catch(e) { showErr('Erro de conexão: ' + e.message); }
+}
+
+function showErr(msg) {
+  document.getElementById('stateEl').innerHTML = `<div style="font-size:28px;margin-bottom:4px;">🔍</div><strong style="color:var(--text);">Relatório não encontrado</strong><span style="max-width:320px;">${msg}</span>`;
+}
+
+// ── Render geral ─────────────────────────────────────────────────────────────
+function renderAll(createdAt) {
+  document.getElementById('stateEl').style.display = 'none';
+  document.getElementById('reportEl').style.display = 'block';
+  document.getElementById('footerEl').style.display = 'flex';
+  const fmt = s => { try { return new Date(s.replace(' ','T')+'Z').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric',timeZone:'America/Sao_Paulo'}); } catch { return s; } };
+  document.getElementById('headerMeta').textContent = fmt(createdAt);
+
+  // Cabeçalho
+  document.getElementById('repHead').innerHTML = `
+    ${S.cliente ? `<div class="rep-cliente">${S.cliente}</div>` : ''}
+    <div class="rep-titulo">${S.projeto || 'Monitoramento'}</div>
+    <div class="rep-info">
+      ${S.periodo            ? `<span>📅 ${S.periodo}</span>` : ''}
+      ${S.totalPubs          ? `<span>📄 ${fmtNum(S.totalPubs)} publicações</span>` : ''}
+      ${S.totalPublicadores  ? `<span>👤 ${fmtNum(S.totalPublicadores)} publicadores</span>` : ''}
+      ${S.fontes?.length     ? `<span>🔗 ${S.fontes.join(', ')}</span>` : ''}
+    </div>`;
+
+  // KPIs
+  document.getElementById('kpisRow').innerHTML = (S.kpis||[]).map(k => `
+    <div class="card kpi-card">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-val" style="color:${k.color||'var(--accent)'};">${fmtNum(k.valor)}</div>
+    </div>`).join('');
+
+  renderTemporal();
+  renderNuvens();
+  renderPubFiltros();
+  renderTabela();
+
+  if (S.ir2?.length) {
+    document.getElementById('sec-ir2-wrap').style.display = 'block';
+    document.getElementById('ancIR2').style.display = 'flex';
+    document.getElementById('sec-topPubs-wrap').style.display = 'block';
+    document.getElementById('ancTopPubs').style.display = 'flex';
+    renderTopPublicadores();
+    renderIR2();
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// LINHA DO TEMPO
+// ════════════════════════════════════════════════════════════════════════════
+function renderTemporal() {
+  const agrup = document.getElementById('agrupSelect')?.value || 'dia';
+  const pubs  = S?.publicacoes || [];
+  const groups = {}, redesByTime = {}, sentByTime = {}, sentPresentes = new Set();
+
+  pubs.forEach(r => {
+    if (!r.data) return;
+    try {
+      const d = new Date(r.data); if (isNaN(d)) return;
+      let key;
+      if      (agrup==='dia') key = d.toISOString().substring(0,10);
+      else if (agrup==='mes') key = d.toISOString().substring(0,7);
+      else { const j=new Date(d.getFullYear(),0,1), w=Math.ceil(((d-j)/86400000+j.getDay()+1)/7); key=d.getFullYear()+'-W'+String(w).padStart(2,'0'); }
+      if (!groups[key]) groups[key]={pubs:0,inter:0};
+      groups[key].pubs++; groups[key].inter+=(r.interacoes||0);
+      const rede = r.canal||'desconhecido';
+      if (!redesByTime[rede]) redesByTime[rede]={};
+      redesByTime[rede][key]=(redesByTime[rede][key]||0)+1;
+      if (r.sentimento) {
+        sentPresentes.add(r.sentimento);
+        if (!sentByTime[r.sentimento]) sentByTime[r.sentimento]={};
+        sentByTime[r.sentimento][key]=(sentByTime[r.sentimento][key]||0)+1;
+      }
+    } catch(e) {}
+  });
+
+  const sorted=Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0]));
+  const labels=sorted.map(([k])=>k), pubsArr=sorted.map(([,v])=>v.pubs), interArr=sorted.map(([,v])=>v.inter);
+  const temSent = sentPresentes.size>0;
+
+  ['tDual','tRedes','tSent'].forEach(k=>{if(chartInst[k]){chartInst[k].destroy();delete chartInst[k];}});
+
+  document.getElementById('temporalContent').innerHTML = `
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-title">Publicações e Interações ao longo do tempo</div>
+      <div class="chart-wrap-xl"><canvas id="tDualChart"></canvas></div>
+    </div>
+    <div class="charts-2">
+      <div class="card">
+        <div class="card-title">Por rede — evolução</div>
+        <div class="chart-wrap-lg"><canvas id="tRedesChart"></canvas></div>
+      </div>
+      ${temSent?`<div class="card">
+        <div class="card-title">Sentimento ao longo do tempo</div>
+        <div class="chart-wrap-lg"><canvas id="tSentChart"></canvas></div>
+      </div>`:''}
+    </div>`;
+
+  chartInst.tDual = new Chart(document.getElementById('tDualChart'),{
+    type:'line', data:{labels, datasets:[
+      {label:'Publicações',data:pubsArr,borderColor:COR_ORA,backgroundColor:oraA(0.12),fill:true,tension:0.4,borderWidth:2.5,pointRadius:2,yAxisID:'yP'},
+      {label:'Interações', data:interArr,borderColor:'#88aaff',backgroundColor:'transparent',fill:false,tension:0.4,borderWidth:2.5,pointRadius:2,yAxisID:'yI'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:true,position:'bottom',labels:{color:tc(),font:{family:'Inter',size:11},boxWidth:10,padding:15}},tooltip:tt()},
+      scales:{
+        x:{grid:{color:gc()},border:{display:false},ticks:{color:tc(),font:{family:'Inter',size:9},maxTicksLimit:14}},
+        yP:{position:'left',beginAtZero:true,grid:{color:gc()},border:{display:false},ticks:{color:COR_ORA,font:{family:'Inter',size:9}},title:{display:true,text:'Publicações',color:COR_ORA,font:{size:10}}},
+        yI:{position:'right',beginAtZero:true,grid:{display:false},border:{display:false},ticks:{color:'#88aaff',font:{family:'Inter',size:9},callback:v=>fmtNum(v)},title:{display:true,text:'Interações',color:'#88aaff',font:{size:10}}}
+      }}
+  });
+
+  const redesDs=Object.entries(redesByTime).slice(0,7).map(([rede,bk])=>({
+    label:rede, data:labels.map(k=>bk[k]||0),
+    borderColor:CORES_REDES[rede.toLowerCase()]||COR_ORA, backgroundColor:'transparent', tension:0.4, borderWidth:1.5, pointRadius:1.5
+  }));
+  chartInst.tRedes=new Chart(document.getElementById('tRedesChart'),{
+    type:'line',data:{labels,datasets:redesDs},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tc(),font:{family:'Inter',size:10},boxWidth:10}},tooltip:tt()},
+      scales:{x:{grid:{color:gc()},border:{display:false},ticks:{color:tc(),font:{family:'Inter',size:9},maxTicksLimit:12}},y:{grid:{color:gc()},border:{display:false},ticks:{color:tc(),font:{family:'Inter',size:9}}}}}
+  });
+
+  if (temSent) {
+    const ordemSent=['positivo','favoravel','neutro','sem_regra','desfavoravel','negativo','fora_escopo'].filter(s=>sentPresentes.has(s));
+    const sentDs=ordemSent.map(s=>({label:sentLabel(s),data:labels.map(k=>(sentByTime[s]&&sentByTime[s][k])||0),backgroundColor:sentCor(s)+'dd',borderWidth:0,borderRadius:2,stack:'s'}));
+    chartInst.tSent=new Chart(document.getElementById('tSentChart'),{
+      type:'bar',data:{labels,datasets:sentDs},
+      options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+        plugins:{legend:{display:true,position:'bottom',labels:{color:tc(),font:{family:'Inter',size:10},boxWidth:10,padding:10}},tooltip:tt()},
+        scales:{x:{stacked:true,grid:{display:false},border:{display:false},ticks:{color:tc(),font:{family:'Inter',size:9},maxTicksLimit:12}},y:{stacked:true,beginAtZero:true,grid:{color:gc()},border:{display:false},ticks:{color:tc(),font:{family:'Inter',size:9}}}}}
+    });
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// NUVENS
+// ════════════════════════════════════════════════════════════════════════════
+function renderNuvens() {
+  const wrap = document.getElementById('nuvensWrap');
+  const nuvens = S?.nuvens||[];
+  if (!nuvens.length) { wrap.innerHTML='<div style="font-size:12px;color:var(--muted);padding:20px;opacity:.5;">Nuvens não disponíveis.</div>'; return; }
+  wrap.innerHTML='';
+  nuvens.forEach(n => {
+    const cor = CORES_REDES[n.rede.toLowerCase()]||COR_ORA;
+    const card = document.createElement('div');
+    card.className='card'; card.style.cssText='padding:16px;';
+    card.innerHTML=`<div class="nuvem-header"><div class="nuvem-label"><span class="nuvem-dot" style="background:${cor}"></span>${n.rede}</div><span class="nuvem-count">${fmtNum(n.docs)} docs</span></div>${n.svg}`;
+    wrap.appendChild(card);
+  });
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// PUBLICAÇÕES
+// ════════════════════════════════════════════════════════════════════════════
+function renderPubFiltros() {
+  const pubs=S?.publicacoes||[];
+  const redes=[...new Set(pubs.map(r=>r.canal).filter(Boolean))].sort();
+  const sents=[...new Set(pubs.map(r=>r.sentimento).filter(Boolean))].sort();
+  const selR=document.getElementById('filtroRede'), selS=document.getElementById('filtroSent');
+  redes.forEach(r=>{const o=document.createElement('option');o.value=r;o.textContent=r.charAt(0).toUpperCase()+r.slice(1);selR.appendChild(o);});
+  sents.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=sentLabel(s);selS.appendChild(o);});
+}
+
+function renderTabela() {
+  const pubs=S?.publicacoes||[];
+  const selR=document.getElementById('filtroRede')?.value||'todas';
+  const selS=document.getElementById('filtroSent')?.value||'todos';
+  const ord =document.getElementById('filtroOrdem')?.value||'inter_desc';
+  const bsc =(document.getElementById('buscaPub')?.value||'').toLowerCase();
+  let df=[...pubs];
+  if(selR!=='todas') df=df.filter(r=>r.canal===selR);
+  if(selS!=='todos') df=df.filter(r=>r.sentimento===selS);
+  if(bsc) df=df.filter(r=>(r.conteudo||'').toLowerCase().includes(bsc)||(r.nome_publicador||'').toLowerCase().includes(bsc));
+  df.sort((a,b)=>{
+    if(ord==='inter_desc') return (b.interacoes||0)-(a.interacoes||0);
+    const da=a.data?new Date(a.data).getTime():0, db=b.data?new Date(b.data).getTime():0;
+    return ord==='data_asc'?da-db:db-da;
+  });
+  const total=df.length, pages=Math.ceil(total/PUB_SIZE);
+  const slice=df.slice(pubPage*PUB_SIZE,(pubPage+1)*PUB_SIZE);
+  _pubModalData=slice;
+  document.getElementById('tabelaWrap').innerHTML=`
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">${total.toLocaleString('pt-BR')} publicações</div>
+    <div class="pub-table-wrap">
+      <table class="pub-table">
+        <thead><tr><th>Data</th><th>Rede</th><th>Publicador</th><th>Conteúdo</th><th>Inter.</th><th>Sentimento</th><th></th></tr></thead>
+        <tbody>${slice.map((r,i)=>{
+          const cor=CORES_REDES[(r.canal||'').toLowerCase()]||COR_ORA;
+          return `<tr onclick="abrirPubModal(${i})">
+            <td style="white-space:nowrap;font-size:11px;">${fmtDate(r.data)}</td>
+            <td><span class="rede-badge" style="background:${cor}22;color:${cor}">${r.canal||'—'}</span></td>
+            <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;">${r.nome_publicador||'—'}</td>
+            <td style="max-width:300px;white-space:normal;line-height:1.4;">${(r.conteudo||'').substring(0,120)+(r.conteudo?.length>120?'…':'')}</td>
+            <td style="text-align:right;white-space:nowrap;">${r.interacoes!=null?fmtNum(r.interacoes):'—'}</td>
+            <td>${sentBadge(r.sentimento)}</td>
+            <td>${r.link_publicacao?`<a href="${r.link_publicacao}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);font-size:11px;">🔗</a>`:'—'}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>`;
+  document.getElementById('pagRow').innerHTML=pages>1?`
+    <button class="tbtn" onclick="pubPage=Math.max(0,pubPage-1);renderTabela()" ${pubPage===0?'disabled':''}>← Anterior</button>
+    <span>Página ${pubPage+1} de ${pages}</span>
+    <button class="tbtn" onclick="pubPage=Math.min(${pages-1},pubPage+1);renderTabela()" ${pubPage>=pages-1?'disabled':''}>Próxima →</button>`:'';
+}
+
+function abrirPubModal(i) {
+  const r=_pubModalData[i]; if(!r) return;
+  const cor=CORES_REDES[(r.canal||'').toLowerCase()]||COR_ORA;
+  document.getElementById('pubModalHead').innerHTML=`
+    <span class="rede-badge" style="background:${cor}22;color:${cor}">${r.canal||'—'}</span>
+    <strong style="color:var(--text);">${r.nome_publicador||'—'}</strong>
+    <span>${fmtDate(r.data)}</span>
+    ${r.interacoes!=null?`<span>❤ ${fmtNum(r.interacoes)}</span>`:''}
+    ${sentBadge(r.sentimento)}`;
+  document.getElementById('pubModalBody').textContent=r.conteudo||r.titulo||'(sem conteúdo)';
+  document.getElementById('pubModalFoot').innerHTML=r.link_publicacao?`<a href="${r.link_publicacao}" target="_blank" style="color:var(--accent);font-size:12px;text-decoration:none;">🔗 Abrir publicação</a>`:'';
+  document.getElementById('pubModal').classList.add('open');
+}
+function fecharModal(){document.getElementById('pubModal').classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')fecharModal();});
+
+// ════════════════════════════════════════════════════════════════════════════
+// TOP PUBLICADORES (lista resumida com card expansível)
+// ════════════════════════════════════════════════════════════════════════════
+function renderTopPublicadores() {
+  const lista=(S.ir2||[]).slice(0,20);
+  const wrap=document.getElementById('topPubsList');
+  if (!lista.length) { wrap.innerHTML='<div style="color:var(--muted);font-size:12px;">Sem dados.</div>'; return; }
+  wrap.innerHTML='';
+  lista.forEach((item,i) => {
+    const redesPresentes=['instagram','facebook','twitter','youtube','tiktok'].filter(r=>(item.porRede[r]||0)>0);
+    const img=item.imagem||'';
+    const wrapper=document.createElement('div');
+    wrapper.style.cssText='border-radius:10px;overflow:hidden;border:1px solid var(--border);';
+
+    const row=document.createElement('div');
+    row.className='top-pub-row';
+    row.style.borderRadius='0'; row.style.border='none';
+    row.innerHTML=`
+      <span class="top-pub-rank">${i+1}</span>
+      ${img?`<img src="${img}" onerror="this.outerHTML='<div class=top-pub-avatar>${(item.nome||'?')[0].toUpperCase()}</div>'" class="top-pub-avatar" style="border-radius:50%;object-fit:cover;">`
+           :`<div class="top-pub-avatar">${(item.nome||'?')[0].toUpperCase()}</div>`}
+      <div class="top-pub-info">
+        <div class="top-pub-name">${item.nome}</div>
+        <div class="top-pub-meta top-pub-redes">
+          ${redesPresentes.map(r=>`<span style="font-size:9px;padding:1px 6px;border-radius:99px;background:${CORES_REDES[r]}22;color:${CORES_REDES[r]};font-weight:600;">${r}</span>`).join('')}
+          ${item.seguidores>0?`<span>👥 ${fmtNum(item.seguidores)}</span>`:''}
+        </div>
+      </div>
+      <span class="top-pub-score">${item.score.toFixed(2)}</span>`;
+
+    const detail=document.createElement('div');
+    detail.className='pub-detail';
+    detail.id='tpd_'+i;
+
+    row.onclick=()=>{
+      const open=detail.classList.contains('open');
+      document.querySelectorAll('.pub-detail.open').forEach(d=>{if(d!==detail)d.classList.remove('open');});
+      detail.classList.toggle('open',!open);
+      if (!open) renderTopPubDetail(detail, item);
+    };
+
+    wrapper.appendChild(row);
+    wrapper.appendChild(detail);
+    wrap.appendChild(wrapper);
+  });
+}
+
+function renderTopPubDetail(el, item) {
+  const redesPresentes=['instagram','facebook','twitter','youtube','tiktok'].filter(r=>(item.porRede[r]||0)>0);
+  const topPost=item.topPost||null;
+  const pubs=item.pubs||[];
+  el.innerHTML=`
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      ${redesPresentes.map(r=>`
+        <div style="text-align:center;padding:6px 10px;background:${CORES_REDES[r]}15;border:1px solid ${CORES_REDES[r]}33;border-radius:8px;">
+          <div style="font-size:8px;color:${CORES_REDES[r]};text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;">${r}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);">${(item.porRede[r]||0).toFixed(1)}</div>
+        </div>`).join('')}
+      <div style="text-align:center;padding:6px 10px;background:hsla(var(--accent-h),90%,50%,.10);border:1px solid hsla(var(--accent-h),90%,50%,.25);border-radius:8px;">
+        <div style="font-size:8px;color:var(--accent);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;">Global</div>
+        <div style="font-size:13px;font-weight:700;color:var(--accent);">${item.score.toFixed(2)}</div>
+      </div>
+      ${item.perfil?`<a href="${item.perfil}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);text-decoration:none;align-self:center;">🔗 Perfil</a>`:''}
+    </div>
+    ${topPost?`<div class="pub-toppost">
+      <div style="font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📌 Post mais engajado</div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.6;">${(topPost.conteudo||topPost.titulo||'').substring(0,220)}${(topPost.conteudo||'').length>220?'…':''}</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:6px;flex-wrap:wrap;">
+        <span style="font-size:10px;color:var(--muted);">${fmtDate(topPost.data)} · ❤ ${fmtNum(topPost.interacoes||0)}</span>
+        ${topPost.link_publicacao?`<a href="${topPost.link_publicacao}" target="_blank" style="font-size:10px;color:var(--accent);text-decoration:none;">🔗 Abrir</a>`:''}
+      </div>
+    </div>`:''}
+    ${pubs.length?`<div class="pub-posts-list">
+      ${pubs.slice(0,20).map(p=>{
+        const rede=((p.canal||'').toLowerCase()==='x'?'twitter':p.canal||'').toLowerCase();
+        const cor=CORES_REDES[rede]||'rgba(255,255,255,.3)';
+        return `<div class="pub-post-item">
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:3px;">
+            <span style="font-size:8px;font-weight:600;color:${cor};background:${cor}20;padding:1px 5px;border-radius:4px;">${rede||'?'}</span>
+            ${p.data?`<span style="font-size:9px;color:var(--muted);">${fmtDate(p.data)}</span>`:''}
+            ${p.interacoes?`<span style="font-size:9px;color:var(--accent);">❤ ${fmtNum(p.interacoes)}</span>`:''}
+          </div>
+          ${(p.conteudo||p.titulo||'').substring(0,150)}${(p.conteudo||'').length>150?'…':''}
+          ${p.link_publicacao?`<br><a href="${p.link_publicacao}" target="_blank" style="font-size:9px;color:var(--accent);text-decoration:none;">🔗 abrir</a>`:''}
+        </div>`;
+      }).join('')}
+      ${pubs.length>20?`<div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">+${pubs.length-20} publicações</div>`:''}
+    </div>`:''}`;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// IR²
+// ════════════════════════════════════════════════════════════════════════════
+function renderIR2() {
+  const lista=S.ir2||[];
+  const redes=['instagram','facebook','twitter','youtube','tiktok'];
+  const redesAtivas=redes.filter(r=>lista.some(item=>(item.porRede[r]||0)>0));
+  const abas=['global',...redesAtivas];
+  document.getElementById('ir2TabsEl').innerHTML=abas.map(a=>`
+    <button class="ir2-tab ${a===ir2AbaAtiva?'active':''}" onclick="ir2SetAba('${a}',this)">
+      ${a==='global'?'🌐 Global':`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${CORES_REDES[a]};margin-right:5px;vertical-align:middle;"></span>${a}`}
+    </button>`).join('');
+  ir2RenderTabela(lista, ir2AbaAtiva);
+  ir2RenderGraficos(lista, redesAtivas);
+}
+
+function ir2SetAba(aba, btn) {
+  ir2AbaAtiva=aba;
+  document.querySelectorAll('.ir2-tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  ir2RenderTabela(S.ir2||[], aba);
+}
+
+function ir2RenderTabela(lista, aba) {
+  const redes=['instagram','facebook','twitter','youtube','tiktok'];
+  let dados, scoreKey, corBarra, titulo, mostrarRedes;
+  if (aba==='global') {
+    dados=[...lista].sort((a,b)=>b.score-a.score); scoreKey=item=>item.score;
+    corBarra=COR_ORA; titulo=`Ranking Global — ${lista.length} publicadores`; mostrarRedes=true;
+  } else {
+    dados=lista.filter(item=>(item.porRede[aba]||0)>0).sort((a,b)=>(b.porRede[aba]||0)-(a.porRede[aba]||0));
+    scoreKey=item=>item.porRede[aba]||0; corBarra=CORES_REDES[aba]||COR_ORA;
+    titulo=`${aba.charAt(0).toUpperCase()+aba.slice(1)} — ${dados.length} publicadores`; mostrarRedes=false;
+  }
+  const maxScore=scoreKey(dados[0]||{score:1})||1;
+  const redesAtivas=mostrarRedes?redes.filter(r=>lista.some(item=>(item.porRede[r]||0)>0)):[];
+  const gridCols=mostrarRedes?`28px 1fr 70px ${redesAtivas.map(()=>'52px').join(' ')} 28px`:`28px 1fr 80px 28px`;
+  _ir2RowCache={};
+  document.getElementById('ir2TableInner').innerHTML=`
+    <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">${titulo}</div>
+    <div style="display:grid;grid-template-columns:${gridCols};gap:6px;padding:0 4px 8px;border-bottom:1px solid var(--border);margin-bottom:4px;align-items:center;">
+      <div></div>
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Publicador</div>
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:right;">Score</div>
+      ${redesAtivas.map(r=>`<div style="font-size:8px;color:${CORES_REDES[r]};text-transform:uppercase;letter-spacing:.4px;text-align:center;">${r.substring(0,4)}</div>`).join('')}
+      <div></div>
+    </div>
+    ${dados.slice(0,60).map((item,i)=>{
+      const score=scoreKey(item), bar=Math.round((score/maxScore)*100);
+      const domId='ir2c_'+i; _ir2RowCache[domId]=item; const img=item.imagem||'';
+      return `<div style="border-radius:8px;margin-bottom:1px;">
+        <div style="display:grid;grid-template-columns:${gridCols};gap:6px;align-items:center;padding:7px 4px;cursor:pointer;border-radius:8px;transition:background .12s;"
+             onclick="ir2Toggle('${domId}')" onmouseover="this.style.background='hsla(26,90%,50%,.05)'" onmouseout="this.style.background='transparent'">
+          <div style="font-size:11px;font-weight:600;color:var(--muted);text-align:center;">${i+1}</div>
+          <div>
+            <div style="display:flex;align-items:center;gap:7px;">
+              ${img?`<img src="${img}" onerror="this.style.display='none'" style="width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);">`
+                  :`<div style="width:22px;height:22px;border-radius:50%;background:hsla(26,90%,50%,.12);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--accent);flex-shrink:0;">${(item.nome||'?')[0].toUpperCase()}</div>`}
+              <span style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.nome}</span>
+            </div>
+            <div style="height:2px;background:var(--border);border-radius:1px;overflow:hidden;margin-top:4px;margin-left:29px;"><div style="height:100%;width:${bar}%;background:${corBarra};border-radius:1px;"></div></div>
+          </div>
+          <div style="text-align:right;font-size:12px;font-weight:700;color:var(--text2);">${score.toFixed(2)}</div>
+          ${redesAtivas.map(r=>{const v=item.porRede[r]||0;return `<div style="text-align:center;font-size:10px;color:${v>0?CORES_REDES[r]:'var(--border)'};">${v>0?v.toFixed(1):'—'}</div>`;}).join('')}
+          <div style="text-align:center;"><svg id="${domId}_ch" viewBox="0 0 24 24" style="width:11px;height:11px;fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg></div>
+        </div>
+        <div id="${domId}_card" style="display:none;padding:0 4px 10px;"></div>
+      </div>`;
+    }).join('')}
+    ${dados.length>60?`<div style="padding:10px;text-align:center;font-size:11px;color:var(--muted);">Mostrando 60 de ${dados.length}</div>`:''}`;
+}
+
+function ir2Toggle(domId) {
+  const item=_ir2RowCache[domId]; if(!item) return;
+  const card=document.getElementById(domId+'_card'), ch=document.getElementById(domId+'_ch'); if(!card) return;
+  if (ir2CardAberto&&ir2CardAberto!==domId) {
+    const p=document.getElementById(ir2CardAberto+'_card'), pc=document.getElementById(ir2CardAberto+'_ch');
+    if(p){p.style.display='none';} if(pc) pc.style.transform='';
+  }
+  const aberto=card.style.display!=='none';
+  if(aberto){card.style.display='none';ch.style.transform='';ir2CardAberto=null;}
+  else{card.style.display='block';ch.style.transform='rotate(180deg)';ir2CardAberto=domId;ir2RenderCard(card,item);}
+}
+
+function ir2RenderCard(el,item) {
+  const redesPresentes=['instagram','facebook','twitter','youtube','tiktok'].filter(r=>(item.porRede[r]||0)>0);
+  const topPost=item.topPost||null, pubs=item.pubs||[], img=item.imagem||'';
+  el.innerHTML=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
+    <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;">
+      <div style="display:flex;gap:12px;align-items:center;flex:1;min-width:200px;">
+        ${img?`<img src="${img}" onerror="this.style.display='none'" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid hsla(26,90%,50%,.30);">`
+            :`<div style="width:48px;height:48px;border-radius:50%;background:hsla(26,90%,50%,.12);border:2px solid hsla(26,90%,50%,.20);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--accent);">${(item.nome||'?')[0].toUpperCase()}</div>`}
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;">${item.nome}</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
+            ${redesPresentes.map(r=>item.perfil?`<a href="${item.perfil}" target="_blank" style="font-size:9px;padding:2px 7px;border-radius:99px;background:${CORES_REDES[r]}22;color:${CORES_REDES[r]};font-weight:600;text-decoration:none;">${r}</a>`:`<span style="font-size:9px;padding:2px 7px;border-radius:99px;background:${CORES_REDES[r]}22;color:${CORES_REDES[r]};font-weight:600;opacity:.7;">${r}</span>`).join('')}
+          </div>
+          ${item.seguidores>0?`<div style="font-size:11px;color:var(--muted);margin-top:4px;">👥 ${fmtNum(item.seguidores)}</div>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
+        ${redesPresentes.map(r=>`<div style="text-align:center;padding:5px 9px;background:${CORES_REDES[r]}15;border:1px solid ${CORES_REDES[r]}33;border-radius:8px;"><div style="font-size:8px;color:${CORES_REDES[r]};text-transform:uppercase;margin-bottom:2px;">${r}</div><div style="font-size:13px;font-weight:700;color:var(--text);">${(item.porRede[r]||0).toFixed(1)}</div></div>`).join('')}
+        <div style="text-align:center;padding:5px 9px;background:hsla(26,90%,50%,.10);border:1px solid hsla(26,90%,50%,.25);border-radius:8px;"><div style="font-size:8px;color:var(--accent);text-transform:uppercase;margin-bottom:2px;">Global</div><div style="font-size:13px;font-weight:700;color:var(--accent);">${item.score.toFixed(2)}</div></div>
+      </div>
+    </div>
+    ${topPost?`<div style="margin-top:12px;padding:10px 12px;background:var(--bg);border-radius:8px;border-left:2px solid ${COR_ORA};"><div style="font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📌 Post mais engajado</div><div style="font-size:11px;color:var(--text2);line-height:1.6;">${(topPost.conteudo||topPost.titulo||'').substring(0,220)}${(topPost.conteudo||'').length>220?'…':''}</div><div style="display:flex;align-items:center;gap:12px;margin-top:6px;flex-wrap:wrap;"><span style="font-size:10px;color:var(--muted);">${fmtDate(topPost.data)} · ❤ ${fmtNum(topPost.interacoes||0)}</span>${topPost.link_publicacao?`<a href="${topPost.link_publicacao}" target="_blank" style="font-size:10px;color:var(--accent);text-decoration:none;">🔗 Abrir</a>`:''}</div></div>`:''}
+    ${pubs.length?`<div style="margin-top:12px;max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">
+      ${pubs.slice(0,30).map(p=>{const r=((p.canal||'').toLowerCase()==='x'?'twitter':p.canal||'').toLowerCase();const cor=CORES_REDES[r]||'rgba(255,255,255,.3)';return `<div style="padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.5;"><div style="display:flex;gap:6px;align-items:center;margin-bottom:3px;"><span style="font-size:8px;font-weight:600;color:${cor};background:${cor}20;padding:1px 5px;border-radius:4px;">${r||'?'}</span>${p.data?`<span style="font-size:9px;color:var(--muted);">${fmtDate(p.data)}</span>`:''}${p.interacoes?`<span style="font-size:9px;color:var(--accent);">❤ ${fmtNum(p.interacoes)}</span>`:''}</div>${(p.conteudo||p.titulo||'').substring(0,150)}${p.link_publicacao?`<br><a href="${p.link_publicacao}" target="_blank" style="font-size:9px;color:var(--accent);text-decoration:none;">🔗</a>`:''}</div>`;}).join('')}
+      ${pubs.length>30?`<div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">+${pubs.length-30} publicações</div>`:''}
+    </div>`:''}
+  </div>`;
+}
+
+function ir2RenderGraficos(lista, redesAtivas) {
+  const redes=redesAtivas||['instagram','facebook','twitter','youtube','tiktok'];
+  const top15=lista.slice(0,15), top5=lista.slice(0,5);
+  ['ir2','ir2Rede','ir2Pres'].forEach(k=>{if(chartInst[k]){chartInst[k].destroy();delete chartInst[k];}});
+  chartInst.ir2=new Chart(document.getElementById('ir2Chart'),{type:'bar',data:{labels:top15.map(r=>r.nome.length>22?r.nome.substring(0,22)+'…':r.nome),datasets:[{label:'Score Global',data:top15.map(r=>+r.score.toFixed(3)),backgroundColor:top15.map((_,i)=>i===0?COR_ORA:oraA(0.47)),borderRadius:4,barPercentage:.7,indexAxis:'y'}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tt(),callbacks:{label:ctx=>` Score: ${ctx.raw}`}}},scales:{x:{grid:{color:gc()},border:{display:false},ticks:{color:tc(),font:{family:'Inter',size:10}}},y:{grid:{display:false},border:{display:false},ticks:{color:tc(),font:{family:'Inter',size:10}}}}}});
+  chartInst.ir2Rede=new Chart(document.getElementById('ir2RedeChart'),{type:'bar',data:{labels:top5.map(r=>r.nome.length>16?r.nome.substring(0,16)+'…':r.nome),datasets:redes.map(rede=>({label:rede,data:top5.map(r=>+((r.porRede[rede]||0).toFixed(3))),backgroundColor:(CORES_REDES[rede]||COR_ORA)+'cc',borderRadius:2,barPercentage:.75,stack:'s'}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:tc(),font:{family:'Inter',size:10},boxWidth:10,padding:8}},tooltip:tt()},scales:{x:{stacked:true,grid:{display:false},border:{display:false},ticks:{color:tc(),font:{family:'Inter',size:9}}},y:{stacked:true,grid:{color:gc()},border:{display:false},ticks:{color:tc(),font:{family:'Inter',size:9}}}}}});
+  const presenca=redes.map(r=>({r,count:lista.filter(item=>(item.porRede[r]||0)>0).length})).filter(p=>p.count>0);
+  chartInst.ir2Pres=new Chart(document.getElementById('ir2PresChart'),{type:'doughnut',data:{labels:presenca.map(p=>p.r),datasets:[{data:presenca.map(p=>p.count),backgroundColor:presenca.map(p=>CORES_REDES[p.r]||COR_ORA),borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'right',labels:{color:tc(),font:{family:'Inter',size:11},boxWidth:10,padding:8}},tooltip:{...tt(),callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw}`}}}}});
+}
+
+// ── Utilitários ──────────────────────────────────────────────────────────────
+function copiarLink() {
+  navigator.clipboard.writeText(location.href).then(()=>{
+    const btn=document.querySelector('.copy-btn'), orig=btn.innerHTML;
+    btn.textContent='✓ Copiado!';
+    setTimeout(()=>btn.innerHTML=orig,2000);
+  });
+}
+
+init();
+</script>
+</body>
+</html>
