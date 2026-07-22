@@ -2,9 +2,5 @@ name = "hub-nexus"
 compatibility_date = "2024-09-23"
 pages_build_output_dir = "."
 
-[[d1_databases]]
-binding = "DB"
-database_id = "fccb5859-59f4-4660-94ff-3f2eac131f3b"
-
 [ai]
 binding = "AI"
